@@ -2,8 +2,8 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.service.TelegramMessagePreviewService;
 import com.padle.core.padelcoreservice.telegram.CampaignModels.*;
 import com.padle.core.padelcoreservice.telegram.TelegramAudienceModels.*;

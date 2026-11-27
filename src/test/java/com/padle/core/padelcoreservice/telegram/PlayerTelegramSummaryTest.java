@@ -1,7 +1,8 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.application.identity.OwnerAccounts;
+import com.padle.core.padelcoreservice.mapper.OwnerPrincipalMapper;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.ContactPreference;
@@ -19,7 +20,7 @@ class PlayerTelegramSummaryTest {
         source.setBasename("i18n/messages");
         source.setDefaultEncoding("UTF-8");
         var summary = new PlayerTelegramSummary(mock(PlayerTelegramProperties.class), mock(PlayerTelegramApi.class),
-                mock(OwnerRepository.class), mock(TournamentRepository.class), mock(TelegramParticipationCoordinator.class),
+                mock(OwnerAccounts.class), mock(OwnerPrincipalMapper.class), mock(TournamentRepository.class), mock(TelegramParticipationCoordinator.class),
                 mock(PlayerTelegramDelivery.class), new PlayerTelegramMessages(source), mock(PlayerTelegramAccess.class));
         String result = summary.format(new Summary(42L, "Fixture", List.of(
                 new Recipient(1, 1, "Ana", "PENDING", false, "NOT_SENT", ContactPreference.WHATSAPP),

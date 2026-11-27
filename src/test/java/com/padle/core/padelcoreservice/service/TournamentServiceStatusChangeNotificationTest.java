@@ -1,14 +1,15 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.model.Club;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.application.clubs.InternalClubReadPort;
+import com.padle.core.persistence.clubs.Club;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class TournamentServiceStatusChangeNotificationTest {
 
     @Mock private TournamentRepository tournamentRepository;
     @Mock private TournamentRegistrationRepository registrationRepository;
-    @Mock private ClubService clubService;
+    @Mock private InternalClubReadPort clubReads;
     @Mock private EmailService emailService;
 
     private TournamentService service;
@@ -54,14 +55,14 @@ class TournamentServiceStatusChangeNotificationTest {
         service = new TournamentService(
                 new RegistrationCancellationService(mock(CancellationHistoryRepository.class),null,null,null,null),
                 tournamentRepository, registrationRepository, null, null,
-                clubService, null, null, emailService, null, null, null,
+                clubReads, null, null, emailService, null, null, null,
                 null, null, null, null, null, new PairTermsService(tournamentRepository, registrationRepository, null, null, null),
                 mock(ParticipationRequests.class));
     }
 
     private void commonStubs() {
         initService();
-        lenient().when(clubService.getClubById(anyLong())).thenReturn(Optional.empty());
+        lenient().when(clubReads.findById(anyLong())).thenReturn(Optional.empty());
         lenient().when(registrationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(registrationRepository.saveAll(any())).thenReturn(List.of());
         lenient().when(registrationRepository.findByTournamentIdAndStatusOrderByPositionAsc(anyLong(), any()))

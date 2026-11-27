@@ -1,8 +1,11 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.92
-> **Миграции:** Liquibase (YAML), файлы в `src/main/resources/db/changelog/versions/`  
+> **Версия схемы:** v1.93
+
+Общий вход Telegram: v1.93 добавляет `player_telegram_onboarding`: UUID, уникальный user_id, равный ему chat_id, уникальный SHA-256 token_hash, expires_at, nullable player_id FK, locale и completed. Один запрос на Telegram, срок 10 минут; истёкшие удаляются при выдаче нового. Кандидат фиксируется POST сайта, связь — только callback исходного Telegram. Прежняя транзакционная блокировка связей сериализует завершение, персональные ссылки, /stop и WhatsApp.
+> **Миграции:** Liquibase (YAML), файлы в `padel-persistence/src/main/resources/db/changelog/versions/`
+>
 > **ddl-auto:** `none` — схема управляется только через Liquibase
 
 ---
@@ -111,6 +114,8 @@ owners_db ───────────────────────�
 
 ### `player_padel_db`
 
+JPA-владелец профиля и контактных запросов находится в `padel-persistence`. Регистрации, рейтинг, Americano и King of Court используют прежние FK на эту таблицу. При объединении гостя JDBC-адаптер меняет ссылки в исходных строках в транзакции сценария объединения.
+
 Основная таблица зарегистрированных игроков. Реализует `UserDetails` Spring Security с ролью `ROLE_PLAYER`.
 
 | Колонка | Тип | Nullable | По умолчанию | Описание |
@@ -145,7 +150,7 @@ owners_db ───────────────────────�
 
 ### `owners_db`
 
-Администраторы и организаторы. Реализует `UserDetails` с ролью из поля `role`.
+Учётные записи администраторов и организаторов. Таблицу и назначения площадок хранит `OwnerEntity` в `padel-persistence`. При входе `OwnerUserService` создаёт отдельный `Owner` для Spring Security с ролью из поля `role`.
 
 | Колонка | Тип | Nullable | По умолчанию | Описание |
 |---------|-----|----------|--------------|----------|
@@ -156,7 +161,7 @@ owners_db ───────────────────────�
 | `first_name` | `VARCHAR(255)` | NOT NULL | — | Имя |
 | `last_name` | `VARCHAR(255)` | NOT NULL | — | Фамилия |
 | `phone` | `VARCHAR(255)` | NULL | — | Телефон |
-| `role` | `VARCHAR(30)` | NOT NULL | `ORGANIZER` | Роль (enum `OwnerRole`) |
+| `role` | `VARCHAR(30)` | NOT NULL | `ORGANIZER` | Роль (enum `OwnerAccount.Role`) |
 | `created_at` | `TIMESTAMP` | NOT NULL | now() | Дата создания |
 | `updated_at` | `TIMESTAMP` | NOT NULL | now() | Дата обновления |
 | `last_login_at` | `TIMESTAMP` | NULL | — | Последний вход |
@@ -829,6 +834,9 @@ tournaments_db
 | `CANCELLED` | Отменён |
 
 ### `OwnerRole` — роль администратора
+
+В JPA используется `OwnerAccount.Role`. Имена значений совпадают с перечислением сессии `OwnerRole`.
+
 | Значение | Права |
 |----------|-------|
 | `SUPER_ADMIN` | Полные права |

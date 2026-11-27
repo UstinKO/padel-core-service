@@ -1,10 +1,16 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.clubs.ClubAdminReadPort;
+import com.padle.core.application.clubs.ClubAdminWritePort;
+import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.ClubReadPort;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.application.clubs.PublicClubQuery;
-import com.padle.core.padelcoreservice.adapter.clubs.LegacyClubReadAdapter;
-import com.padle.core.padelcoreservice.model.Club;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
+import com.padle.core.persistence.clubs.JpaClubReadAdapter;
+import com.padle.core.persistence.clubs.Club;
+import com.padle.core.persistence.clubs.ClubRepository;
+import jakarta.persistence.EntityManagerFactory;
+import liquibase.integration.spring.SpringLiquibase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.support.AopUtils;
@@ -22,14 +28,18 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -50,10 +60,11 @@ class PublicClubApplicationIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired PublicClubQuery query;
+    @Autowired InternalClubReadPort internalClubs;
     @MockitoSpyBean ClubRepository clubs;
     @Autowired ApplicationContext context;
     @Autowired PlatformTransactionManager transactions;
-    @MockitoSpyBean LegacyClubReadAdapter adapter;
+    @MockitoSpyBean JpaClubReadAdapter adapter;
     private final List<Long> owned = new ArrayList<>();
 
     @AfterEach
@@ -83,6 +94,20 @@ class PublicClubApplicationIntegrationTest {
     }
 
     @Test
+    void persistenceUsesSharedInfrastructureAndSingleClubMapping() throws Exception {
+        assertThat(context.getBeansOfType(DataSource.class)).hasSize(1);
+        assertThat(context.getBeansOfType(EntityManagerFactory.class)).hasSize(1);
+        assertThat(context.getBeansOfType(SpringLiquibase.class)).hasSize(1);
+        assertThat(context.getBeansOfType(ClubRepository.class)).hasSize(1);
+        assertThat(context.getBeansOfType(ClubAdminReadPort.class)).hasSize(1);
+        assertThat(context.getBeansOfType(ClubAdminWritePort.class)).hasSize(1);
+        var model = context.getBean(EntityManagerFactory.class).getMetamodel();
+        assertThat(model.entity(Club.class).getName()).isEqualTo("Club");
+        assertThat(model.getEntities().stream().filter(type -> type.getName().equals("Club"))).hasSize(1);
+        assertThat(context.getResources("classpath*:db/changelog/changelog-master.yaml")).hasSize(1);
+    }
+
+    @Test
     void adapterPreservesActiveFilterAndNameThenIdOrdering() {
         String prefix = "Порядок " + UUID.randomUUID();
         var last = create(prefix + " Z", true);
@@ -94,6 +119,46 @@ class PublicClubApplicationIntegrationTest {
                 .extracting(value -> value.id()).containsExactly(first.getId(), second.getId(), last.getId());
         verify(clubs).findByIsActiveTrue(Sort.by("nombre", "id"));
         assertThat(query.club(hidden.getId())).isEmpty();
+    }
+
+    @Test
+    void internalReadPreservesInactiveClubsAndLoadsOneBatch() {
+        var active = create("Внутренний активный " + UUID.randomUUID(), true);
+        var inactive = create("Внутренний выключенный " + UUID.randomUUID(), false);
+        var missingId = -1L;
+        var ids = List.of(active.getId(), inactive.getId(), inactive.getId(), missingId);
+        clearInvocations(clubs);
+
+        assertThat(internalClubs.findByIds(ids))
+                .containsOnlyKeys(active.getId(), inactive.getId())
+                .containsEntry(active.getId(), new ClubDetails(active.getId(), active.getNombre(), null, null, true))
+                .containsEntry(inactive.getId(), new ClubDetails(inactive.getId(), inactive.getNombre(), null, null, false));
+        verify(clubs).findAllById(ids);
+        verify(clubs, never()).findById(any());
+
+        assertThat(internalClubs.findByIds(List.of())).isEmpty();
+        assertThat(internalClubs.findById(inactive.getId())).hasValueSatisfying(club -> assertThat(club.active()).isFalse());
+        assertThat(internalClubs.findById(missingId)).isEmpty();
+        assertThat(query.club(inactive.getId())).isEmpty();
+    }
+
+    @Test
+    void homeCountsOnlyActiveClubsThroughTheReadOnlyPortWithoutLoadingAList() throws Exception {
+        long before = clubs.countByIsActiveTrue();
+        create("Активный " + UUID.randomUUID(), true);
+        create("Неактивный " + UUID.randomUUID(), false);
+        clearInvocations(clubs);
+        doAnswer(invocation -> {
+            assertReadOnlyTransaction();
+            return invocation.callRealMethod();
+        }).when(adapter).countActive();
+
+        mvc.perform(get("/api/public/home")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalClubs").value(before + 1));
+        verify(adapter).countActive();
+        verify(clubs).countByIsActiveTrue();
+        verify(clubs, never()).findByIsActiveTrue(any(Sort.class));
+        verify(clubs, never()).findByIsActiveTrue();
     }
 
     @Test

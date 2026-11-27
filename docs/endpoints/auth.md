@@ -104,7 +104,7 @@ web-сессии для React UI. Веб-вход использует Spring Se
 
 1. Читает email из `SecurityContext`.
 2. Загружает `PlayerPadel` из БД.
-3. Маппит principal через `PlayerMapper` или `OwnerMapper` и возвращает DTO.
+3. По ID игрока загружает профиль и маппит через `PlayerMapper`. Для владельца использует `OwnerMapper`.
 
 ### Контракт
 
@@ -121,7 +121,7 @@ web-сессии для React UI. Веб-вход использует Spring Se
 > **[закрыто, сверено с кодом 2026-11-05]** JPA entity не сериализуется: Player и Owner
 > преобразуются MapStruct-мапперами в `PlayerResponseDto`/`OwnerDto`.
 
-> **[закрыто, сверено с кодом 2026-10-16]** `/me` обрабатывает и `Owner`, и `PlayerPadel` (по типу principal). Исходное замечание: эндпоинт искал только в `PlayerRepository`.
+> **[закрыто, сверено с кодом 2026-10-16]** `/me` обрабатывает и `Owner`, и `PlayerPrincipal`. Исходное замечание: эндпоинт искал только в `PlayerRepository`.
 
 ---
 
@@ -153,7 +153,7 @@ web-сессии для React UI. Веб-вход использует Spring Se
 - Пароль/хеш, телефон, Telegram, JWT, remember-me/JSESSIONID и CSRF token в JSON отсутствуют.
 - Ответ инициирует выдачу cookie `XSRF-TOKEN`; React передаёт её в `X-XSRF-TOKEN` на мутациях.
 
-Если authenticated principal не относится к `PlayerPadel` или `Owner`, ответ —
+Если authenticated principal отличается от `PlayerPrincipal` и `Owner`, ответ —
 `500 application/problem+json` с полями `type`, `title`, `status`, `detail`, `instance` и
 `code=SPA_AUTH_UNSUPPORTED_PRINCIPAL`, без имени Java-исключения или stack trace.
 

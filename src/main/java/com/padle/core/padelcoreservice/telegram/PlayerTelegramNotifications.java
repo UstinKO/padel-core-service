@@ -1,11 +1,12 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.model.ParticipationRequest;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
@@ -23,7 +24,7 @@ import java.util.stream.Stream;
 public class PlayerTelegramNotifications {
     private final TournamentRegistrationRepository registrations;
     private final PlayerRepository players;
-    private final ClubRepository clubs;
+    private final InternalClubReadPort clubReads;
     private final TelegramParticipationCoordinator participation;
     private final PlayerTelegramStore store;
     private final PlayerTelegramMessages messages;
@@ -57,9 +58,9 @@ public class PlayerTelegramNotifications {
             }
             var locale = player.getLocale();
             var tournament = row.getTournament();
-            var club = clubs.findById(tournament.getClubId());
-            String clubName = club.map(c -> c.getNombre()).orElse("");
-            String address = club.map(c -> c.getDireccion()).orElse("");
+            var club = clubReads.findById(tournament.getClubId());
+            String clubName = club.map(ClubDetails::name).orElse("");
+            String address = club.map(ClubDetails::address).orElse("");
             String when = tournament.getFechaHoraInicioCompleta().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String text = messages.text(reminder ? "reminder" : "request", locale,
                     row.getPlayer().getNombreCompleto(), tournament.getNombre(), when, clubName, address);

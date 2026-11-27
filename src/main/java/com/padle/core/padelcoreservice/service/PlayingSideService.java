@@ -4,9 +4,9 @@ import com.padle.core.padelcoreservice.dto.PlayingSideDtos;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.mapper.PlayingSideMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -52,8 +52,8 @@ public class PlayingSideService {
     private PlayerPadel locked(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated())
             throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
-        var player = SecurityUtils.extractPlayer(authentication.getPrincipal());
-        if (player == null) throw new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED");
+        var player = SecurityUtils.playerPrincipal(authentication.getPrincipal())
+                .orElseThrow(() -> new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED"));
         return players.lockPlayers(List.of(player.getId())).stream().filter(PlayerPadel::isActivo).findFirst()
                 .orElseThrow(() -> new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED"));
     }

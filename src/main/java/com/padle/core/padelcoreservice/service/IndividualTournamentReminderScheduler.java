@@ -1,11 +1,11 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class IndividualTournamentReminderScheduler {
 
     private final TournamentRepository tournamentRepository;
     private final TournamentRegistrationRepository registrationRepository;
-    private final ClubRepository clubRepository;
+    private final InternalClubReadPort clubReads;
     private final EmailService emailService;
 
     @Scheduled(cron = "0 0/30 * * * *")
@@ -85,9 +85,9 @@ public class IndividualTournamentReminderScheduler {
     }
 
     private void sendReminderForTournament(Tournament tournament) {
-        Club club = clubRepository.findById(tournament.getClubId()).orElse(null);
-        String clubName = club != null ? club.getNombre() : "el club";
-        String direccion = club != null ? club.getDireccion() : "";
+        var club = clubReads.findById(tournament.getClubId());
+        String clubName = club.map(ClubDetails::name).orElse("el club");
+        String direccion = club.isPresent() ? club.orElseThrow().address() : "";
         String hora = tournament.getHoraInicio().format(DateTimeFormatter.ofPattern("HH:mm"));
         boolean canchaAbierta = tournament.getTipo() == TournamentType.CANCHA_ABIERTA;
 

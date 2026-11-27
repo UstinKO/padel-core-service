@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.controller.api;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.principal;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -34,11 +36,11 @@ class PlayerContactApiTest {
     @Test
     void telegramCannotReplacePhoneAndInvalidTelegramDoesNotSavePhone() throws Exception {
         var player = player();
-        mvc.perform(patch("/api/players/me/contact").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/contact").with(playerUser(player)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"telegramUsername\":\"valid_user\"}"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("PHONE_REQUIRED"))
                 .andExpect(jsonPath("$.field").value("telefono"));
-        mvc.perform(patch("/api/players/me/contact").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/contact").with(playerUser(player)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"telefono\":\"+79125550123\",\"telegramUsername\":\"bad!\"}"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("TELEGRAM_INVALID"));
@@ -48,13 +50,28 @@ class PlayerContactApiTest {
     @Test
     void normalizesNationalPhoneAndStatusReadsFreshProfile() throws Exception {
         var player = player();
-        mvc.perform(patch("/api/players/me/contact").with(user(player)).with(csrf())
+        var signedIn = principal(player);
+        assertThat(signedIn.isValidContact()).isFalse();
+        mvc.perform(patch("/api/players/me/contact").with(user(signedIn)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"telefono\":\"8 (912) 555-01-24\",\"phoneCountry\":\"RU\",\"telegramUsername\":null}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.telefono").value("+79125550124"));
         assertThat(player.getTelefono()).isNull();
-        mvc.perform(get("/api/players/me/contact-status").with(user(player)))
+        assertThat(signedIn.isValidContact()).isFalse();
+        mvc.perform(get("/api/players/me/contact-status").with(user(signedIn)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.hasContact").value(true));
+    }
+
+    @Test
+    void telegramOnlyProfileStillNeedsPhone() throws Exception {
+        var player = player();
+        player.setTelegramUsername("@contact_qa_" + player.getId());
+        players.saveAndFlush(player);
+
+        mvc.perform(get("/api/players/me/contact-status").with(playerUser(player)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasContact").value(false))
+                .andExpect(jsonPath("$.hasTelegram").value(true));
     }
 
     @Test
@@ -63,7 +80,7 @@ class PlayerContactApiTest {
         owner.setTelefono("+79125550125");
         players.saveAndFlush(owner);
         var player = player();
-        mvc.perform(patch("/api/players/me/contact").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/contact").with(playerUser(player)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"telefono\":\"+7 (912) 555-01-25\",\"telegramUsername\":\"unused_qa_handle\"}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PHONE_IN_USE"));
@@ -75,7 +92,7 @@ class PlayerContactApiTest {
     private PlayerPadel player() {
         var player = players.saveAndFlush(PlayerPadel.builder().nombre("Contact").apellido("QA")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("test-hash")
-                .activo(true).emailConfirmado(true).preferredLocale("es").nivelJugador(com.padle.core.padelcoreservice.model.enums.Nivel.C9).build());
+                .activo(true).emailConfirmado(true).preferredLocale("es").nivelJugador(com.padle.core.application.tournament.Nivel.C9).build());
         createdPlayers.add(player.getId());
         return player;
     }

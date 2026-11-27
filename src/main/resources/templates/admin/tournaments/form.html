@@ -20,6 +20,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/admin-forms.css}">
+    <link rel="stylesheet" th:href="@{/css/organizer-contact.css}">
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(${tournament.id == null} ? #{admin.tournaments.form.title.create} : #{admin.tournaments.form.title.edit})}"></header>
@@ -40,6 +41,7 @@
                     <i class="fas fa-edit"></i>
                     <span th:text="#{admin.tournaments.form.title.edit}">Editar Torneo</span>
                 </h1>
+                <span data-pair-help hidden><th:block th:if="${isCopy != null}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block><th:block th:if="${tournament.id != null}"><button th:replace="~{fragments/action-help :: help('edit')}"></button></th:block></span>
                 <p th:text="#{admin.tournaments.form.subtitle}">Complete los detalles del torneo a continuación</p>
             </div>
 
@@ -70,7 +72,7 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="clubId" class="required" th:text="#{admin.tournaments.form.field.club}">Club</label>
+                            <div class="action-help-field-label"><label for="clubId" class="required" th:text="#{admin.tournaments.form.field.club}">Club</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('create')}"></button></span></div>
                             <select th:field="*{clubId}"
                                     id="clubId"
                                     class="form-control"
@@ -98,7 +100,7 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="fechaInicio" class="required" th:text="#{admin.tournaments.form.field.date_start}">Fecha de Inicio</label>
+                            <div class="action-help-field-label"><label for="fechaInicio" class="required" th:text="#{admin.tournaments.form.field.date_start}">Fecha de Inicio</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('schedule')}"></button></span></div>
                             <input type="date"
                                    th:field="*{fechaInicio}"
                                    id="fechaInicio"
@@ -178,7 +180,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="categoriaNivel" class="required" th:text="#{admin.tournaments.form.field.level}">Categoría / Nivel</label>
+                            <div class="action-help-field-label"><label for="categoriaNivel" class="required" th:text="#{admin.tournaments.form.field.level}">Categoría / Nivel</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('category')}"></button></span></div>
                             <select th:field="*{categoriaNivel}"
                                     id="categoriaNivel"
                                     class="form-control"
@@ -200,7 +202,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="tipo" class="required" th:text="#{admin.tournaments.form.field.type}">Tipo de Torneo</label>
+                            <div class="action-help-field-label"><label for="tipo" class="required" th:text="#{admin.tournaments.form.field.type}">Tipo de Torneo</label><span data-pair-help data-pair-help-chooser hidden><button th:replace="~{fragments/action-help :: help('format')}"></button></span></div>
                             <select th:field="*{tipo}"
                                     id="tipo"
                                     class="form-control"
@@ -214,7 +216,7 @@
                                 <option value="CANCHA_ABIERTA" th:text="#{admin.tournaments.form.field.type.cancha_abierta}">Cancha Abierta</option>
                                 <option value="PADEL_CLINIC" th:text="#{admin.tournaments.form.field.type.padel_clinic}">Clínica de pádel</option>
                             </select>
-                            <div id="tipoHint" style="font-size:.8rem;margin-top:.35rem;color:#64748b"></div>
+                            <div id="tipoHint" th:attr="data-round-robin-hint=#{organizer.contact.round_robin_hint}" style="font-size:.8rem;margin-top:.35rem;color:#64748b"></div>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('tipo')}"
                                  th:errors="*{tipo}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
                         </div>
@@ -247,9 +249,9 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="cupoMax" id="cupoMaxLabel" class="required"
+                            <div class="action-help-field-label"><label for="cupoMax" id="cupoMaxLabel" class="required"
                                    th:text="#{admin.tournaments.form.field.capacity}"
-                                   th:attr="data-label-individual=#{admin.tournaments.form.field.capacity},data-label-pairs=#{admin.tournaments.form.field.capacity_pairs}">Cupo Máximo</label>
+                                   th:attr="data-label-individual=#{admin.tournaments.form.field.capacity},data-label-pairs=#{admin.tournaments.form.field.capacity_pairs}">Cupo Máximo</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('capacity')}"></button></span></div>
                             <input type="number"
                                    th:field="*{cupoMax}"
                                    id="cupoMax"
@@ -348,18 +350,44 @@
                                   th:placeholder="#{admin.tournaments.form.field.description.placeholder}"></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="contactoOrganizador" class="required" th:text="#{admin.tournaments.form.field.contact}">Contacto del Organizador</label>
-                        <input type="text"
-                               th:field="*{contactoOrganizador}"
-                               id="contactoOrganizador"
-                               class="form-control"
-                               th:classappend="${#fields.hasErrors('contactoOrganizador')} ? 'is-invalid' : ''"
-                               th:placeholder="#{admin.tournaments.form.field.contact.placeholder}"
-                               required>
-                        <div class="invalid-feedback" th:if="${#fields.hasErrors('contactoOrganizador')}"
-                             th:errors="*{contactoOrganizador}" th:text="#{admin.tournaments.form.error.field}">Error en el campo</div>
-                    </div>
+                    <fieldset class="organizer-contact-form" id="organizerContactForm"
+                              th:attr="data-event-id=${tournament.id},data-preview-url=@{/admin/api/organizer-contact/preview},data-pending=#{organizer.contact.checking},data-unavailable=#{organizer.contact.preview.unavailable}">
+                        <legend th:text="#{admin.tournaments.form.field.contact}">Contacto del organizador</legend>
+                        <div class="form-group">
+                            <label for="organizerName" th:text="#{organizer.contact.name}">Nombre del organizador</label>
+                            <input type="text" th:field="*{organizerName}" id="organizerName" class="form-control" maxlength="160" autocomplete="section-organizer name">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('organizerName')}" th:errors="*{organizerName}"></div>
+                        </div>
+                        <div class="organizer-contact-grid">
+                            <div class="form-group">
+                                <label for="organizerCountry" th:text="#{organizer.contact.country}">País</label>
+                                <select th:field="*{organizerCountry}" id="organizerCountry" class="form-control" aria-describedby="organizerPhoneExample">
+                                    <option th:each="country : ${organizerCountries}" th:value="${country.code}" th:text="${country.label}" th:attr="data-example=${country.example}"></option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('organizerCountry')}" th:errors="*{organizerCountry}"></div>
+                            </div>
+                            <div class="form-group">
+                                <div class="action-help-field-label"><label for="organizerPhone" class="required" th:text="#{organizer.contact.phone}">WhatsApp del organizador</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('contact')}"></button></span></div>
+                                <input type="tel" inputmode="tel" th:field="*{organizerPhone}" id="organizerPhone" class="form-control" maxlength="500" required autocomplete="section-organizer tel"
+                                       aria-describedby="organizerPhoneHelp organizerPhoneExample organizerPhoneError organizerPhoneServerError">
+                            </div>
+                        </div>
+                        <p id="organizerPhoneHelp" class="form-text" th:text="#{organizer.contact.help}"></p>
+                        <p class="form-text" id="organizerPhoneExample"><span th:text="#{organizer.contact.example}">Ejemplo:</span> <span data-phone-example></span></p>
+                        <p id="organizerPhoneServerError" class="organizer-contact-error" th:if="${#fields.hasErrors('organizerPhone')}" th:errors="*{organizerPhone}"></p>
+                        <p class="organizer-contact-error" th:if="${#fields.hasErrors('contactoOrganizador')}" th:errors="*{contactoOrganizador}"></p>
+                        <div th:if="${tournament.organizerContact != null and tournament.organizerContact.needsReview}" class="organizer-contact-legacy" role="note">
+                            <strong th:text="#{organizer.contact.review}"></strong>
+                            <p th:text="#{organizer.contact.original}"></p>
+                            <p class="organizer-contact-original" th:text="${tournament.organizerContactOriginal}"></p>
+                        </div>
+                        <p id="organizerPhoneError" class="organizer-contact-error" aria-live="polite" hidden></p>
+                        <div class="organizer-contact-preview" data-contact-preview hidden>
+                            <strong data-contact-number></strong>
+                            <a class="btn btn-outline-primary" data-contact-link target="_blank" rel="noopener noreferrer" th:text="#{organizer.contact.test}">Probar enlace de WhatsApp</a>
+                            <small th:text="#{organizer.contact.format_only}"></small>
+                        </div>
+                    </fieldset>
 
                     <div class="form-group">
                         <label for="faqUrl" th:text="#{admin.tournaments.form.field.faq}">URL de Preguntas Frecuentes</label>
@@ -381,7 +409,7 @@
 
                     <!--/* Доступ: публичный / только по ссылке */-->
                     <div class="form-group">
-                        <label for="visibilidad" th:text="#{admin.tournaments.form.field.visibility}">Modo de acceso</label>
+                        <div class="action-help-field-label"><label for="visibilidad" th:text="#{admin.tournaments.form.field.visibility}">Modo de acceso</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('visibility')}"></button></span></div>
                         <select th:field="*{visibilidad}"
                                 id="visibilidad"
                                 class="form-control">
@@ -469,9 +497,11 @@
             tipoHint.textContent = 'Formato parejas: Calificación (2 partidos) + Playoff eliminatorio. Modalidad siempre Dobles.';
         } else if (val === 'AMERICANO') {
             modalidadGroup.style.display = 'none';
-            modalidadSelect.value = 'INDIVIDUAL';
+            const existingPairs = !sel && modalidadSelect.value === 'DOBLES';
+            if (!existingPairs) modalidadSelect.value = 'INDIVIDUAL';
             modalidadSelect.required = false;
-            tipoHint.textContent = 'Americano individual (Round Robin clásico). Modalidad siempre Individual.';
+            tipoHint.textContent = existingPairs ? tipoHint.dataset.roundRobinHint
+                : 'Americano individual (Round Robin clásico). Modalidad siempre Individual.';
         } else if (val === 'KING_OF_COURT') {
             modalidadGroup.style.display = 'none';
             modalidadSelect.value = 'INDIVIDUAL';
@@ -565,5 +595,6 @@
     });
 </script>
 <script th:src="@{/js/admin-tournament-list.js}" defer></script>
+<script th:src="@{/js/organizer-contact.js}" defer></script>
 </body>
 </html>

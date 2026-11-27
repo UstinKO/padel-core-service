@@ -4,7 +4,7 @@ import com.padle.core.application.roundrobin.RoundRobinPosition;
 import com.padle.core.application.roundrobin.RoundRobinReadSet.ScoringMode;
 import com.padle.core.padelcoreservice.adapter.roundrobin.LegacyRoundRobinPositionAdapter;
 import com.padle.core.padelcoreservice.mapper.americano.RoundRobinPositionMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;

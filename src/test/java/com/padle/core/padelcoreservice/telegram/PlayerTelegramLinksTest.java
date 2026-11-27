@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import java.time.OffsetDateTime;

@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.identity.GuestProfileClaims.ProfileChoice;
+import com.padle.core.application.identity.GuestProfileClaims.Status;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.*;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.service.AccountService;

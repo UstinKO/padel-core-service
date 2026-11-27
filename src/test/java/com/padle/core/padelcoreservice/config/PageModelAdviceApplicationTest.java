@@ -1,11 +1,11 @@
 package com.padle.core.padelcoreservice.config;
 
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
+import com.padle.core.persistence.identity.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Year;
 import java.util.UUID;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,7 +48,7 @@ class PageModelAdviceApplicationTest {
     private PlayerRepository playerRepository;
 
     @Autowired
-    private OwnerRepository ownerRepository;
+    private OwnerFixtures ownerRepository;
 
     @Test
     void shouldAddBaseUrlToPublicPage() throws Exception {
@@ -73,7 +74,7 @@ class PageModelAdviceApplicationTest {
                 .preferredLocale("es")
                 .build());
 
-        mockMvc.perform(get("/perfil").with(user(player)))
+        mockMvc.perform(get("/perfil").with(playerUser(player)))
                 .andExpect(status().isOk())
                 .andExpect(view().name("players/perfil"))
                 .andExpect(model().attribute("player", player))

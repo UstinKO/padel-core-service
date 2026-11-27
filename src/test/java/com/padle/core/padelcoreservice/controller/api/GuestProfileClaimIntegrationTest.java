@@ -1,22 +1,27 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.identity.GuestProfileClaims;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.config.GuestClaimContact;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Match;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.RecaptchaService;
 import com.padle.core.padelcoreservice.service.GuestProfileClaimService;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Approval;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Request;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ManualMerge;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.Verification;
-import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.ContactChoice;
+import com.padle.core.application.identity.GuestProfileClaims.Verification;
+import com.padle.core.application.identity.GuestProfileClaims.ContactChoice;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -46,6 +51,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
@@ -86,7 +92,7 @@ class GuestProfileClaimIntegrationTest {
     @Autowired TransactionTemplate transaction;
     @MockitoBean RecaptchaService captcha;
     @MockitoSpyBean GuestClaimContact support;
-    @MockitoSpyBean GuestProfileClaimRepository claimRecords;
+    @MockitoSpyBean GuestProfileClaims claimRecords;
 
     @Test
     void phoneClaimIndexAndNormalizationWorkWithRestoreSearchPath() {
@@ -124,11 +130,11 @@ class GuestProfileClaimIntegrationTest {
     void recordsRequestWhenSupportWhatsappIsNotConfigured() throws Exception {
         doReturn(Optional.empty()).when(support).url();
         var account = player(false, null);
-        mvc.perform(post(REQUEST).with(user(account)).with(csrf()).contentType("application/json")
+        mvc.perform(post(REQUEST).with(playerUser(account)).with(csrf()).contentType("application/json")
                         .content(json.writeValueAsString(new Request(MOBILE))))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.number").exists())
                 .andExpect(jsonPath("$.whatsappUrl").doesNotExist());
-        mvc.perform(get(REQUEST).with(user(account))).andExpect(status().isOk())
+        mvc.perform(get(REQUEST).with(playerUser(account))).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("PENDING"));
     }
 
@@ -139,13 +145,13 @@ class GuestProfileClaimIntegrationTest {
         var reference = request(account, MOBILE);
         assertThat(request(account, LOCAL)).isEqualTo(reference);
 
-        var own = mvc.perform(get(REQUEST).with(user(account)))
+        var own = mvc.perform(get(REQUEST).with(playerUser(account)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0]").exists())
                 .andExpect(jsonPath("$[0].reference").value(reference.toString()))
                 .andExpect(jsonPath("$[0].status").value("PENDING"))
                 .andReturn().getResponse().getContentAsString();
         long number = json.readTree(own).path(0).path("number").asLong();
-        mvc.perform(get(REQUEST).with(user(other))).andExpect(status().isOk())
+        mvc.perform(get(REQUEST).with(playerUser(other))).andExpect(status().isOk())
                 .andExpect(content().json("[]"));
         mvc.perform(get("/api/admin/guest-profile-claims").param("search", Long.toString(number))
                         .with(user(owner(OwnerRole.ORGANIZER))))
@@ -170,7 +176,7 @@ class GuestProfileClaimIntegrationTest {
                         .contentType("application/json").content("{\"verified\":false}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("GUEST_CLAIM_VERIFICATION_REQUIRED"));
         approve(reference, organizer, OTHER, 409, "code", "GUEST_CLAIM_PHONE_MISMATCH");
-        mvc.perform(get(REQUEST).with(user(account))).andExpect(jsonPath("$[0].status").value("NEEDS_DETAILS"));
+        mvc.perform(get(REQUEST).with(playerUser(account))).andExpect(jsonPath("$[0].status").value("NEEDS_DETAILS"));
         mvc.perform(post("/api/admin/guest-profile-claims/{reference}/decision", reference)
                         .with(user(organizer)).with(csrf()).contentType("application/json")
                         .content("{\"decision\":\"REJECTED\"}"))
@@ -613,7 +619,7 @@ class GuestProfileClaimIntegrationTest {
     }
 
     private UUID request(PlayerPadel account, String phone) throws Exception {
-        String body = mvc.perform(post(REQUEST).with(user(account)).with(csrf()).contentType("application/json")
+        String body = mvc.perform(post(REQUEST).with(playerUser(account)).with(csrf()).contentType("application/json")
                         .content(json.writeValueAsString(new Request(phone))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.whatsappUrl").value("https://wa.me/12025550100"))

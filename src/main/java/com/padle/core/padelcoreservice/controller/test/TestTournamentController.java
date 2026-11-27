@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.controller.test;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.TournamentService;

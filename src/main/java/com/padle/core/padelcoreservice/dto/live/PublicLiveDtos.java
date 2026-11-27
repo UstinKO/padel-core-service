@@ -1,11 +1,11 @@
 package com.padle.core.padelcoreservice.dto.live;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import com.padle.core.padelcoreservice.dto.AdditionalPointsDto;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.Format;
 import com.padle.core.padelcoreservice.dto.PublicEventResponse.Phase;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import java.time.Instant;
 import java.util.List;
 

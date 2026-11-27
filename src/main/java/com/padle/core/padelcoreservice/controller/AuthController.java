@@ -6,9 +6,11 @@ import com.padle.core.padelcoreservice.dto.RefreshTokenRequest;
 import com.padle.core.padelcoreservice.mapper.OwnerMapper;
 import com.padle.core.padelcoreservice.mapper.PlayerMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.security.CompositeUserDetailsService;
 import com.padle.core.padelcoreservice.security.JwtService;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
+import com.padle.core.padelcoreservice.security.oauth2.OAuth2PlayerPrincipal;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class AuthController {
     private final JwtService jwtService;
     private final PlayerMapper playerMapper;
     private final OwnerMapper ownerMapper;
+    private final PlayerService players;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@Valid @RequestBody AuthRequest request) {
@@ -55,7 +58,7 @@ public class AuthController {
             // повторный поход в репозиторий не нужен.
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-            if (userDetails instanceof PlayerPadel player) {
+            if (userDetails instanceof PlayerPrincipal player) {
                 if (!player.isEmailConfirmado()) {
                     return ResponseEntity.badRequest().body("Por favor, confirma tu email primero");
                 }
@@ -108,8 +111,11 @@ public class AuthController {
         // проверяем конкретный тип принципала, а не этот флаг.
         Object principal = authentication != null ? authentication.getPrincipal() : null;
 
-        if (principal instanceof PlayerPadel player) {
-            return ResponseEntity.ok(playerMapper.entityToResponse(player));
+        if (principal instanceof PlayerPrincipal player && !(player instanceof OAuth2PlayerPrincipal)) {
+            return players.getPlayerById(player.getId())
+                    .map(playerMapper::entityToResponse)
+                    .<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.status(401).body("No autenticado"));
         }
         if (principal instanceof Owner owner) {
             return ResponseEntity.ok(ownerMapper.toDto(owner));
@@ -123,7 +129,7 @@ public class AuthController {
         String fullName;
         String email;
 
-        if (userDetails instanceof PlayerPadel player) {
+        if (userDetails instanceof PlayerPrincipal player) {
             id = player.getId();
             fullName = player.getNombreCompleto();
             email = player.getEmail();

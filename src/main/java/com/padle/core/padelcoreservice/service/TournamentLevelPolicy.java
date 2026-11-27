@@ -2,8 +2,8 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import org.springframework.context.MessageSource;
 

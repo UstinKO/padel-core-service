@@ -1,5 +1,10 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.OwnerAccounts;
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.service.contact.OrganizerContacts;
 import com.padle.core.padelcoreservice.exception.OrganizerContactException;
 
@@ -16,7 +21,6 @@ import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
-import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -28,13 +32,13 @@ import com.padle.core.padelcoreservice.model.ParticipationRequest;
 import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.enums.*;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -46,7 +50,6 @@ import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancella
 import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
 import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -82,13 +85,13 @@ public class TournamentService {
     private final TournamentRegistrationRepository registrationRepository;
     private final TournamentMapper tournamentMapper;
     private final TournamentRegistrationMapper registrationMapper;
-    private final ClubService clubService;
+    private final InternalClubReadPort clubReads;
     private final PlayerRepository playerRepository;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
     private final TournamentAccessService tournamentAccessService;
     private final ClubAccountService clubAccounts;
-    private final OwnerRepository ownerRepository;
+    private final OwnerAccounts ownerAccounts;
 
     // Добавляем репозитории Americano
     private final AmericanoPlayerRepository americanoPlayerRepository;
@@ -929,7 +932,7 @@ public class TournamentService {
     )
     @Transactional
     public TournamentDto createTournament(TournamentDto tournamentDto, Long createdBy) {
-        ownerRepository.findById(createdBy).ifPresent(owner -> {
+        ownerAccounts.findById(createdBy).ifPresent(owner -> {
             clubAccounts.assertCanCreateAt(owner, tournamentDto.getClubId());
             if (owner.isClubAdmin()) {
                 tournamentDto.setEstado(TournamentStatus.REGISTRO_ABIERTO);
@@ -1201,10 +1204,10 @@ public class TournamentService {
     private TournamentDto mapToDtoWithDetails(Tournament tournament) {
         TournamentDto dto = tournamentMapper.toDto(tournament);
 
-        clubService.getClubById(tournament.getClubId())
+        clubReads.findById(tournament.getClubId())
                 .ifPresent(club -> {
-                    dto.setClubNombre(club.getNombre());
-                    dto.setClubDireccion(club.getDireccionCompleta());
+                    dto.setClubNombre(club.name());
+                    dto.setClubDireccion(club.formattedAddress());
                 });
 
         // ИСПРАВЛЕНО: считаем только CONFIRMED регистрации для основного состава
@@ -1259,7 +1262,7 @@ public class TournamentService {
                 .map(Tournament::getClubId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long, ClubDto> clubsById = clubService.findClubsByIds(clubIds);
+        Map<Long, ClubDetails> clubsById = clubReads.findByIds(clubIds);
 
         Map<Long, Map<RegistrationStatus, Long>> singlesCounts = new HashMap<>();
         for (Object[] row : registrationRepository.countStatusesByTournamentIds(
@@ -1467,11 +1470,11 @@ public class TournamentService {
         }
 
         tournamentAccessService.assertCanManageAtClub(owner, tournament, clubId);
-        var club = clubService.getClubById(clubId)
-                .filter(candidate -> Boolean.TRUE.equals(candidate.getIsActive()))
+        var club = clubReads.findById(clubId)
+                .filter(ClubDetails::active)
                 .orElseThrow(() -> new InvalidStateException(messageSource.getMessage(
                         "admin.tournaments.form.field.club.select", null, LocaleContextHolder.getLocale())));
-        tournament.setClubId(club.getId());
+        tournament.setClubId(club.id());
     }
 
     private void updateTournamentFields(Tournament existing, TournamentDto dto) {
@@ -1561,17 +1564,17 @@ public class TournamentService {
 
     private TournamentDto mapToDtoWithBatchedData(
             Tournament tournament,
-            Map<Long, ClubDto> clubsById,
+            Map<Long, ClubDetails> clubsById,
             Map<Long, Map<RegistrationStatus, Long>> singlesCounts,
             Map<Long, Long> confirmedPairsById,
             Map<Long, Long> waitlistPairsById) {
 
         TournamentDto dto = tournamentMapper.toDto(tournament);
 
-        ClubDto club = clubsById.get(tournament.getClubId());
+        ClubDetails club = clubsById.get(tournament.getClubId());
         if (club != null) {
-            dto.setClubNombre(club.getNombre());
-            dto.setClubDireccion(club.getDireccionCompleta());
+            dto.setClubNombre(club.name());
+            dto.setClubDireccion(club.formattedAddress());
         }
 
         long confirmedSpots;
@@ -1809,8 +1812,8 @@ public class TournamentService {
     }
 
     private String resolveClubName(Long clubId) {
-        return clubService.getClubById(clubId)
-                .map(ClubDto::getNombre)
+        return clubReads.findById(clubId)
+                .map(ClubDetails::name)
                 .orElseGet(() -> {
                     log.warn("Club not found for id: {}", clubId);
                     return "Club";

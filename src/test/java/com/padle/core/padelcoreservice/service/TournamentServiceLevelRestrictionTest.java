@@ -1,19 +1,20 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.repository.KingOfCourtPlayerStatsRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
@@ -62,7 +63,7 @@ class TournamentServiceLevelRestrictionTest {
     @Mock private TournamentRegistrationRepository registrationRepository;
     @Mock private TournamentMapper tournamentMapper;
     @Mock private TournamentRegistrationMapper registrationMapper;
-    @Mock private ClubService clubService;
+    @Mock private InternalClubReadPort clubReads;
     @Mock private PlayerRepository playerRepository;
     @Mock private TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     @Mock private EmailService emailService;

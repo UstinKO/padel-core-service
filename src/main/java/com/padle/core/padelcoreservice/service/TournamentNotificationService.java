@@ -1,12 +1,12 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
-import com.padle.core.padelcoreservice.model.Club;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
 import com.padle.core.padelcoreservice.util.AfterCommit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.Optional;
 public class TournamentNotificationService {
 
     private final EmailService emailService;
-    private final ClubRepository clubRepository;
+    private final InternalClubReadPort clubReads;
     private final TournamentMapper tournamentMapper;
 
     public void sendPairTermsNotice(PlayerPadel player, PairTermsService.Offer offer,
@@ -150,8 +150,8 @@ public class TournamentNotificationService {
     }
 
     private String getClubName(Long clubId) {
-        return clubRepository.findById(clubId)
-                .map(Club::getNombre)
+        return clubReads.findById(clubId)
+                .map(ClubDetails::name)
                 .orElse("Club Desconocido");
     }
 }

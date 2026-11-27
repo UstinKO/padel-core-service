@@ -1,8 +1,9 @@
 package com.padle.core.padelcoreservice.controller;
 
+import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
 import com.padle.core.padelcoreservice.config.RecaptchaProperties;
 import com.padle.core.padelcoreservice.exception.ContactValidationException;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.security.TournamentLogin;
 import com.padle.core.padelcoreservice.service.PlayerContactService;
 import jakarta.validation.Validator;
@@ -10,7 +11,6 @@ import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
 import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.security.RateLimitFilter;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.RecaptchaService;
@@ -126,7 +126,7 @@ public class PlayerPadelController {
 
             // 2. Автоматический вход
             try {
-                PlayerPadel player = playerService.getPlayerByEmail(request.getEmail());
+                var player = PlayerPrincipalMapper.INSTANCE.toPrincipal(playerService.getPlayerByEmail(request.getEmail()));
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(

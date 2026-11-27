@@ -53,10 +53,19 @@
         row.payments.forEach(payment => card.append(node('p', money(payment))));
         if (actions) {
             const bar = node('div', undefined, 'solo-actions');
-            bar.append(button(m.partner, event => open('PAIR', row, 'search', event.currentTarget)),
-                button(m.merge, event => open('PAIR', row, 'single', event.currentTarget)),
-                button(m.remove, event => open('REMOVE', row, 'search', event.currentTarget)),
-                button(m.payment, () => focusPayment(row.registrationId)));
+            const actionsWithHelp = [
+                [button(m.partner, event => open('PAIR', row, 'search', event.currentTarget)), 'solo-partner'],
+                [button(m.merge, event => open('PAIR', row, 'single', event.currentTarget)), 'solo-pair'],
+                [button(m.remove, event => open('REMOVE', row, 'search', event.currentTarget)), 'solo-remove']
+            ];
+            actionsWithHelp.forEach(([actionButton, topic]) => {
+                const group = node('span', undefined, 'solo-action-help');
+                group.append(actionButton);
+                const help = document.querySelector('#solo-action-help-copies [data-help-copy="' + topic + '"] button');
+                if (help) group.append(help.cloneNode(true));
+                bar.append(group);
+            });
+            bar.append(button(m.payment, () => focusPayment(row.registrationId)));
             card.append(bar);
         }
         return card;

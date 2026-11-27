@@ -1,11 +1,18 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.model.*;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.persistence.clubs.Club;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerAuthentication;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.oauthPrincipal;
 import static org.mockito.Mockito.mock;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +107,7 @@ class InternalAttributionIntegrationTest {
     @Test
     void googlePrincipalBindsTheSamePlayerAccount() {
         var player = player();
-        var principal = new CustomOAuth2User(mock(OAuth2User.class), player);
+        var principal = oauthPrincipal(mock(OAuth2User.class), player);
         SecurityContextHolder.getContext().setAuthentication(
                 UsernamePasswordAuthenticationToken.authenticated(principal, "", principal.getAuthorities()));
         capture(browser(), "reby");
@@ -282,7 +289,7 @@ class InternalAttributionIntegrationTest {
     }
 
     private void login(PlayerPadel player) {
-        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(player, "", player.getAuthorities()));
+        SecurityContextHolder.getContext().setAuthentication(playerAuthentication(player));
     }
 
     private TournamentRegistration registration(Tournament event, PlayerPadel player) {

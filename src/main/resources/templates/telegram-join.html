@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="same-origin"><meta name="robots" content="noindex,nofollow">
+    <title th:text="#{telegram.connect.title}"></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/telegram-connect.css}">
+    <script th:src="@{/js/telegram-join.js}" defer></script>
+</head>
+<body class="tg-connect-page">
+<main class="tg-connect" data-telegram-join th:attr="data-state=${join.state}">
+    <a class="tg-connect-brand" href="/">1‑Padel</a>
+    <nav class="tg-connect-languages" th:aria-label="#{telegram.connect.language}">
+        <a th:each="language : ${#strings.arraySplit('es,ru,en',',')}" th:href="@{/telegram/join(lang=${language})}"
+           th:text="${#strings.toUpperCase(language)}" th:attr="aria-current=${#locale.language == language ? 'true' : null}"></a>
+    </nav>
+    <h1 th:text="#{telegram.connect.title}"></h1>
+    <section data-account th:if="${join.state == 'READY' or join.state == 'CONNECTED'}">
+        <p th:text="#{telegram.connect.account}"></p><strong data-player-name th:text="${join.playerName}"></strong>
+    </section>
+    <p data-join-message th:text="${#messages.msg('telegram.join.' + join.state)}"></p>
+    <p role="alert" th:if="${joinFailed == true}" th:text="#{telegram.join.failed}"></p>
+    <form th:if="${join.state == 'READY'}" th:action="@{/telegram/join(lang=${#locale.language})}" method="post" data-join-form>
+        <p th:text="#{telegram.join.consent}"></p>
+        <div class="tg-connect-actions">
+            <button class="btn btn-primary" type="submit" data-join-submit th:attr="data-opening=#{telegram.join.opening}" th:text="#{telegram.join.connect}"></button>
+        </div>
+        <p th:text="#{telegram.join.next}"></p>
+    </form>
+    <a th:if="${join.state == 'READY' or join.state == 'CONNECTED'}" href="/players/perfil" th:text="#{telegram.connect.profile}"></a>
+    <a th:if="${join.state == 'UNAVAILABLE' or join.state == 'ACCOUNT_REQUIRED'}" href="/" th:text="#{telegram.join.home}"></a>
+</main>
+</body>
+</html>

@@ -9,22 +9,22 @@ import com.padle.core.padelcoreservice.service.PublicLiveService;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamPlayoffAddTeamRequest;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.clubs.ClubRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
@@ -320,7 +320,7 @@ class TeamPlayoffEndToEndTest {
                 .fechaInicio(LocalDate.now().plusDays(7))
                 .horaInicio(LocalTime.of(10, 0))
                 .generoFormato(GenderFormat.MIXTO)
-                .categoriaNivel(com.padle.core.padelcoreservice.model.enums.Nivel.C7)
+                .categoriaNivel(com.padle.core.application.tournament.Nivel.C7)
                 .tipo(TournamentType.AMERICANO_TEAMS)
                 .modalidad(Modalidad.DOBLES)
                 .cupoMax(teamCount * 2)

@@ -9,8 +9,7 @@ import com.padle.core.contract.clubs.Club;
 import com.padle.core.padelcoreservice.exception.PublicDiscoveryException;
 import com.padle.core.padelcoreservice.mapper.PublicClubMapper;
 import com.padle.core.padelcoreservice.mapper.PublicTournamentMapper;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +24,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class PublicDiscoveryService {
     private final TournamentService tournamentService;
-    private final ClubRepository clubRepository;
     private final PlayerRepository playerRepository;
     private final PublicTournamentMapper tournamentMapper;
     private final PublicClubMapper clubMapper;
@@ -52,7 +50,7 @@ public class PublicDiscoveryService {
     public PublicHomeResponse home() {
         var result = tournamentService.getPublicHomeCatalog(PageRequest.of(0, 6,
                 Sort.by("fechaInicio", "horaInicio", "id")));
-        return new PublicHomeResponse(clubRepository.countByIsActiveTrue(), playerRepository.countByActivoTrue(),
+        return new PublicHomeResponse(clubQuery.countActive(), playerRepository.countByActivoTrue(),
                 result.getTotalElements(), result.getContent().stream()
                 .map(value -> tournamentMapper.toPublicDto(value, baseUrl)).toList());
     }

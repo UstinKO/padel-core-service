@@ -21,7 +21,7 @@
     <link rel="stylesheet" th:href="@{/css/solo-roster.css}">
     <script th:src="@{/js/csrf.js}" defer></script>
 </head>
-<body>
+<body th:with="pairedHelp=${tournament.tipo != null and (tournament.tipo.name() == 'AMERICANO_TEAMS' or (tournament.tipo.name() == 'AMERICANO' and tournament.modalidad != null and tournament.modalidad.name() == 'DOBLES'))}">
 <header th:replace="~{fragments/admin-header :: header(#{admin.payments.title})}"></header>
 
 <main class="admin-main">
@@ -179,7 +179,7 @@
                     <button type="button" class="btn-sm btn-success" onclick="toggleManualAddTeamForm()">
                         <i class="fas fa-plus"></i>
                         <span th:text="#{admin.payments.btn.add_team_manual}">+ Agregar pareja manualmente</span>
-                    </button>
+                    </button><button th:replace="~{fragments/action-help :: help('add-pair')}"></button>
                     <button type="button" class="btn-sm btn-success" data-roster-action="ADD" th:text="#{solo.ui.add}"></button>
                 </div>
                 <div id="manualAddTeamForm" style="display:none;border-top:1px solid #e2e8f0">
@@ -305,14 +305,14 @@
                             <th th:title="#{admin.payments.col.confirmed_title}"><i class="fas fa-phone-alt"></i></th>
                             <th>
                                 <span th:text="#{admin.payments.attended.label}">Presencia del equipo</span>
-                                <button type="button" class="info-tip" tabindex="0"
+                                <th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('attendance')}"></button></th:block><th:block th:unless="${pairedHelp}"><button type="button" class="info-tip" tabindex="0"
                                         th:aria-label="#{admin.payments.attended.tooltip}"
                                         th:title="#{admin.payments.attended.tooltip}"
                                         th:attr="data-tip=#{admin.payments.attended.tooltip}">
                                     <i class="fas fa-info-circle"></i>
-                                </button>
+                                </button></th:block>
                             </th>
-                            <th th:text="#{admin.payments.col.amount}">Monto</th>
+                            <th><span th:text="#{admin.payments.col.amount}">Monto</span><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('payment')}"></button></th:block></th>
                             <th th:text="#{admin.payments.col.currency}">Mon.</th>
                             <th th:text="#{admin.common.col.status}">Estado</th>
                             <th th:text="#{admin.payments.col.method}">Método</th>
@@ -395,7 +395,7 @@
                                             th:title="#{admin.payments.btn.add_team_title}">
                                         <i class="fas fa-user-plus"></i>
                                         <span th:text="#{admin.payments.btn.add_team}">Agregar equipo</span>
-                                    </button>
+                                    </button><th:block th:if="${player.canAddToTeamPlayoff}"><button th:replace="~{fragments/action-help :: help('include')}"></button></th:block>
                                     <span th:if="${player.alreadyInTeamPlayoff}" class="badge-in-tournament"
                                           th:title="#{admin.payments.badge.in_tournament_title}">
                                         <i class="fas fa-check-circle"></i>
@@ -512,7 +512,7 @@
                     <button type="submit" class="btn btn-primary" th:if="${players != null and not #lists.isEmpty(players)}">
                         <i class="fas fa-save"></i>
                         <span th:text="#{admin.payments.btn.save_changes}">Guardar Cambios</span>
-                    </button>
+                    </button><th:block th:if="${pairedHelp}"><button th:replace="~{fragments/action-help :: help('save')}"></button></th:block>
                 </div>
             </form>
         </div>

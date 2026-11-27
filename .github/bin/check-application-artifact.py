@@ -9,8 +9,18 @@ import zipfile
 
 PREFIX = 'com/padle/core/application/'
 REQUIRED = {PREFIX + 'clubs/' + name + '.class'
-            for name in ['PublicClub', 'PublicClubQuery', 'ClubReadPort']}
+            for name in ['PublicClub', 'PublicClubQuery', 'ClubReadPort', 'ClubDetails', 'InternalClubReadPort',
+                         'ClubProfile', 'ClubProfile$Fields', 'ClubAdminReadPort', 'ClubAdminWritePort',
+                         'ClubTournamentUsage']}
 READ_PREFIX = PREFIX + 'roundrobin/'
+REQUIRED.update(PREFIX + 'identity/' + name + '.class' for name in [
+    'PasswordResetTokens', 'PasswordResetTokens$Token', 'OwnerAccount', 'OwnerAccount$Role',
+    'OwnerAccounts', 'OwnerAccounts$Login', 'OwnerAccounts$Profile', 'PlayerIdentity',
+    'PlayerProfiles', 'PlayerProfiles$Profile', 'PlayerProfiles$Login', 'PlayerProfiles$ProfileUpdate',
+    'PlayerContacts', 'PlayingSide', 'GuestProfileClaims', 'GuestProfileClaims$Claim',
+    'GuestProfileHistory', 'GuestProfileHistory$Counts',
+])
+REQUIRED.update(PREFIX + 'tournament/' + name + '.class' for name in ('Nivel', 'GenderFormat'))
 REQUIRED.update(READ_PREFIX + name + '.class' for name in [
     'RoundRobinReadPort', 'RoundRobinRankingQuery', 'RoundRobinRankingComposer', 'RoundRobinNotFound',
     'RoundRobinReadSet', 'RoundRobinReadSet$Event', 'RoundRobinReadSet$Team', 'RoundRobinReadSet$Player',

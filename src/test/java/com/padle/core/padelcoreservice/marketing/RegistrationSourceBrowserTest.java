@@ -1,11 +1,17 @@
 package com.padle.core.padelcoreservice.marketing;
 
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.PlayingSide;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.TournamentNotificationService;
 import org.junit.jupiter.api.Test;
@@ -34,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1",
-        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:5432/padel_browser_qa",
+        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "app.analytics.meta.enabled=false", "app.analytics.meta.access-token=",
         "app.analytics.ga4-id=", "app.analytics.clarity-id=",
@@ -48,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class RegistrationSourceBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRepository tournaments;
     @Autowired ClubRepository clubs;

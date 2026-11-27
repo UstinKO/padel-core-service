@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1031" viewBox="0 0 960 1031" role="img" aria-labelledby="title desc">
+<title id="title">От события матча до публикации Elo</title>
+<desc id="desc">Квитанция в потоке подтверждает ход доставки. Отдельные квитанции трёх площадок за полный архив допускают запуск импорта.</desc>
+<style>
+:root { --paper:#f5f8f7; --panel:#ffffff; --ink:#182d37; --muted:#445d64; --rule:#bccbc9; --soft:#e5edeb; --line:#426166;
+          --gateway:#165173; --journal:#126756; --identity:#654591; --ops:#2456a0; --elo:#995016; --neutral:#3e5961;
+          --gateway-soft:#e0f1fa; --journal-soft:#dff2e9; --identity-soft:#eee8f8; --ops-soft:#e5edfc; --elo-soft:#f9ecd9; --neutral-soft:#e8efed; }
+  @media (prefers-color-scheme:dark) {
+    :root { --paper:#101e24; --panel:#192c32; --ink:#f0f5ef; --muted:#bdcecb; --rule:#53686c; --soft:#263c40; --line:#aec5bf;
+            --gateway:#86d4f7; --journal:#77dcc0; --identity:#ccaffa; --ops:#a6c9ff; --elo:#ffc389; --neutral:#c1d3d6;
+            --gateway-soft:#203c4b; --journal-soft:#183e35; --identity-soft:#383049; --ops-soft:#263953; --elo-soft:#453627; --neutral-soft:#263b40; }
+  }
+  text { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; fill:var(--ink); }
+  .title { font-size:25px; font-weight:700; letter-spacing:-.5px }
+  .head { font-size:19px; font-weight:700 }
+  .body { font-size:16px }
+  .note { font-size:15px; fill:var(--muted) }
+  .tag { font-size:14px; font-weight:700; letter-spacing:.4px }
+  .base { fill:var(--paper); stroke:var(--rule) }
+  .card { fill:var(--panel); stroke:var(--rule) }
+  .band { fill:var(--soft) }
+  .arrow,.return { fill:none; stroke:var(--line); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; marker-end:url(#tip) }
+  .return { stroke-dasharray:5 5 }
+  .spine { fill:none; stroke:var(--line); stroke-width:2; stroke-linejoin:round }
+  .guide { stroke:var(--rule); stroke-dasharray:2 5 }
+  .divider { stroke:var(--rule) }
+</style>
+<defs>
+  <marker id="tip" viewBox="0 0 8 8" markerWidth="7" markerHeight="7" refX="7" refY="4" orient="auto-start-reverse">
+    <path d="M1 1 L7 4 L1 7 Z" fill="var(--line)"/>
+  </marker>
+</defs>
+<rect x="1" y="1" width="958" height="1029" rx="18" class="base"/>
+<text x="24" y="42" class="title" text-anchor="start">От события матча до публикации Elo</text>
+<text x="26" y="76" class="tag" text-anchor="start" style="fill:var(--neutral)">Вызов или результат</text>
+<rect x="404" y="62" width="128" height="65" rx="12" class="card"/>
+<rect x="406" y="64" width="124" height="61" rx="10" fill="var(--gateway-soft)"/>
+<rect x="455" y="71" width="26" height="3" rx="2" fill="var(--gateway)"/>
+<text x="468" y="98" class="tag" text-anchor="middle" style="fill:var(--gateway)">№1 Шлюз клуба</text>
+<text x="468" y="117" class="note" text-anchor="middle">Go</text>
+<rect x="536" y="62" width="128" height="65" rx="12" class="card"/>
+<rect x="538" y="64" width="124" height="61" rx="10" fill="var(--gateway-soft)"/>
+<rect x="587" y="71" width="26" height="3" rx="2" fill="var(--gateway)"/>
+<text x="600" y="98" class="tag" text-anchor="middle" style="fill:var(--gateway)">№1 Шлюз облака</text>
+<text x="600" y="117" class="note" text-anchor="middle">Go</text>
+<rect x="668" y="62" width="128" height="65" rx="12" class="card"/>
+<rect x="670" y="64" width="124" height="61" rx="10" fill="var(--journal-soft)"/>
+<rect x="719" y="71" width="26" height="3" rx="2" fill="var(--journal)"/>
+<text x="732" y="98" class="tag" text-anchor="middle" style="fill:var(--journal)">№2 Протокол</text>
+<text x="732" y="117" class="note" text-anchor="middle">Go / SQLite</text>
+<rect x="800" y="62" width="128" height="65" rx="12" class="card"/>
+<rect x="802" y="64" width="124" height="61" rx="10" fill="var(--elo-soft)"/>
+<rect x="851" y="71" width="26" height="3" rx="2" fill="var(--elo)"/>
+<text x="864" y="98" class="tag" text-anchor="middle" style="fill:var(--elo)">№5 Рейтинг</text>
+<text x="864" y="117" class="note" text-anchor="middle">Kotlin/JVM 25</text>
+<rect x="23" y="148" width="913" height="30" rx="6" class="band"/>
+<text x="36" y="169" class="tag" text-anchor="start">Во время турнира · независимо для A, B и C</text>
+<path d="M468 180 V320" class="guide"/>
+<path d="M600 180 V320" class="guide"/>
+<path d="M732 180 V320" class="guide"/>
+<path d="M864 180 V320" class="guide"/>
+<text x="34" y="205" class="body" text-anchor="start">gRPC/Protobuf · события по HTTP/2 с mTLS</text>
+<path d="M468 200 H600" class="arrow"/>
+<circle cx="468" cy="200" r="3" fill="var(--line)"/>
+<text x="34" y="240" class="body" text-anchor="start">gRPC · доставить события в журнал</text>
+<path d="M600 235 H732" class="arrow"/>
+<circle cx="600" cy="235" r="3" fill="var(--line)"/>
+<text x="34" y="275" class="body" text-anchor="start">Записанный номер без пропусков и хеш</text>
+<path d="M732 270 H600" class="return"/>
+<circle cx="732" cy="270" r="3" fill="var(--line)"/>
+<text x="34" y="310" class="body" text-anchor="start">Квитанция в том же gRPC-потоке</text>
+<path d="M600 305 H468" class="return"/>
+<circle cx="600" cy="305" r="3" fill="var(--line)"/>
+<rect x="23" y="330" width="913" height="30" rx="6" class="band"/>
+<text x="36" y="351" class="tag" text-anchor="start">После финала · отдельная квитанция за полный архив</text>
+<path d="M468 362 V502" class="guide"/>
+<path d="M600 362 V502" class="guide"/>
+<path d="M732 362 V502" class="guide"/>
+<path d="M864 362 V502" class="guide"/>
+<text x="34" y="387" class="body" text-anchor="start">HTTPS · подписанный архив, версия и хеш</text>
+<path d="M468 382 H600" class="arrow"/>
+<circle cx="468" cy="382" r="3" fill="var(--line)"/>
+<text x="34" y="422" class="body" text-anchor="start">HTTPS · проверить и сохранить архив</text>
+<path d="M600 417 H732" class="arrow"/>
+<circle cx="600" cy="417" r="3" fill="var(--line)"/>
+<text x="34" y="457" class="body" text-anchor="start">Квитанция за архив площадки</text>
+<path d="M732 452 H600" class="return"/>
+<circle cx="732" cy="452" r="3" fill="var(--line)"/>
+<text x="34" y="492" class="body" text-anchor="start">Подтверждение полной копии</text>
+<path d="M600 487 H468" class="return"/>
+<circle cx="600" cy="487" r="3" fill="var(--line)"/>
+<rect x="23" y="512" width="913" height="30" rx="6" class="band"/>
+<text x="36" y="533" class="tag" text-anchor="start">Три копии одного архива · импорт и расчёт</text>
+<path d="M468 544 V859" class="guide"/>
+<path d="M600 544 V859" class="guide"/>
+<path d="M732 544 V859" class="guide"/>
+<path d="M864 544 V859" class="guide"/>
+<text x="34" y="569" class="body" text-anchor="start">HTTPS · запросить квитанции A, B и C</text>
+<path d="M600 564 H732" class="arrow"/>
+<circle cx="600" cy="564" r="3" fill="var(--line)"/>
+<text x="34" y="604" class="body" text-anchor="start">Версия и хеш от каждой площадки</text>
+<path d="M732 599 H600" class="return"/>
+<circle cx="732" cy="599" r="3" fill="var(--line)"/>
+<text x="34" y="639" class="body" text-anchor="start">HTTPS POST · ID, версия, хеш и ссылка</text>
+<path d="M600 634 H864" class="arrow"/>
+<circle cx="600" cy="634" r="3" fill="var(--line)"/>
+<text x="34" y="674" class="body" text-anchor="start">202 · задание сохранено в схеме rating</text>
+<path d="M864 669 H600" class="return"/>
+<circle cx="864" cy="669" r="3" fill="var(--line)"/>
+<text x="34" y="709" class="body" text-anchor="start">HTTPS GET · запросить архив по ссылке</text>
+<path d="M864 704 H600" class="arrow"/>
+<circle cx="864" cy="704" r="3" fill="var(--line)"/>
+<text x="34" y="744" class="body" text-anchor="start">HTTPS GET · получить указанную версию</text>
+<path d="M600 739 H732" class="arrow"/>
+<circle cx="600" cy="739" r="3" fill="var(--line)"/>
+<text x="34" y="779" class="body" text-anchor="start">Байты архива</text>
+<path d="M732 774 H600" class="return"/>
+<circle cx="732" cy="774" r="3" fill="var(--line)"/>
+<text x="34" y="814" class="body" text-anchor="start">Архив для проверки и расчёта</text>
+<path d="M600 809 H864" class="return"/>
+<circle cx="600" cy="809" r="3" fill="var(--line)"/>
+<text x="34" y="849" class="body" text-anchor="start">Elo · записать версию и outbox атомарно</text>
+<path d="M864 837 h29 v16 h-29" class="arrow"/>
+<circle cx="864" cy="837" r="3" fill="var(--line)"/>
+<rect x="23" y="869" width="913" height="30" rx="6" class="band"/>
+<text x="36" y="890" class="tag" text-anchor="start">Публикация · независимо для каждого облачного журнала</text>
+<path d="M468 901 V971" class="guide"/>
+<path d="M600 901 V971" class="guide"/>
+<path d="M732 901 V971" class="guide"/>
+<path d="M864 901 V971" class="guide"/>
+<text x="34" y="926" class="body" text-anchor="start">HTTPS · передать подписанный срез</text>
+<path d="M864 921 H600" class="arrow"/>
+<circle cx="864" cy="921" r="3" fill="var(--line)"/>
+<text x="34" y="961" class="body" text-anchor="start">HTTPS · сохранить проверенный целый срез</text>
+<path d="M600 956 H732" class="arrow"/>
+<circle cx="600" cy="956" r="3" fill="var(--line)"/>
+<path d="M24 984 H936" class="divider"/>
+<text x="26" y="1010" class="note" text-anchor="start">Сплошная стрелка — вызов, пунктир — ответ. Зрители получают через №1 последнюю целиком опубликованную версию.</text>
+</svg>

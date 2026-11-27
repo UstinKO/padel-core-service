@@ -6,7 +6,7 @@ import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
@@ -57,10 +57,8 @@ public class AmericanoViewController {
         model.addAttribute("ascending", ascending);
 
         model.addAttribute("isAuthenticated", authentication != null);
-        com.padle.core.padelcoreservice.model.PlayerPadel currentPlayer = null;
-        if (authentication != null && authentication.getPrincipal() instanceof com.padle.core.padelcoreservice.model.PlayerPadel) {
-            currentPlayer = (com.padle.core.padelcoreservice.model.PlayerPadel) authentication.getPrincipal();
-        }
+        PlayerPrincipal currentPlayer = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
         model.addAttribute("player", currentPlayer);
         model.addAttribute("currentPlayerId", currentPlayer != null ? currentPlayer.getId() : null);
 
@@ -337,8 +335,8 @@ public class AmericanoViewController {
 
         AmericanoRankingDto ranking = americanoService.getRankingWithDetails(tournamentId, criteria);
 
-        PlayerPadel currentPlayer =
-                SecurityUtils.extractPlayer(authentication != null ? authentication.getPrincipal() : null);
+        PlayerPrincipal currentPlayer = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
 
         model.addAttribute("tournament", tournament);
         model.addAttribute("ranking", ranking);

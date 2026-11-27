@@ -1,4 +1,12 @@
+Короткий Telegram UI: `telegram-join.html` / `telegram-join.js` используют общий стиль `telegram-connect.css`. Одна HTML-форма сразу открывает бота по 303. `telegram-invitation.js` получает новый site-invitation API, копирует HTTPS `/telegram/join`, не меняет кампанию. `PlayerTelegramJoinBrowserTest` включён в browser CI.
+
+Короткий вход Telegram: `TelegramJoinController`, GET/POST `/telegram/join`, новый `/api/admin/telegram/site-invitation`. GET не выдаёт токен; POST PLAYER+CSRF возвращает 303 на прежний персональный bot Start. До выпуска шаблона показывается безопасная заглушка. Старый вход и API приглашения сохраняются.
+
 # PROJECT.md — техническая карта проекта
+
+Общий вход Telegram UI: `telegram-connect.html` / JS / CSS, `telegram-invitation.js` в действующем редакторе. Кнопка подтверждает профиль только явным POST, окончательная связь — в исходном боте. Fragment очищается, контекст вкладки выбирает публичный UUID request; неизвестный ответ проверяется вручную. Настоящий `PlayerTelegramOnboardingBrowserTest` включён в существующий browser CI. [Проверки](../docs/player-telegram-interface.md).
+
+Общий вход Telegram: `PlayerTelegramOnboarding` / `PlayerTelegramOnboardingStore`, `TelegramConnectController` и `TelegramOnboardingController`. Схема v1.93, флаг `telegram.players.onboarding-enabled=false`; временная ссылка сайта и подтверждение исходного Telegram, прежняя блокировка связей и дедупликация отправок. [Контракт](../docs/endpoints/player-telegram.md).
 
 Технический справочник для Codex. Точка входа и обязательные правила — `AGENTS.md` в корне репозитория.
 
@@ -22,7 +30,7 @@
 
 **Документация `docs/`** (в репозитории с LFPT-0602) — контекст приложения для конвейера и людей: [docs/Home.md](../docs/Home.md) — оглавление; архитектура и деплой (`architecture.md`), БД (`database-architecture.md`), домены и все эндпоинты (`domain-overview.md`, `endpoints/`), аутентификация (`auth-flow.md`), i18n (`i18n/`), переход на React (`frontend-react/`), автономный конвейер (`pipeline-autonomy.md`). Перед задачей в незнакомой области — прочитать соответствующий раздел, но источник истины по бизнес-логике — `specs/MASTER.md`, по поведению — код: если документ расходится с кодом, верить коду и поправить документ в том же PR. Пометки `[SECURITY — закрыто/актуально на <дата>]` и `[закрыто, сверено с кодом <дата>]` в `docs/endpoints/*` — результат сверки с кодом на указанную дату. **Документация обновляется в том же PR, что и код** — карта «что изменил → какой документ» в [docs/Home.md § Как поддерживать актуальность](../docs/Home.md#как-поддерживать-актуальность); механические расхождения (версия схемы, колонки, enum, эндпоинты, классы) проверяет `python3 .github/bin/docs-drift.py`, сверено до 0 на 2026-10-16 (LFPT-0615). `docs/infrastructure-security.md` и `docs/telegram-ai-pipeline.md` — приватные (в `.gitignore`), в облачном клоне их нет и не должно быть; IP сервера, доверенные IP, SSH-доступы и идентификаторы роутины в `docs/` и любые публичные файлы не писать.
 
-**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Reactor содержит api-contract, engines, application и bootstrap; исполняемым остаётся только bootstrap. Engines владеет PlayoffMatchingEngine, KingOfCourtPairingEngine, AmericanoScheduleEngine, AmericanoScheduleValidator, QualificationPairing, PlayoffFormat, EarlyPlayoffSeeding, RoundRobinSetStandingsEngine, RoundRobinPointsStandingsEngine и RoundRobinFinalOrderEngine и зависит только от JDK. [Места кругового SETS](../docs/modular-monolith/phase-3/round-robin-sets-extraction.md), [POINTS](../docs/modular-monolith/phase-3/round-robin-points-extraction.md). [Расчёт раннего плей-офф](../docs/modular-monolith/phase-3/early-playoff-extraction.md). [Правила квалификации Team Playoff](../docs/modular-monolith/phase-3/team-playoff-qualification-extraction.md). Bean PlayoffMatchingEngine задаёт TournamentEngineConfig; King of Court, расписание Americano и правила квалификации сохраняют статический API; EarlyPlayoffSeeding остаётся чистым объектом с PlayoffMatchingEngine, без отдельного bean. RoundRobinStandings и MapStruct-мапперы остаются адресными адаптерами JPA в bootstrap: SETS и POINTS вычисляет engines; RoundRobinRules.order POINTS использует тот же компаратор. Начисление и дополнительные встречи прежние. [Перенос расписания Americano](../docs/modular-monolith/phase-3/americano-extraction.md). [Перенос второго движка](../docs/modular-monolith/phase-3/README.md). В application выделены PublicClubQuery с собственными PublicClub/ClubReadPort и RoundRobinRankingQuery с RoundRobinReadSet/RoundRobinRanking/RoundRobinReadPort; оба сценария используют readOnly-транзакцию REQUIRED; явный @Import из PublicClubApplicationConfiguration сохраняет общий scan. LegacyClubReadAdapter и ClubReadModelMapper остаются в корневом src под bootstrap до поздней #1051; PublicClubMapper строит generated Club/canonicalUrl из канонического OpenAPI в api-contract; [владение и генерация](../docs/modular-monolith/phase-2/contract-adoption.md). Каталог/главная, MVC клуба, остальные API DTO и хранение не перенесены. [Срез, wiring и мосты](../docs/modular-monolith/phase-2/application-club-read.md), [исходная сборка](../docs/modular-monolith/phase-1/reactor-delivery.md), [движок/DevTools](../docs/modular-monolith/phase-1/engine-extraction.md). Приёмка #1045 принята 20.11 с ограничениями; #1199 включена через #1234 после принятого протокола #1180; generated Club включён через #1238 (#1200). [Независимая техническая приёмка клубов](../docs/modular-monolith/phase-2/acceptance.md) — #1201: HTTP baseline до обоих переносов, 12 browser cases, restart/rollback и общий smoke на отдельном preview; новый ручной сеанс не заявляется. Каждый PR сохраняет работоспособность. Persistence/Liquibase — поздняя #1051; физическая PostgreSQL и Swarm не включаются. Внутреннего HTTP между Maven-модулями нет; REST между репликами монолита относится к отдельной #1211. [Исторический план](../docs/microservices-migration-plan.md) сохраняет справочные связи и риски. Остальные три целевых модуля пока не выделены.
+**Многомодульный монолит (LFPT-1041, решение владельца 13.11.2026):** семь целевых модулей: api-contract, tournament-engines, application, persistence, web, integrations, bootstrap. Reactor содержит api-contract, engines, application, persistence и bootstrap; исполняемым остаётся только bootstrap. Engines владеет PlayoffMatchingEngine, KingOfCourtPairingEngine, AmericanoScheduleEngine, AmericanoScheduleValidator, QualificationPairing, PlayoffFormat, EarlyPlayoffSeeding, RoundRobinSetStandingsEngine, RoundRobinPointsStandingsEngine и RoundRobinFinalOrderEngine и зависит только от JDK. [Места кругового SETS](../docs/modular-monolith/phase-3/round-robin-sets-extraction.md), [POINTS](../docs/modular-monolith/phase-3/round-robin-points-extraction.md). [Расчёт раннего плей-офф](../docs/modular-monolith/phase-3/early-playoff-extraction.md). [Правила квалификации Team Playoff](../docs/modular-monolith/phase-3/team-playoff-qualification-extraction.md). Bean PlayoffMatchingEngine задаёт TournamentEngineConfig; King of Court, расписание Americano и правила квалификации сохраняют статический API; EarlyPlayoffSeeding остаётся чистым объектом с PlayoffMatchingEngine, без отдельного bean. RoundRobinStandings и MapStruct-мапперы остаются адресными адаптерами JPA в bootstrap: SETS и POINTS вычисляет engines; RoundRobinRules.order POINTS использует тот же компаратор. Начисление и дополнительные встречи прежние. [Перенос расписания Americano](../docs/modular-monolith/phase-3/americano-extraction.md). [Перенос второго движка](../docs/modular-monolith/phase-3/README.md). В application выделены PublicClubQuery с собственными PublicClub/ClubReadPort и RoundRobinRankingQuery с RoundRobinReadSet/RoundRobinRanking/RoundRobinReadPort; оба сценария используют readOnly-транзакцию REQUIRED; явный @Import из PublicClubApplicationConfiguration сохраняет общий scan. JpaClubReadAdapter и ClubReadModelMapper принадлежат persistence после #1442; PublicClubMapper строит generated Club/canonicalUrl из канонического OpenAPI в api-contract; [владение и генерация](../docs/modular-monolith/phase-2/contract-adoption.md). Каталог/главная, MVC клуба, остальные API DTO и хранение не перенесены. [Срез, wiring и мосты](../docs/modular-monolith/phase-2/application-club-read.md), [исходная сборка](../docs/modular-monolith/phase-1/reactor-delivery.md), [движок/DevTools](../docs/modular-monolith/phase-1/engine-extraction.md). Приёмка #1045 принята 20.11 с ограничениями; #1199 включена через #1234 после принятого протокола #1180; generated Club включён через #1238 (#1200). [Независимая техническая приёмка клубов](../docs/modular-monolith/phase-2/acceptance.md) — #1201: HTTP baseline до обоих переносов, 12 browser cases, restart/rollback и общий smoke на отдельном preview; новый ручной сеанс не заявляется. Каждый PR сохраняет работоспособность. Persistence/Liquibase — отдельная #1051; физическая PostgreSQL и Swarm не включаются. Внутреннего HTTP между Maven-модулями нет; REST между репликами монолита относится к отдельной #1211. [Исторический план](../docs/microservices-migration-plan.md) сохраняет справочные связи и риски. Выделение web и integrations следует после завершения фазы хранения.
 
 ---
 
@@ -59,6 +67,8 @@ docker compose up -d
 Тесты поднимают контекст Spring и требуют реального PostgreSQL. CI-pipeline в PR подключает сервис-контейнер postgres с кредами `epadel_user/test` к базе `player_padel_db`.
 
 ---
+
+Утверждена [фаза 6 / #1051](../docs/modular-monolith/phase-6/README.md). Порядок выделения хранения закреплён в ADR-0007. В #1439 публичная главная использует `PublicClubQuery.countActive`. В #1440 каталог, кабинет, регистрация и уведомления читают клубы через [InternalClubReadPort](../docs/modular-monolith/phase-6/internal-club-reads.md). В #1441 клубные фасады используют [порты административного чтения и записи](../docs/modular-monolith/phase-6/admin-club-storage.md). В #1442 клубный JPA и Liquibase принадлежат [padel-persistence](../docs/modular-monolith/phase-6/club-persistence.md).
 
 ## Navigation Map (URL → Template → Controller)
 
@@ -134,7 +144,7 @@ docker compose up -d
 | `GET /admin/players` | `admin/players/list.html` | Список игроков |
 | `GET /admin/players/{id}` | `admin/players/details.html` | Детали игрока |
 | `GET /admin/tournaments/king-of-court/{kingId}` | `admin/tournaments/king-of-court.html` | Управление King of Court |
-| `GET /admin/tournaments/{tournamentId}/payments` | `admin/tournaments/payments.html` | Управление платежами турнира |
+| `GET /admin/tournaments/{tournamentId}/payments` | `admin/tournaments/payments.html` | Управление платежами турнира; компактный раскрываемый блок участия и Telegram с сохранением выбора для аккаунта и турнира |
 | `GET /admin/export` | — (Excel file) | Экспорт всех данных в Excel |
 
 ### Americano Admin Pages
@@ -435,8 +445,8 @@ service/
 └── (security) JwtService, CompositeUserDetailsService, CustomOAuth2UserService
 
 model/
-├── PlayerPadel, Owner, Club, Tournament, TournamentRegistration
-├── Match, Ranking, Payment, PasswordResetToken
+├── PlayerPadel, Owner, Tournament, TournamentRegistration
+├── Match, Ranking, Payment
 ├── TournamentKingOfCourt, KingOfCourtRound, KingOfCourtCourt,
 │   KingOfCourtPlayerStats, KingOfCourtMatchResult, CourtTeam
 ├── americano/ → AmericanoRound, AmericanoMatch, AmericanoPlayer, AmericanoTeam
@@ -463,7 +473,7 @@ repository/
 | `matches_db` | `Match` | Матчи bracket-турниров |
 | `ranking_db` | `Ranking` | Рейтинг игроков |
 | `payments_db` | `Payment` | Платежи (без реального платёжного шлюза — фиксируются вручную админом) |
-| `password_reset_tokens_db` | `PasswordResetToken` | Токены сброса пароля |
+| `password_reset_tokens_db` | `PasswordResetToken` в `padel-persistence` | Токены сброса пароля, связь по `player_id` |
 | `tournament_king_of_court_db` | `TournamentKingOfCourt` | KoC конфигурация |
 | `king_of_court_round_db` | `KingOfCourtRound` | Раунды KoC |
 | `king_of_court_court_db` | `KingOfCourtCourt` | Корты KoC |
@@ -479,7 +489,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия: v1.88. `ddl-auto = none` — только Liquibase. Новые файлы добавлять с инкрементальным номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `padel-persistence/src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия v1.93. `ddl-auto = none` оставляет управление схемой Liquibase. Новые файлы добавлять со следующим номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 
@@ -566,7 +576,7 @@ Push в `master` запускает `.github/workflows/deploy.yml`: сборка
 - `@Transactional(readOnly = true)` — дефолт на уровне класса в большинстве сервисов; write-методы переопределяют через `@Transactional`.
 - Язык домена смешанный: поля entity на испанском (`nombre`, `fechaInicio`, `modalidad`), комментарии и логи на русском.
 - Язык работы — русский (все разработчики русскоязычные): issue (заголовок и описание), ТЗ в `specs/**`, документация в `docs/**` и `.agents/**`, коммиты и описания PR — на русском. Подробно — [GIT_WORKFLOW.md §1.5](GIT_WORKFLOW.md).
-- `PlayerPadel.hasValidContact()` — регистрация на турнир требует телефон `+54` **или** Telegram username.
+- `PlayerContacts.hasValidContact()` — регистрация на турнир требует заполненный телефон, Telegram необязателен. `PlayerContactService` нормализует новый номер по стране в E.164 и проверяет дубли транзакционно. ID вошедшего игрока берётся из `PlayerPrincipal`; перед записью и при запросе статуса контактов читается актуальный профиль через `PlayerService`.
 - `TournamentLevelPolicy` (LFPT-0303) — самостоятельная регистрация на турнир с "простой" категорией (`Nivel.isPlayerLevel(categoriaNivel)`, т.е. `C9..C4`/`D9..D6`) требует уровень игрока в пределах ±1 ступени от категории турнира; не применяется к `CANCHA_ABIERTA`/`PADEL_CLINIC`, `TODOS`/`PRINCIPIANTES`/диапазонам/`SUMA_*`. Проверяется в `TournamentService.registerPlayer()` и в точках самостоятельной регистрации `DoubleTournamentRegistrationService` (не в `TestTournamentController` — ручная регистрация организатором не ограничивается).
 - `TestTournamentController` работает напрямую через JDBC (`DataSource`), **не через JPA**. Используется только для внутреннего тестирования организатором.
 - При добавлении новой Liquibase-миграции: создать файл `v1.XX-<description>.yaml` в `versions/` и добавить `include` в конец `changelog-master.yaml`.
@@ -714,3 +724,9 @@ Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчани
 Индивидуальные пульты и публичные страницы используют общий `individual-ranking.js`/CSS и фрагмент: итог рядом с именем, раскрытие статистики и прежних действий на телефоне; публично — весь состав, три столбца без уровня, расшифровка только для просмотра и серверная первичная выдача; серверный контракт сохраняется. [Спецификация](../specs/done/LFPT-1401-compact-individual-ranking.md).
 
 Контакт организатора мероприятия: `OrganizerContacts` — единая чистая проверка libphonenumber, разбор WhatsApp URL и legacy без записи при чтении. Поля `Tournament.organizerName/organizerPhone/organizerCountry/organizerContactOriginal`, миграция v1.92. `TournamentMapper` отдаёт безопасное представление `organizerContact`, сервис проверяет создание/редактирование, `@ValidOrganizerContact` привязывает ошибку к полю формы. `OrganizerContactController` — служебный предпросмотр, `OrganizerContactFormAdvice` — страны для создания/редактирования/копирования. Контракт: [контакт организатора](../docs/endpoints/organizer-contact.md).
+
+Форма контакта организатора: `static/js/organizer-contact.js` и `static/css/organizer-contact.css`; три поля, серверный предпросмотр с CSRF, защита от устаревшего ответа, inline-ошибки. `templates/tournament-details.html` и `admin/tournaments/details.html` используют безопасный `organizerContact`. Браузерная проверка: `OrganizerContactBrowserTest`, `tests/browser/organizer-contact.browser.mjs` (флаг `organizer.browser.qa=true`, отдельная БД, мок уведомлений).
+
+### Помощь у действий парного турнира
+
+`templates/fragments/action-help.html`, `static/js/action-help.js`, `static/css/action-help.css`: короткие RU/ES/EN пояснения у существующих действий, без API/отправки форм. [Контракт и проверка](../docs/organizer-action-help.md).

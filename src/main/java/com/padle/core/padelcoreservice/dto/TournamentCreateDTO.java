@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import jakarta.validation.constraints.*;

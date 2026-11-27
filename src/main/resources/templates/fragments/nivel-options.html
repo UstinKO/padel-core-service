@@ -19,7 +19,7 @@
     <option th:if="${allowEmpty}" value=""
             th:selected="${selected == null or selected.name() == 'SIN_ESPECIFICAR'}"
             th:text="#{perfil.field.nivel.none}">Sin especificar</option>
-    <option th:each="level : ${T(com.padle.core.padelcoreservice.model.enums.Nivel).playerLevels()}"
+    <option th:each="level : ${T(com.padle.core.application.tournament.Nivel).playerLevels()}"
             th:value="${level.name()}" th:selected="${selected == level}" th:text="${level.name()}">C3</option>
 </th:block>
 </body>

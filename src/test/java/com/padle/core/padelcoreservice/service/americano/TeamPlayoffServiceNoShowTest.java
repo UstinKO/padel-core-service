@@ -9,7 +9,7 @@ import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;

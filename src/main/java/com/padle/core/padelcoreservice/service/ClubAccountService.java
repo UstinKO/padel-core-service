@@ -1,52 +1,58 @@
 package com.padle.core.padelcoreservice.service;
 
-import java.util.Collections;
+import com.padle.core.application.identity.OwnerAccount;
+import com.padle.core.application.identity.OwnerAccounts;
+import com.padle.core.application.clubs.ClubAdminReadPort;
 import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
-import com.padle.core.padelcoreservice.mapper.ClubMapper;
-import com.padle.core.padelcoreservice.model.Club;
+import com.padle.core.padelcoreservice.mapper.ClubDtoMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.ClubRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ClubAccountService {
-    private final OwnerRepository owners;
-    private final ClubRepository clubs;
-    private final ClubMapper mapper;
+    private final OwnerAccounts owners;
+    private final ClubAdminReadPort clubReads;
+    private final ClubDtoMapper mapper;
 
     public Set<Long> assignedClubIds(Owner account) {
         // Сессия может быть открыта до изменения назначений: читаем актуальные права из базы.
-        Owner fresh = requireAccount(account.getId());
-        return Stream.concat(fresh.getClubIds().stream(), Stream.ofNullable(fresh.getClubId()))
-                .collect(Collectors.toUnmodifiableSet());
+        return requireAccount(account.getId()).assignedClubIds();
     }
 
     public List<ClubDto> availableClubs(Owner account) {
         if (!account.isClubAdmin()) {
-            return clubs.findAllByIsActiveTrueOrderByNombreAsc().stream().map(mapper::toDto).toList();
+            return clubReads.findActiveOrderedByName().stream().map(mapper::toDto).toList();
         }
         Set<Long> assigned = assignedClubIds(account);
-        return clubs.findAllByIsActiveTrueOrderByNombreAsc().stream()
-                .filter(club -> assigned.contains(club.getId())).map(mapper::toDto).toList();
+        return clubReads.findActiveOrderedByName().stream()
+                .filter(club -> assigned.contains(club.id())).map(mapper::toDto).toList();
     }
 
     public void assertCanCreateAt(Owner account, Long clubId) {
-        if (account.isClubAdmin() && (clubId == null || !assignedClubIds(account).contains(clubId)
-                || !clubs.existsByIdAndIsActiveTrue(clubId))) {
+        if (account.isClubAdmin()) {
+            assertClubAssignment(account.getId(), clubId);
+        }
+    }
+
+    public void assertCanCreateAt(OwnerAccount account, Long clubId) {
+        if (account.isClubAdmin()) {
+            assertClubAssignment(account.id(), clubId);
+        }
+    }
+
+    private void assertClubAssignment(Long ownerId, Long clubId) {
+        if (clubId == null || !requireAccount(ownerId).assignedClubIds().contains(clubId)
+                || !clubReads.existsActiveById(clubId)) {
             throw new AccessDeniedException("club_access.denied");
         }
     }
@@ -57,14 +63,14 @@ public class ClubAccountService {
         }
     }
 
-    public List<Owner> accounts(Owner actor) {
+    public List<OwnerAccount> accounts(Owner actor) {
         assertSuperAdmin(actor);
-        return owners.findByRole(OwnerRole.CLUB_ADMIN);
+        return owners.findByRole(OwnerAccount.Role.CLUB_ADMIN);
     }
 
-    public Owner account(Owner actor, Long id) {
+    public OwnerAccount account(Owner actor, Long id) {
         assertSuperAdmin(actor);
-        Owner target = requireAccount(id);
+        OwnerAccount target = requireAccount(id);
         if (!target.isClubAdmin()) {
             throw new AccessDeniedException("club_access.denied");
         }
@@ -73,19 +79,17 @@ public class ClubAccountService {
 
     @Transactional
     public void assign(Owner actor, Long id, Set<Long> clubIds) {
-        Owner target = account(actor, id);
+        account(actor, id);
         Set<Long> selected = Set.copyOf(clubIds);
-        Set<Long> existing = clubs.findAllById(selected).stream().map(Club::getId).collect(Collectors.toSet());
+        Set<Long> existing = clubReads.findExistingIds(selected);
         if (!existing.equals(selected)) {
             throw new IllegalArgumentException("club_access.invalid_club");
         }
-        target.setClubIds(new HashSet<>(selected));
         // Совместимость с прежней одиночной привязкой; пустой набор полностью снимает назначения.
-        target.setClubId(selected.isEmpty() ? null : Collections.min(selected));
-        owners.save(target);
+        owners.replaceClubAssignments(id, selected.isEmpty() ? null : Collections.min(selected), selected);
     }
 
-    private Owner requireAccount(Long id) {
+    private OwnerAccount requireAccount(Long id) {
         return owners.findById(id).orElseThrow(() -> new ResourceNotFoundException("Account not found"));
     }
 

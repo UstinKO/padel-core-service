@@ -4,7 +4,7 @@
 </span>
 <th:block th:fragment="options(selected)">
     <option value="" th:selected="${selected == null}" th:text="#{playingSide.notSpecified}"></option>
-    <option th:each="side : ${T(com.padle.core.padelcoreservice.model.enums.PlayingSide).values()}" th:value="${side}" th:selected="${selected == side}" th:text="#{${side.messageKey}}"></option>
+    <option th:each="side : ${T(com.padle.core.application.identity.PlayingSide).values()}" th:value="${side}" th:selected="${selected == side}" th:text="#{${side.messageKey}}"></option>
 </th:block>
 <div th:fragment="editor(selected)" class="form-group playing-side-editor" data-playing-side-editor>
     <label for="playingSide" th:text="#{playingSide.label}"></label>
@@ -19,7 +19,7 @@
     <header><h2 id="playing-side-title" th:text="#{playingSide.title}"></h2><button type="button" data-side-later class="playing-side-close" th:aria-label="#{playingSide.close}">×</button></header>
     <form id="playing-side-answer">
         <fieldset aria-labelledby="playing-side-title"><p class="playing-side-hint" th:text="#{playingSide.hint}"></p>
-            <label th:each="side : ${T(com.padle.core.padelcoreservice.model.enums.PlayingSide).values()}" class="playing-side-option">
+            <label th:each="side : ${T(com.padle.core.application.identity.PlayingSide).values()}" class="playing-side-option">
                 <input type="radio" name="playingSide" th:value="${side}" required><span><span th:text="#{${side.messageKey}}"></span></span>
             </label>
         </fieldset>

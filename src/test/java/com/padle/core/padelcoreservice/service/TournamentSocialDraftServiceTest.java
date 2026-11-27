@@ -8,7 +8,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;

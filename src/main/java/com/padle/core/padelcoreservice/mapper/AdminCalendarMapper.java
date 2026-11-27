@@ -1,12 +1,12 @@
 package com.padle.core.padelcoreservice.mapper;
 
+import com.padle.core.application.identity.OwnerAccount;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.enums.EventFormat;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth.Event;
 import org.mapstruct.Mapper;
 import org.mapstruct.Context;
-import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.dto.calendar.OrganizerOrganization;
 import com.padle.core.padelcoreservice.dto.calendar.OrganizationAccount;
 import java.util.Map;
@@ -31,8 +31,8 @@ public interface AdminCalendarMapper {
     Event toEvent(TournamentDto event, @Context Map<Long, OrganizerOrganization> organizers);
 
     @Mapping(target = "name", source = "organizationName")
-    OrganizerOrganization toOrganizer(Owner owner);
+    OrganizerOrganization toOrganizer(OwnerAccount owner);
 
     @Mapping(target = "accountName", source = "fullName")
-    OrganizationAccount toOrganizationAccount(Owner owner);
+    OrganizationAccount toOrganizationAccount(OwnerAccount owner);
 }

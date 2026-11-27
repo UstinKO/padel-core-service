@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
 import org.junit.jupiter.api.Test;
 

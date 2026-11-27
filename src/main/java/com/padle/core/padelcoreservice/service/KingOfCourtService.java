@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.*;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;

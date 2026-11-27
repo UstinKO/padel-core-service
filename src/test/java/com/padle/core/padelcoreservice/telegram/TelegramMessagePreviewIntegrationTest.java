@@ -1,9 +1,16 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.TelegramMessagePreviewService;
 import com.padle.core.padelcoreservice.telegram.TelegramAudienceModels.*;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.ContactPreference;
@@ -21,6 +28,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
@@ -35,7 +43,7 @@ class TelegramMessagePreviewIntegrationTest {
     @Autowired TelegramMessagePreviewService service;
     @Autowired PlayerTelegramStore connections;
     @Autowired PlayerRepository players;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired TournamentRepository events;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRegistrationRepository registrations;
@@ -80,7 +88,7 @@ class TelegramMessagePreviewIntegrationTest {
         mvc.perform(get("/api/admin/telegram/messages/audience?tournamentId=" + event.getId()).with(user(other)))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/admin/telegram/messages/audience").with(user(owner))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/admin/telegram/messages/audience").with(user(foreign))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/admin/telegram/messages/audience").with(playerUser(foreign))).andExpect(status().isForbidden());
         var admin = owner(OwnerRole.SUPER_ADMIN);
         mvc.perform(get("/api/admin/telegram/messages/audience").with(user(admin))).andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "no-store"))

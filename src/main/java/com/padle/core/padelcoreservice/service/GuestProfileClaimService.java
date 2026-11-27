@@ -1,14 +1,18 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.identity.GuestProfileClaims.ProfileChoice;
+import com.padle.core.application.identity.GuestProfileClaims.ContactChoice;
+import com.padle.core.application.identity.GuestProfileClaims.Verification;
+import com.padle.core.application.identity.GuestProfileClaims.Status;
 import com.padle.core.padelcoreservice.config.GuestClaimContact;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.*;
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.GuestProfileClaimRepository;
-import com.padle.core.padelcoreservice.repository.GuestProfileClaimRepository.Claim;
-import com.padle.core.padelcoreservice.repository.GuestProfileHistoryRepository;
-import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.identity.GuestProfileClaims;
+import com.padle.core.application.identity.GuestProfileClaims.Claim;
+import com.padle.core.application.identity.GuestProfileHistory;
+import com.padle.core.application.identity.PasswordResetTokens;
+import com.padle.core.persistence.identity.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,9 +33,9 @@ import java.util.UUID;
 public class GuestProfileClaimService {
     private final PlayerRepository players;
     private final GuestClaimContact claimContact;
-    private final GuestProfileClaimRepository claims;
-    private final GuestProfileHistoryRepository history;
-    private final PasswordResetTokenRepository resetTokens;
+    private final GuestProfileClaims claims;
+    private final GuestProfileHistory history;
+    private final PasswordResetTokens resetTokens;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -383,7 +387,7 @@ public class GuestProfileClaimService {
     }
 
     private void revokeCredentials(PlayerPadel profile) {
-        resetTokens.deleteByPlayer(profile);
+        resetTokens.revokeForPlayer(profile.getId());
         profile.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
         profile.setPasswordChangedAt(LocalDateTime.now());
         profile.setCodigoConfirmacion(null);
