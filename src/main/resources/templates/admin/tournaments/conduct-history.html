@@ -13,7 +13,7 @@
     <div class="container">
         <div class="admin-header">
             <h1 class="admin-title" th:text="#{conduct.history.title}">Historial del torneo</h1>
-            <p th:text="${tournament.nombre}"></p>
+            <p th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}"></p>
             <a class="btn btn-secondary" th:href="@{/admin/tournaments/{id}(id=${tournament.id})}"
                th:text="#{admin.koc.btn.back}">Volver al torneo</a>
         </div>

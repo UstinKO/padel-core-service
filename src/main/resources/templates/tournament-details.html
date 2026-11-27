@@ -6,19 +6,19 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <meta name="description" th:content="'1-Padel - ' + ${tournament.nombre} + '. Información del torneo, inscripción y detalles.'">
+    <meta name="description" th:content="'1-Padel - ' + ${@eventLevelText.eventName(tournament.nombre, #locale)} + '. Información del torneo, inscripción y detalles.'">
     <meta name="keywords" content="pádel, torneo, inscripción, detalles, 1-padel">
     <meta name="author" content="1-Padel">
     <meta name="theme-color" content="#FF6B35">
 
     <!-- Open Graph / Social Media -->
-    <meta property="og:title" th:content="${tournament.nombre} + ' | 1-Padel'">
-    <meta property="og:description" th:content="'Inscríbete en ' + ${tournament.nombre} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">
+    <meta property="og:title" th:content="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' | 1-Padel'">
+    <meta property="og:description" th:content="'Inscríbete en ' + ${@eventLevelText.eventName(tournament.nombre, #locale)} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">
     <meta property="og:image" content="/images/og-image.jpg">
     <meta property="og:url" th:content="@{'/torneo/' + ${tournament.id}}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <title th:text="${tournament.nombre} + ' | 1-Padel'">Torneo | 1-Padel</title>
+    <title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' | 1-Padel'">Torneo | 1-Padel</title>
 
     <!-- Favicon con nuevo logo -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -106,7 +106,7 @@
         <div class="breadcrumb">
             <a href="/" class="breadcrumb-link" th:text="#{breadcrumb.home}">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-            <span class="breadcrumb-current" th:text="${tournament.nombre}">Torneo Open</span>
+            <span class="breadcrumb-current" th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo Open</span>
         </div>
 
         <!-- Cabecera del torneo -->
@@ -752,7 +752,7 @@
                             <span class="tournament-booking-availability"></span>
                             <button type="button" class="btn-register btn-primary btn-block tournament-booking-action"
                                     th:if="${isAuthenticated}"
-                                    th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre},
+                                    th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${@eventLevelText.eventName(tournament.nombre, #locale)},
                                              data-registration-level-missing=${registrationLevelMissing}"
                                     th:data-registration-intent="${tournament.id}" id="registerButton">
                                 <i class="fas fa-check-circle"></i>
@@ -778,7 +778,7 @@
 
                         <button class="btn-cancel btn-outline btn-block"
                                 th:if="${isRegistered and tournament.modalidad.name() != 'DOBLES'}"
-                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}">
+                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${@eventLevelText.eventName(tournament.nombre, #locale)}">
                             <i class="fas fa-times-circle"></i>
                             <span th:text="#{tournament.btn.cancel}">Cancelar inscripción</span>
                         </button>

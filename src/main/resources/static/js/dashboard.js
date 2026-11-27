@@ -1235,14 +1235,14 @@ document.addEventListener('DOMContentLoaded', function() {
 ` : !isMyTournament ? `
     <button class="btn btn-primary btn-small btn-register" data-registration-intent="${tournament.id}"
             data-tournament-id="${tournament.id}"
-            data-tournament-name="${escapeHtml(tournament.nombre)}">
+            data-tournament-name="${escapeHtml(window.PadelLevels.eventName(tournament.nombre))}">
         <i class="fas fa-plus-circle"></i>
         <span>${registrationText}</span>
     </button>
 ` : `
     <button class="btn btn-outline btn-small btn-cancel"
             data-tournament-id="${tournament.id}"
-            data-tournament-name="${escapeHtml(tournament.nombre)}">
+            data-tournament-name="${escapeHtml(window.PadelLevels.eventName(tournament.nombre))}">
         <i class="fas fa-times-circle"></i> ${t('common.cancel')}
     </button>
 `}

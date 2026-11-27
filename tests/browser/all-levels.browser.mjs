@@ -94,6 +94,8 @@ try {
             });assert.equal(geometry,true);
             await go(page,`/admin/tournaments/${id}`,lang);
             assert.equal(await page.locator('.badge-level').innerText(),labels[lang]);
+            assert.equal((await page.locator('h1').innerText()).includes('TODOS'),false);
+            assert.equal((await page.title()).includes('TODOS'),false);
             report.push({role:account.role,id,originalType,originalModality,checks:'matrix, save, reopen, copy, display'});
         }
         if(index===0) {
@@ -114,6 +116,8 @@ try {
                 for(const lang of ['ru','es','en']) {
                     await go(page,`/torneo/${id}`,lang);
                     assert.equal(await page.locator('.badge-level').innerText(),labels[lang]);
+            assert.equal((await page.locator('h1').innerText()).includes('TODOS'),false);
+            assert.equal((await page.title()).includes('TODOS'),false);
                 }
                 report.push({type,gender,id,checks:'create, persist, public RU ES EN'});
             }

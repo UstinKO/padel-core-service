@@ -35,7 +35,7 @@
                 </h1>
                 <h1 th:if="${isCopy != null}">
                     <i class="fas fa-copy"></i>
-                    <span th:text="#{admin.tournaments.form.title.copy}">Copiar Torneo</span>: <span th:text="${tournament.nombre}" style="font-size: 1.5rem; color: var(--admin-primary);">Torneo</span>
+                    <span th:text="#{admin.tournaments.form.title.copy}">Copiar Torneo</span>: <span th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}" style="font-size: 1.5rem; color: var(--admin-primary);">Torneo</span>
                 </h1>
                 <h1 th:unless="${tournament.id == null}">
                     <i class="fas fa-edit"></i>
