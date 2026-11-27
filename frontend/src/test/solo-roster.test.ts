@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 const code = readFileSync(resolve('../src/main/resources/static/js/solo-roster.js'), 'utf8');
@@ -98,7 +98,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 async function reviewPair() {
-  fireEvent.click(document.querySelector('#solo-list article button:nth-child(2)')!);
+  fireEvent.click(
+    within(document.querySelector('#solo-list article')!).getByRole('button', {
+      name: 'merge',
+    }),
+  );
   fireEvent.change(document.getElementById('solo-single')!, { target: { value: '2' } });
   fireEvent.submit(document.getElementById('solo-form')!);
   await waitFor(() =>
@@ -169,7 +173,11 @@ test('a preview error preserves guest fields and does not submit a mutation', as
 });
 
 test('the source and single candidate retain their level and side before preview', async () => {
-  fireEvent.click(document.querySelector('#solo-list article button:nth-child(2)')!);
+  fireEvent.click(
+    within(document.querySelector('#solo-list article')!).getByRole('button', {
+      name: 'merge',
+    }),
+  );
   expect(document.getElementById('solo-source')).toHaveTextContent('Ana <script> · C7 · Справа');
   const candidate = document.querySelector<HTMLOptionElement>('#solo-single option[value="2"]')!;
   expect(candidate).toHaveTextContent('Bea · C7 · Справа · looking');
@@ -225,7 +233,11 @@ test.each([
   const original = b.playingSide;
   Object.assign(b, { playingSide: side });
   try {
-    fireEvent.click(document.querySelector('#solo-list article button:nth-child(2)')!);
+    fireEvent.click(
+      within(document.querySelector('#solo-list article')!).getByRole('button', {
+        name: 'merge',
+      }),
+    );
     expect(document.querySelector('#solo-single option[value="2"]')).toHaveTextContent(
       `C7 · ${label}`,
     );

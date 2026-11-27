@@ -726,3 +726,7 @@ Telegram-пилот: `telegram.players.pilot-enabled=true` по умолчани
 Контакт организатора мероприятия: `OrganizerContacts` — единая чистая проверка libphonenumber, разбор WhatsApp URL и legacy без записи при чтении. Поля `Tournament.organizerName/organizerPhone/organizerCountry/organizerContactOriginal`, миграция v1.92. `TournamentMapper` отдаёт безопасное представление `organizerContact`, сервис проверяет создание/редактирование, `@ValidOrganizerContact` привязывает ошибку к полю формы. `OrganizerContactController` — служебный предпросмотр, `OrganizerContactFormAdvice` — страны для создания/редактирования/копирования. Контракт: [контакт организатора](../docs/endpoints/organizer-contact.md).
 
 Форма контакта организатора: `static/js/organizer-contact.js` и `static/css/organizer-contact.css`; три поля, серверный предпросмотр с CSRF, защита от устаревшего ответа, inline-ошибки. `templates/tournament-details.html` и `admin/tournaments/details.html` используют безопасный `organizerContact`. Браузерная проверка: `OrganizerContactBrowserTest`, `tests/browser/organizer-contact.browser.mjs` (флаг `organizer.browser.qa=true`, отдельная БД, мок уведомлений).
+
+### Помощь у действий парного турнира
+
+`templates/fragments/action-help.html`, `static/js/action-help.js`, `static/css/action-help.css`: короткие RU/ES/EN пояснения у существующих действий, без API/отправки форм. [Контракт и проверка](../docs/organizer-action-help.md).

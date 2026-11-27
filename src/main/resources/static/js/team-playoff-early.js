@@ -119,6 +119,8 @@
             const projected = document.getElementById('earlyProjected');
             const byes = state.projectedByes || [];
             projected.hidden = byes.length === 0;
+            const byeHelp = document.getElementById('earlyByeHelp');
+            if (byeHelp) byeHelp.hidden = byes.length === 0;
             projected.textContent = text.projected.replace('{0}', byes.map(teamLabel).join(', '));
             const pending = (state.pendingMatchNumbers || []).map(number => '№' + number).join(', ');
             const waiting = state.reason === 'results' && pending
