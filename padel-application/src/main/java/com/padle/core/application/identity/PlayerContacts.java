@@ -14,6 +14,6 @@ public interface PlayerContacts {
     boolean existsByPhone(String phone);
 
     static boolean hasValidContact(String phone, String telegram) {
-        return phone != null && !phone.isBlank() || telegram != null && !telegram.isBlank();
+        return phone != null && !phone.isBlank();
     }
 }

@@ -339,7 +339,7 @@ public class TournamentService {
         // ========== ДОБАВЛЯЕМ ПРОВЕРКУ КОНТАКТОВ ==========
         if (!player.hasValidContact()) {
             throw new TournamentRegistrationException(
-                    "Para inscribirte en un torneo necesitas tener al menos un dato de contacto: WhatsApp o Telegram"
+                    messageSource.getMessage("contact.validation.PHONE_REQUIRED", null, LocaleContextHolder.getLocale())
             );
         }
         // ========== КОНЕЦ ПРОВЕРКИ ==========
