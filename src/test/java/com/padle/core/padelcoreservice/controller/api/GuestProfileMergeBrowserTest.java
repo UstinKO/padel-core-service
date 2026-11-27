@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
@@ -44,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class GuestProfileMergeBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;

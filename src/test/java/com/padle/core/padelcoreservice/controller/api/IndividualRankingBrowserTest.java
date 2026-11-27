@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.RankingCriteria;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoMatchResultDto;
@@ -49,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class IndividualRankingBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository tournaments;

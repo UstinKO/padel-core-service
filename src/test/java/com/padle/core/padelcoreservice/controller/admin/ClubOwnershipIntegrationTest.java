@@ -1,6 +1,8 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.ClubDto;
+import com.padle.core.padelcoreservice.dto.OwnerDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -11,6 +13,7 @@ import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.service.ClubService;
+import com.padle.core.padelcoreservice.service.OwnerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,9 +54,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ClubOwnershipIntegrationTest {
     @Autowired ClubAccountService accounts;
     @Autowired ClubService clubService;
+    @Autowired OwnerService profiles;
     @Autowired TournamentService tournaments;
     @Autowired TournamentAccessService access;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository events;
     @Autowired PlayerRepository players;
@@ -219,11 +223,15 @@ class ClubOwnershipIntegrationTest {
     }
 
     @Test
-    void clubCreationAndAssignmentJoinTheCallerRollback() {
+    void clubCreationProfileAndAssignmentJoinTheCallerRollback() {
         var created = clubService.createClub(ClubDto.builder().nombre("Rollback " + UUID.randomUUID()).build(),
                 root.getId());
+        profiles.updateOwner(actor.getId(), OwnerDto.builder().firstName("Updated").lastName("Club")
+                .phone("+5491100001234").isActive(true).build(), root);
         accounts.assign(root, actor.getId(), Set.of(created.getId()));
         owners.flush();
+        assertThat(profiles.getOwnerById(actor.getId(), root).getFirstName()).isEqualTo("Updated");
+        assertThat(owners.findById(actor.getId()).orElseThrow().getClubId()).isEqualTo(created.getId());
         assertThat(accounts.assignedClubIds(actor)).containsExactly(created.getId());
 
         TestTransaction.flagForRollback();

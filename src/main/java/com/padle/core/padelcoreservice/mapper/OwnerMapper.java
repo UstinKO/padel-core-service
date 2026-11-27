@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.mapper;
 
+import com.padle.core.application.identity.OwnerAccount;
 import com.padle.core.padelcoreservice.dto.OwnerDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import org.mapstruct.Mapper;
@@ -9,4 +10,6 @@ import org.mapstruct.ReportingPolicy;
 public interface OwnerMapper {
 
     OwnerDto toDto(Owner owner);
+
+    OwnerDto toDto(OwnerAccount owner);
 }

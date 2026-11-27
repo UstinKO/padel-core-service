@@ -28,9 +28,9 @@ public class AdminClubAccountController {
 
     @GetMapping("/{id}")
     public String details(@PathVariable Long id, @AuthenticationPrincipal Owner actor, Model model) {
-        Owner account = accounts.account(actor, id);
+        var account = accounts.account(actor, id);
         model.addAttribute("account", account);
-        model.addAttribute("assignedClubIds", accounts.assignedClubIds(account));
+        model.addAttribute("assignedClubIds", account.assignedClubIds());
         model.addAttribute("clubs", clubs.getAllClubsForAdmin());
         return "admin/club-accounts/details";
     }

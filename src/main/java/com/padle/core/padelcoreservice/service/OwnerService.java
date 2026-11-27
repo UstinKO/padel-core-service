@@ -1,11 +1,12 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.identity.OwnerAccount;
+import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.padelcoreservice.dto.OwnerDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.OwnerMapper;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,16 +20,14 @@ import java.util.Optional;
 @Slf4j
 public class OwnerService {
 
-    private final OwnerRepository ownerRepository;
+    private final OwnerAccounts owners;
     private final OwnerMapper ownerMapper;
 
     @Transactional(readOnly = true)
     public OwnerDto getOwnerById(Long id, Owner currentOwner) {
-        Owner owner = ownerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Owner not found with id: " + id));
+        OwnerAccount owner = owners.findById(id).orElseThrow(() -> new ResourceNotFoundException("Owner not found with id: " + id));
 
-        if (currentOwner.isSuperAdmin()) {
-        } else if (currentOwner.getRole() == OwnerRole.ORGANIZER && currentOwner.getId().equals(owner.getId())) {
-        } else {
+        if (!canManageProfile(currentOwner, owner.id())) {
             throw new AccessDeniedException("No tienes permiso para ver este perfil");
         }
 
@@ -37,46 +36,40 @@ public class OwnerService {
 
     @Transactional(readOnly = true)
     public Optional<OwnerDto> getSuperAdmin() {
-        return ownerRepository.findSuperAdmin()
+        return owners.findActiveSuperAdmin()
                 .map(ownerMapper::toDto);
     }
 
     // Метод для обновления данных владельца (для будущей админки)
     @Transactional
     public OwnerDto updateOwner(Long id, OwnerDto ownerDto, Owner currentOwner) {
-        Owner owner = ownerRepository.findById(id)
+        OwnerAccount owner = owners.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Owner not found with id: " + id));
 
-        if (currentOwner.isSuperAdmin()) {
-            owner.setFirstName(ownerDto.getFirstName());
-            owner.setLastName(ownerDto.getLastName());
-            owner.setPhone(ownerDto.getPhone());
-            owner.setIsActive(ownerDto.getIsActive());
-        } else if (currentOwner.getRole() == OwnerRole.ORGANIZER && currentOwner.getId().equals(owner.getId())) {
-            owner.setFirstName(ownerDto.getFirstName());
-            owner.setLastName(ownerDto.getLastName());
-            owner.setPhone(ownerDto.getPhone());
-        } else {
+        if (!canManageProfile(currentOwner, owner.id())) {
             throw new AccessDeniedException("No tienes permiso para editar este perfil");
         }
 
-        Owner updatedOwner = ownerRepository.save(owner);
+        Boolean active = currentOwner.isSuperAdmin() ? ownerDto.getIsActive() : owner.isActive();
+        var profile = new OwnerAccounts.Profile(ownerDto.getFirstName(), ownerDto.getLastName(), ownerDto.getPhone(), active);
+        OwnerAccount updatedOwner = owners.updateProfile(id, profile);
         log.info("Updated owner with id: {}", id);
 
         return ownerMapper.toDto(updatedOwner);
     }
 
-    // ========== НОВЫЕ МЕТОДЫ ДЛЯ КОНТРОЛЛЕРА ==========
-
     @Transactional(readOnly = true)
     public long getTotalActiveOwners() {
-        return ownerRepository.countByIsActiveTrue();
+        return owners.countActive();
     }
 
-    // ========== МЕТОД ДЛЯ ПОЛУЧЕНИЯ OWNER ПО EMAIL (возвращает Optional<Owner>) ==========
     @Transactional(readOnly = true)
-    public Optional<Owner> findByEmail(String email) {
+    public Optional<Long> findIdByEmail(String email) {
         log.debug("Finding owner by email: {}", email);
-        return ownerRepository.findByEmail(email);
+        return owners.findIdByEmail(email);
+    }
+
+    private boolean canManageProfile(Owner actor, Long id) {
+        return actor.isSuperAdmin() || actor.getRole() == OwnerRole.ORGANIZER && actor.getId().equals(id);
     }
 }

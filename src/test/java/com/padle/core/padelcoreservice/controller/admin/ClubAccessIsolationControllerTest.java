@@ -13,7 +13,7 @@ import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
 import com.padle.core.padelcoreservice.controller.view.PaymentManagementController;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +71,7 @@ class ClubAccessIsolationControllerTest {
     @Autowired
     private ClubRepository clubRepository;
     @Autowired
-    private OwnerRepository ownerRepository;
+    private OwnerFixtures ownerRepository;
 
     @Test
     void moveToWaitlist_clubAdminDeOtroClub_esRechazado_ySuPropioClubFunciona() {

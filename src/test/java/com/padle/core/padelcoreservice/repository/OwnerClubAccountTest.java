@@ -2,8 +2,10 @@ package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.enums.OwnerRole;
+import com.padle.core.persistence.identity.OwnerEntity;
+import com.padle.core.persistence.identity.OwnerRepository;
+import com.padle.core.application.identity.OwnerAccount.Role;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,7 +17,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Модель данных клубных аккаунтов: Owner.clubId (nullable-колонка без FK, тот же паттерн,
+ * Модель данных клубных аккаунтов: OwnerEntity.clubId (nullable-колонка без FK, тот же паттерн,
  * что Tournament.clubId) и значение роли CLUB_ADMIN.
  */
 @SpringBootTest
@@ -34,24 +36,28 @@ class OwnerClubAccountTest {
     private OwnerRepository ownerRepository;
     @Autowired
     private ClubRepository clubRepository;
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     void ownerExistente_sinClubId_sePersisteConClubIdNull() {
-        Owner owner = ownerRepository.saveAndFlush(buildOwner(OwnerRole.ORGANIZER, null));
+        OwnerEntity owner = ownerRepository.saveAndFlush(buildOwner(Role.ORGANIZER, null));
+        entityManager.clear();
 
-        Owner reloaded = ownerRepository.findById(owner.getId()).orElseThrow();
+        OwnerEntity reloaded = ownerRepository.findById(owner.getId()).orElseThrow();
         assertThat(reloaded.getClubId()).isNull();
-        assertThat(reloaded.getRole()).isEqualTo(OwnerRole.ORGANIZER);
+        assertThat(reloaded.getRole()).isEqualTo(Role.ORGANIZER);
     }
 
     @Test
     void ownerClubAdmin_conClubId_sePersisteYSeLee() {
         Club club = clubRepository.save(Club.builder().nombre("Club " + UUID.randomUUID()).isActive(true).build());
 
-        Owner owner = ownerRepository.saveAndFlush(buildOwner(OwnerRole.CLUB_ADMIN, club.getId()));
+        OwnerEntity owner = ownerRepository.saveAndFlush(buildOwner(Role.CLUB_ADMIN, club.getId()));
+        entityManager.clear();
 
-        Owner reloaded = ownerRepository.findById(owner.getId()).orElseThrow();
-        assertThat(reloaded.getRole()).isEqualTo(OwnerRole.CLUB_ADMIN);
+        OwnerEntity reloaded = ownerRepository.findById(owner.getId()).orElseThrow();
+        assertThat(reloaded.getRole()).isEqualTo(Role.CLUB_ADMIN);
         assertThat(reloaded.getClubId()).isEqualTo(club.getId());
     }
 
@@ -60,18 +66,18 @@ class OwnerClubAccountTest {
         Club clubA = clubRepository.save(Club.builder().nombre("Club A " + UUID.randomUUID()).isActive(true).build());
         Club clubB = clubRepository.save(Club.builder().nombre("Club B " + UUID.randomUUID()).isActive(true).build());
 
-        Owner ownerA = ownerRepository.saveAndFlush(buildOwner(OwnerRole.CLUB_ADMIN, clubA.getId()));
-        ownerRepository.saveAndFlush(buildOwner(OwnerRole.CLUB_ADMIN, clubB.getId()));
-        ownerRepository.saveAndFlush(buildOwner(OwnerRole.ORGANIZER, null));
+        OwnerEntity ownerA = ownerRepository.saveAndFlush(buildOwner(Role.CLUB_ADMIN, clubA.getId()));
+        ownerRepository.saveAndFlush(buildOwner(Role.CLUB_ADMIN, clubB.getId()));
+        ownerRepository.saveAndFlush(buildOwner(Role.ORGANIZER, null));
 
         assertThat(ownerRepository.findByClubId(clubA.getId()))
-                .extracting(Owner::getId)
+                .extracting(OwnerEntity::getId)
                 .containsExactly(ownerA.getId());
     }
 
-    private Owner buildOwner(OwnerRole role, Long clubId) {
+    private OwnerEntity buildOwner(Role role, Long clubId) {
         String suffix = "LFPT375-" + UUID.randomUUID();
-        return Owner.builder()
+        return OwnerEntity.builder()
                 .email(suffix + "@example.com")
                 .password("irrelevant-hash")
                 .firstName("Test")

@@ -1,14 +1,12 @@
-package com.padle.core.padelcoreservice.repository;
+package com.padle.core.persistence.identity;
 
-import com.padle.core.padelcoreservice.model.PasswordResetToken;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.Lock;
-import jakarta.persistence.LockModeType;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -25,7 +23,7 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     @Modifying
     @Transactional
-    void deleteByPlayer(PlayerPadel player);
+    void deleteByPlayerId(Long playerId);
 
     @Modifying
     @Transactional

@@ -4,6 +4,7 @@ import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
@@ -51,7 +52,7 @@ import static org.mockito.Mockito.when;
 })
 class ActionHelpBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired ClubRepository clubs;
     @Autowired TournamentRepository events;

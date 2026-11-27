@@ -113,7 +113,7 @@ SITE_KEY, SECRET_KEY
 | Тип | Таблица | Роли |
 |-----|---------|------|
 | `PlayerPadel` | `player_padel_db` | `ROLE_PLAYER` |
-| `Owner` | `owners_db` | `ROLE_OWNER`, `ROLE_ORGANIZER`, `ROLE_SUPER_ADMIN` |
+| `Owner` (сессия), `OwnerEntity` (хранение) | `owners_db` | `ROLE_SUPER_ADMIN`, `ROLE_ORGANIZER`, `ROLE_ADMIN`, `ROLE_CLUB_ADMIN` |
 
 ---
 

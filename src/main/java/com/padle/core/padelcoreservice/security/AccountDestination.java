@@ -43,7 +43,7 @@ public final class AccountDestination {
     }
 
     public static boolean telegramConnect(String value) {
-        return value != null && value.matches("/telegram/connect(?:\\?request=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})?");
+        return "/telegram/join".equals(value) || (value != null && value.matches("/telegram/connect(?:\\?request=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})?"));
     }
 
     public static Optional<String> authorized(HttpServletRequest request) {

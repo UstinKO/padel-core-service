@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.*;
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1", "app.scheduling.enabled=false",
-        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:5432/padel_browser_qa",
+        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "telegram.enabled=false", "telegram.players.enabled=true",
         "telegram.players.bot-username=OnePadelQaBot", "telegram.players.automatic-enabled=false",
@@ -52,7 +53,7 @@ import static org.mockito.Mockito.*;
 })
 class PlayerTelegramBrowserTest {
     @LocalServerPort int port;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PlayerRepository players;
     @Autowired TournamentRepository tournaments;
     @Autowired TournamentRegistrationRepository registrations;

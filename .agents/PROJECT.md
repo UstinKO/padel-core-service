@@ -1,3 +1,7 @@
+Короткий Telegram UI: `telegram-join.html` / `telegram-join.js` используют общий стиль `telegram-connect.css`. Одна HTML-форма сразу открывает бота по 303. `telegram-invitation.js` получает новый site-invitation API, копирует HTTPS `/telegram/join`, не меняет кампанию. `PlayerTelegramJoinBrowserTest` включён в browser CI.
+
+Короткий вход Telegram: `TelegramJoinController`, GET/POST `/telegram/join`, новый `/api/admin/telegram/site-invitation`. GET не выдаёт токен; POST PLAYER+CSRF возвращает 303 на прежний персональный bot Start. До выпуска шаблона показывается безопасная заглушка. Старый вход и API приглашения сохраняются.
+
 # PROJECT.md — техническая карта проекта
 
 Общий вход Telegram UI: `telegram-connect.html` / JS / CSS, `telegram-invitation.js` в действующем редакторе. Кнопка подтверждает профиль только явным POST, окончательная связь — в исходном боте. Fragment очищается, контекст вкладки выбирает публичный UUID request; неизвестный ответ проверяется вручную. Настоящий `PlayerTelegramOnboardingBrowserTest` включён в существующий browser CI. [Проверки](../docs/player-telegram-interface.md).
@@ -441,8 +445,8 @@ service/
 └── (security) JwtService, CompositeUserDetailsService, CustomOAuth2UserService
 
 model/
-├── PlayerPadel, Owner, Club, Tournament, TournamentRegistration
-├── Match, Ranking, Payment, PasswordResetToken
+├── PlayerPadel, Owner, Tournament, TournamentRegistration
+├── Match, Ranking, Payment
 ├── TournamentKingOfCourt, KingOfCourtRound, KingOfCourtCourt,
 │   KingOfCourtPlayerStats, KingOfCourtMatchResult, CourtTeam
 ├── americano/ → AmericanoRound, AmericanoMatch, AmericanoPlayer, AmericanoTeam
@@ -469,7 +473,7 @@ repository/
 | `matches_db` | `Match` | Матчи bracket-турниров |
 | `ranking_db` | `Ranking` | Рейтинг игроков |
 | `payments_db` | `Payment` | Платежи (без реального платёжного шлюза — фиксируются вручную админом) |
-| `password_reset_tokens_db` | `PasswordResetToken` | Токены сброса пароля |
+| `password_reset_tokens_db` | `PasswordResetToken` в `padel-persistence` | Токены сброса пароля, связь по `player_id` |
 | `tournament_king_of_court_db` | `TournamentKingOfCourt` | KoC конфигурация |
 | `king_of_court_round_db` | `KingOfCourtRound` | Раунды KoC |
 | `king_of_court_court_db` | `KingOfCourtCourt` | Корты KoC |

@@ -28,7 +28,7 @@
 | Тип пользователя | Таблица | Роль | Способ входа |
 |-----------------|---------|------|--------------|
 | **Игрок** (`PlayerPadel`) | `player_padel_db` | `ROLE_PLAYER` | Form Login, JWT API, Google OAuth2 |
-| **Администратор** (`Owner`) | `owners_db` | `ROLE_SUPER_ADMIN` / `ROLE_ORGANIZER` / `ROLE_ADMIN` / `ROLE_CLUB_ADMIN` | Form Login, JWT API |
+| **Администратор** (`Owner` в Spring Security) | `owners_db` | `ROLE_SUPER_ADMIN` / `ROLE_ORGANIZER` / `ROLE_ADMIN` / `ROLE_CLUB_ADMIN` | Form Login, JWT API |
 
 После успешного Form Login:
 - Игрок → редирект на `/players/dashboard`
@@ -117,7 +117,9 @@ loadUserByUsername(email)
   throw UsernameNotFoundException
 ```
 
-**Следствие:** если у игрока и администратора одинаковый email — войдёт администратор, потому что `OwnerUserService` проверяется первым.
+При одинаковом email активный владелец имеет приоритет. Если владелец выключен, поиск продолжается среди игроков. После выбора активного владельца Spring Security проверяет его пароль. Ошибка этой проверки завершает вход.
+
+`OwnerUserService` читает учётные записи через `OwnerAccounts`. JPA-модель `OwnerEntity` и назначения площадок находятся в `padel-persistence`. В форме входа, JWT и MVC используется отдельный `Owner`. Его полное имя класса и идентификатор сериализации сохранены для открытых сессий. Для клубного админа область доступа при проверке назначения берётся из актуальных данных аккаунта.
 
 ---
 
@@ -406,10 +408,10 @@ Client                          /api/auth/refresh
   │                    playerRepository.findByEmail()              │
   │                    ┌── не найден → return true (защита от перебора)
   │                    │                                           │
-  │                    tokenRepository.deleteByPlayer(player)  ← удаляем старые
+  │                    tokens.revokeForPlayer(playerId)
   │                    token = UUID.randomUUID()
   │                    expiryDate = now + 24ч
-  │                    PasswordResetToken.save()
+  │                    tokens.issue(playerId, token, expiryDate)
   │                                  │                             │
   │                    EmailService.sendPasswordResetEmail() ─────►│
   │                                  │  ссылка: /recuperar-password?token=UUID
@@ -433,9 +435,8 @@ Client                          /api/auth/refresh
   │                    пароли совпадают?
   │                    токен валиден и не использован?
   │                    player.passwordHash = BCrypt(newPassword)
-  │                    resetToken.used = true
   │                    playerRepository.save()
-  │                    tokenRepository.save()
+  │                    tokens.markUsed(tokenId)
   │                                  │
   │◄─── 200 { success: true } ───────┤
 ```
@@ -447,6 +448,7 @@ Client                          /api/auth/refresh
 - Старые токены удаляются при каждом новом запросе сброса.
 - При запросе несуществующего email — всегда возвращается `success: true` (защита от user enumeration).
 - После использования токен помечается `used = true`, повторное использование невозможно.
+- Порт `PasswordResetTokens` реализуется в `padel-persistence` и хранит связь по `player_id`. Подтверждение удерживает блокировку строки токена до конца общей транзакции записи нового пароля и отметки об использовании. [Граница хранения](modular-monolith/phase-6/identity-storage.md)
 
 ---
 

@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
+import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 @EnabledIfSystemProperty(named="browser.qa",matches="true")
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,properties={
         "server.address=127.0.0.1","app.scheduling.enabled=false","telegram.enabled=false",
-        "telegram.players.onboarding-enabled=true",
+        "telegram.players.onboarding-enabled=true","app.base-url=https://1-padel.com",
         "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
         "spring.datasource.username=epadel_user","spring.datasource.password=test",
         "app.analytics.meta.enabled=false","app.analytics.ga4-id=","app.analytics.clarity-id=",
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
 class PlayerTelegramOnboardingBrowserTest {
     @LocalServerPort int port;
     @Autowired PlayerRepository players;
-    @Autowired OwnerRepository owners;
+    @Autowired OwnerFixtures owners;
     @Autowired PasswordEncoder passwords;
     @Autowired PlayerTelegramOnboarding onboarding;
     @Autowired PlayerTelegramOnboardingStore pending;

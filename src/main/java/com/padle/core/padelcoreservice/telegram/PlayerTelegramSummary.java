@@ -1,11 +1,13 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.identity.OwnerAccount;
+import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
+import com.padle.core.padelcoreservice.mapper.OwnerPrincipalMapper;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import org.springframework.http.HttpStatus;
 import java.util.Locale;
-import com.padle.core.padelcoreservice.repository.OwnerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
@@ -27,7 +29,8 @@ import java.util.stream.IntStream;
 public class PlayerTelegramSummary {
     private final PlayerTelegramProperties properties;
     private final PlayerTelegramApi api;
-    private final OwnerRepository owners;
+    private final OwnerAccounts owners;
+    private final OwnerPrincipalMapper principals;
     private final TournamentRepository tournaments;
     private final TelegramParticipationCoordinator participation;
     private final PlayerTelegramDelivery delivery;
@@ -58,7 +61,8 @@ public class PlayerTelegramSummary {
     private Optional<Owner> configuredOwner() {
         return Optional.ofNullable(properties.organizerChatId()).filter(id -> id > 0)
                 .flatMap(id -> Optional.ofNullable(properties.organizerOwnerId()))
-                .flatMap(owners::findById).filter(Owner::isSuperAdmin).filter(Owner::isEnabled);
+                .flatMap(owners::findById).filter(OwnerAccount::isSuperAdmin).filter(OwnerAccount::isActive)
+                .map(principals::toPrincipal);
     }
 
     private void send(Owner owner, String cycle) {
