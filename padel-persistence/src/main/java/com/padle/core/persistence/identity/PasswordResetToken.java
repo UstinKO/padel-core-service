@@ -1,6 +1,5 @@
-package com.padle.core.padelcoreservice.model;
+package com.padle.core.persistence.identity;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,9 +23,8 @@ public class PasswordResetToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "player_id", nullable = false)
-    private PlayerPadel player;  // Используем существующую модель PlayerPadel
+    @Column(name = "player_id", nullable = false)
+    private Long playerId;
 
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
@@ -42,7 +40,4 @@ public class PasswordResetToken {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiryDate);
-    }
 }

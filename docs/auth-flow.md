@@ -406,10 +406,10 @@ Client                          /api/auth/refresh
   │                    playerRepository.findByEmail()              │
   │                    ┌── не найден → return true (защита от перебора)
   │                    │                                           │
-  │                    tokenRepository.deleteByPlayer(player)  ← удаляем старые
+  │                    tokens.revokeForPlayer(playerId)
   │                    token = UUID.randomUUID()
   │                    expiryDate = now + 24ч
-  │                    PasswordResetToken.save()
+  │                    tokens.issue(playerId, token, expiryDate)
   │                                  │                             │
   │                    EmailService.sendPasswordResetEmail() ─────►│
   │                                  │  ссылка: /recuperar-password?token=UUID
@@ -433,9 +433,8 @@ Client                          /api/auth/refresh
   │                    пароли совпадают?
   │                    токен валиден и не использован?
   │                    player.passwordHash = BCrypt(newPassword)
-  │                    resetToken.used = true
   │                    playerRepository.save()
-  │                    tokenRepository.save()
+  │                    tokens.markUsed(tokenId)
   │                                  │
   │◄─── 200 { success: true } ───────┤
 ```
@@ -447,6 +446,7 @@ Client                          /api/auth/refresh
 - Старые токены удаляются при каждом новом запросе сброса.
 - При запросе несуществующего email — всегда возвращается `success: true` (защита от user enumeration).
 - После использования токен помечается `used = true`, повторное использование невозможно.
+- Порт `PasswordResetTokens` реализуется в `padel-persistence` и хранит связь по `player_id`. Подтверждение удерживает блокировку строки токена до конца общей транзакции записи нового пароля и отметки об использовании. [Граница хранения](modular-monolith/phase-6/identity-storage.md)
 
 ---
 

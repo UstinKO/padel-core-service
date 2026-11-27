@@ -443,8 +443,8 @@ service/
 └── (security) JwtService, CompositeUserDetailsService, CustomOAuth2UserService
 
 model/
-├── PlayerPadel, Owner, Club, Tournament, TournamentRegistration
-├── Match, Ranking, Payment, PasswordResetToken
+├── PlayerPadel, Owner, Tournament, TournamentRegistration
+├── Match, Ranking, Payment
 ├── TournamentKingOfCourt, KingOfCourtRound, KingOfCourtCourt,
 │   KingOfCourtPlayerStats, KingOfCourtMatchResult, CourtTeam
 ├── americano/ → AmericanoRound, AmericanoMatch, AmericanoPlayer, AmericanoTeam
@@ -471,7 +471,7 @@ repository/
 | `matches_db` | `Match` | Матчи bracket-турниров |
 | `ranking_db` | `Ranking` | Рейтинг игроков |
 | `payments_db` | `Payment` | Платежи (без реального платёжного шлюза — фиксируются вручную админом) |
-| `password_reset_tokens_db` | `PasswordResetToken` | Токены сброса пароля |
+| `password_reset_tokens_db` | `PasswordResetToken` в `padel-persistence` | Токены сброса пароля, связь по `player_id` |
 | `tournament_king_of_court_db` | `TournamentKingOfCourt` | KoC конфигурация |
 | `king_of_court_round_db` | `KingOfCourtRound` | Раунды KoC |
 | `king_of_court_court_db` | `KingOfCourtCourt` | Корты KoC |

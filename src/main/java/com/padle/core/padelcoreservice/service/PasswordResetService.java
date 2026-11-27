@@ -1,9 +1,8 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.identity.PasswordResetTokens;
 import com.padle.core.padelcoreservice.dto.PasswordResetConfirm;
-import com.padle.core.padelcoreservice.model.PasswordResetToken;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import com.padle.core.padelcoreservice.security.AccountDestination;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 @Transactional(readOnly = true)
 public class PasswordResetService {
     private final PlayerRepository playerRepository;
-    private final PasswordResetTokenRepository tokenRepository;
+    private final PasswordResetTokens tokens;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     @Value("${app.base-url}")
@@ -38,10 +37,9 @@ public class PasswordResetService {
     public boolean requestPasswordReset(String email, Optional<String> destination) {
         playerRepository.findByEmail(email).filter(PlayerPadel::isActivo)
                 .filter(player -> !player.isGuestAccount()).ifPresent(player -> {
-            tokenRepository.deleteByPlayer(player);
+            tokens.revokeForPlayer(player.getId());
             String token = UUID.randomUUID().toString();
-            tokenRepository.save(PasswordResetToken.builder().token(token).player(player)
-                    .expiryDate(LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS)).used(false).build());
+            tokens.issue(player.getId(), token, LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS));
             String url = baseUrl + "/recuperar-password?token=" + token
                     + destination.flatMap(AccountDestination::safe)
                     .map(value -> "&destination=" + URLEncoder.encode(value, StandardCharsets.UTF_8)).orElse("");
@@ -51,28 +49,32 @@ public class PasswordResetService {
     }
 
     public boolean validateToken(String token) {
-        return tokenRepository.findByToken(token).filter(this::usable).isPresent();
+        return tokens.findByToken(token).flatMap(this::eligiblePlayer).isPresent();
     }
 
     @Transactional
     public boolean resetPassword(PasswordResetConfirm request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) return false;
-        var token = tokenRepository.findForUpdateByToken(request.getToken()).filter(this::usable);
-        if (token.isEmpty()) return false;
-        var reset = token.orElseThrow();
-        var player = reset.getPlayer();
-        player.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        playerRepository.save(player);
-        reset.setUsed(true);
-        tokenRepository.save(reset);
-        return true;
+        return tokens.lockByToken(request.getToken()).flatMap(token -> eligiblePlayer(token).map(player -> {
+            player.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            playerRepository.save(player);
+            tokens.markUsed(token.id());
+            return true;
+        })).orElse(false);
     }
 
-    private boolean usable(PasswordResetToken token) { return !token.isUsed() && !token.isExpired()
-            && token.getPlayer().isActivo() && !token.getPlayer().isGuestAccount(); }
+    private Optional<PlayerPadel> eligiblePlayer(PasswordResetTokens.Token token) {
+        if (token.used() || LocalDateTime.now().isAfter(token.expiryDate())) {
+            return Optional.empty();
+        }
+        return playerRepository.findById(token.playerId()).filter(PlayerPadel::isActivo)
+                .filter(player -> !player.isGuestAccount());
+    }
 
     @Transactional
-    public void cleanExpiredTokens() { tokenRepository.deleteAllExpiredOrUsed(LocalDateTime.now()); }
+    public void cleanExpiredTokens() {
+        tokens.deleteExpiredOrUsed(LocalDateTime.now());
+    }
 
     public static String maskToken(String token) { return "***"; }
 }
