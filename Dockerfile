@@ -10,6 +10,7 @@ COPY padel-api-contract/pom.xml padel-api-contract/pom.xml
 COPY padel-bootstrap/pom.xml padel-bootstrap/pom.xml
 COPY padel-tournament-engines/pom.xml padel-tournament-engines/pom.xml
 COPY padel-application/pom.xml padel-application/pom.xml
+COPY padel-persistence/pom.xml padel-persistence/pom.xml
 RUN mvn dependency:go-offline -B
 
 COPY frontend ./frontend
@@ -17,6 +18,7 @@ COPY padel-api-contract ./padel-api-contract
 COPY padel-bootstrap ./padel-bootstrap
 COPY padel-tournament-engines ./padel-tournament-engines
 COPY padel-application ./padel-application
+COPY padel-persistence ./padel-persistence
 COPY src ./src
 RUN mvn clean package -DskipTests
 

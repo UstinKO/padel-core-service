@@ -2,8 +2,10 @@ package com.padle.core.padelcoreservice.marketing;
 
 import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.PaymentService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import jakarta.persistence.EntityManager;

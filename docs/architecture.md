@@ -264,13 +264,13 @@ hikari:
 ### Liquibase
 
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
-- Файлы: `src/main/resources/db/changelog/versions/vX.XX-<description>.yaml`
+- Файлы миграций находятся в `padel-persistence/src/main/resources/db/changelog/versions/`.
 - Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
 - Текущая версия: **v1.93**
 
 **Добавление новой миграции:**
 ```
-1. Создать файл: src/main/resources/db/changelog/versions/v1.56-<описание>.yaml
+1. Создать файл `padel-persistence/src/main/resources/db/changelog/versions/v1.XX-<описание>.yaml` со следующим номером.
 2. Добавить в конец changelog-master.yaml:
    - include:
        file: versions/v1.56-<описание>.yaml
