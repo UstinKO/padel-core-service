@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service.conduct;
 
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore.Entry;
 import lombok.RequiredArgsConstructor;

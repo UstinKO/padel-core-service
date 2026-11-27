@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.mapper.americano;
 
 import com.padle.core.application.roundrobin.RoundRobinFinishEvent;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.application.tournament.TournamentStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

@@ -14,7 +14,7 @@ import com.padle.core.padelcoreservice.mapper.AdminCalendarMapper;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;

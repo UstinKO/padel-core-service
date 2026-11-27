@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.repository;
 
 import com.padle.core.padelcoreservice.dto.PublicCatalogFilter;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.service.calendar.DeclaredEventLevel;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentVisibility;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 

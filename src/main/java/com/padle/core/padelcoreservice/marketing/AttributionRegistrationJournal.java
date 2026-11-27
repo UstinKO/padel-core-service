@@ -1,11 +1,11 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.application.registration.RegistrationAttributionSnapshots;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -16,7 +16,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class AttributionRegistrationJournal {
-    private final JdbcTemplate jdbc;
+    private final RegistrationAttributionSnapshots snapshots;
     private final InternalAttributionService context;
     private final ObjectProvider<PlatformTransactionManager> transactions;
 
@@ -69,21 +68,6 @@ public class AttributionRegistrationJournal {
 
     private void snapshot(Long id, Long actor, UUID visitor, Instant at) {
         context.bind(visitor, actor);
-        jdbc.update("""
-                UPDATE marketing_registrations_db mr SET
-                    attribution_visitor_id = v.id,
-                    acquisition_player_id = a.player_id,
-                    acquisition_touch = CASE WHEN r.player_id = ? THEN a.first_touch END,
-                    registration_touch = CASE WHEN (v.last_touch::jsonb->>'capturedAt')::timestamptz
-                        BETWEEN ?::timestamptz - INTERVAL '90 days' AND ?::timestamptz THEN v.last_touch END,
-                    attribution_recorded_at = ?,
-                    attribution_expires_at = COALESCE(a.expires_at, v.expires_at)
-                FROM tournament_registrations_db r
-                LEFT JOIN marketing_attribution_visitors_db v ON v.id = ? AND v.consent
-                    AND v.expires_at >= CURRENT_TIMESTAMP AND v.bound_player_id = ?
-                LEFT JOIN marketing_acquisition_db a ON a.player_id = r.player_id
-                    AND a.player_id = ? AND a.expires_at >= CURRENT_TIMESTAMP
-                WHERE mr.registration_id = r.id AND r.id = ? AND mr.attribution_recorded_at IS NULL
-                """, actor, Timestamp.from(at), Timestamp.from(at), Timestamp.from(at), visitor, actor, actor, id);
+        snapshots.record(id, actor, visitor, at);
     }
 }

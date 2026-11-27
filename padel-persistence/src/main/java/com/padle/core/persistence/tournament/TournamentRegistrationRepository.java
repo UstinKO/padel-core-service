@@ -1,8 +1,6 @@
-package com.padle.core.padelcoreservice.repository;
+package com.padle.core.persistence.tournament;
 
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.application.registration.RegistrationStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

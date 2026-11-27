@@ -5,16 +5,16 @@ import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.tournament.Modalidad;
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.persistence.identity.PlayerRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
-import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
+import com.padle.core.application.registration.RegistrationCancellationHistory;
 import static org.mockito.Mockito.mock;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -68,7 +68,7 @@ class DoubleTournamentRegistrationNewPartnerInstantTest {
     @Mock private PairTermsService pairTerms;
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(
-            mock(CancellationHistoryRepository.class),null,null,null,null);
+            mock(RegistrationCancellationHistory.class),null,null,null,null);
 
     @InjectMocks private DoubleTournamentRegistrationService service;
 

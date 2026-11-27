@@ -10,7 +10,7 @@ import com.padle.core.padelcoreservice.dto.PlayerSummaryDto;
 import com.padle.core.padelcoreservice.mapper.PlayerSummaryMapper;
 import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.persistence.identity.PlayerRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

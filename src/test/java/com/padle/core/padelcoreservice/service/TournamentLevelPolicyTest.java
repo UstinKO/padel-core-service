@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.TournamentType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

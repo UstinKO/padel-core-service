@@ -1,7 +1,6 @@
-package com.padle.core.padelcoreservice.repository;
+package com.padle.core.persistence.tournament;
 
-import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
+import com.padle.core.application.registration.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

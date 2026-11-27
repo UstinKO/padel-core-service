@@ -7,7 +7,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
 import com.padle.core.padelcoreservice.mapper.americano.AmericanoMapper;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
-import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
+import com.padle.core.application.registration.RegistrationCancellationHistory;
 import static org.mockito.Mockito.mock;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,7 +53,7 @@ class AmericanoServiceByePlayersTest {
 
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(
-            mock(CancellationHistoryRepository.class),null,null,null,null);
+            mock(RegistrationCancellationHistory.class),null,null,null,null);
 
     @InjectMocks private AmericanoService americanoService;
 

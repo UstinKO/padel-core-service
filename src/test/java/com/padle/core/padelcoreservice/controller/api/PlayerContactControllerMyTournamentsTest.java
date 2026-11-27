@@ -4,7 +4,7 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.application.registration.RegistrationStatus;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
