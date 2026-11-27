@@ -89,7 +89,7 @@ class PlayerTelegramBrowserTest {
         try {
             var process = new ProcessBuilder("node", "tests/browser/telegram-disclosure.browser.mjs", input.toString())
                     .redirectErrorStream(true).redirectOutput(output.resolve("disclosure-browser.log").toFile()).start();
-            boolean completed = process.waitFor(240, TimeUnit.SECONDS);
+            boolean completed = process.waitFor(420, TimeUnit.SECONDS);
             if (!completed) process.destroyForcibly();
             assertThat(completed).as("Проверка сворачивания блока оплат завершилась вовремя").isTrue();
             assertThat(process.exitValue()).as(Files.readString(output.resolve("disclosure-browser.log"))).isZero();

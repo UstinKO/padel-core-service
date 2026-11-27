@@ -28,8 +28,10 @@ const isOpen = () => disclosure.evaluate(el => el.open);
 const ready = () => page.waitForFunction(() => document.querySelector('[data-tg-admin]')?.dataset.busy === 'false');
 const record = name => { checks.push(name); console.log('PASS ' + name); };
 const visit = async (id, language) => {
+    const summaryRead = page.waitForResponse(r => new URL(r.url()).pathname === '/api/admin/tournaments/' + id + '/telegram');
     const response = await page.goto(fixture.baseUrl + '/admin/tournaments/' + id + '/payments?lang=' + language);
     assert.equal(response.status(), 200);
+    assert.equal((await summaryRead).status(), 200, 'Сводка Telegram должна успешно загрузиться');
     await ready();
 };
 const formData = () => page.locator('#paymentForm').evaluate(form => [...new FormData(form)]);
@@ -42,6 +44,8 @@ async function fits(width) {
 }
 try {
     for (const account of fixture.accounts) {
+        // Все браузерные сценарии делят один IP; новый блок начинается после полного окна лимитов API и входа.
+        await new Promise(resolve => setTimeout(resolve, 61_000));
         await context.clearCookies();
         await page.goto(fixture.baseUrl + '/login');
         const rejectCookies = page.locator('#cookieConsentBanner .cookie-btn-reject');
