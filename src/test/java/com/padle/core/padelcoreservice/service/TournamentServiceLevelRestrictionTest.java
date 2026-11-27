@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
@@ -62,7 +63,7 @@ class TournamentServiceLevelRestrictionTest {
     @Mock private TournamentRegistrationRepository registrationRepository;
     @Mock private TournamentMapper tournamentMapper;
     @Mock private TournamentRegistrationMapper registrationMapper;
-    @Mock private ClubService clubService;
+    @Mock private InternalClubReadPort clubReads;
     @Mock private PlayerRepository playerRepository;
     @Mock private TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     @Mock private EmailService emailService;

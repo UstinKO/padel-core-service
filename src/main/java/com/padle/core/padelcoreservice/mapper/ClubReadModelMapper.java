@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.mapper;
 
+import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.PublicClub;
 import com.padle.core.padelcoreservice.model.Club;
 import org.mapstruct.Mapper;
@@ -14,4 +15,10 @@ public interface ClubReadModelMapper {
     @Mapping(target = "description", source = "descripcion")
     @Mapping(target = "mapUrl", source = "mapaUrl")
     PublicClub toReadModel(Club club);
+
+    @Mapping(target = "name", source = "nombre")
+    @Mapping(target = "address", source = "direccion")
+    @Mapping(target = "formattedAddress", source = "direccionCompleta")
+    @Mapping(target = "active", source = "isActive")
+    ClubDetails toDetails(Club club);
 }

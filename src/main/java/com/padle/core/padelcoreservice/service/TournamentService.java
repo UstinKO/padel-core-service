@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.clubs.ClubDetails;
+import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.service.contact.OrganizerContacts;
 import com.padle.core.padelcoreservice.exception.OrganizerContactException;
 
@@ -16,7 +18,6 @@ import com.padle.core.padelcoreservice.util.AfterCommit;
 import com.padle.core.padelcoreservice.annotation.Counted;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.annotation.TrackErrors;
-import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
@@ -82,7 +83,7 @@ public class TournamentService {
     private final TournamentRegistrationRepository registrationRepository;
     private final TournamentMapper tournamentMapper;
     private final TournamentRegistrationMapper registrationMapper;
-    private final ClubService clubService;
+    private final InternalClubReadPort clubReads;
     private final PlayerRepository playerRepository;
     private final TournamentKingOfCourtRepository tournamentKingOfCourtRepository;
     private final EmailService emailService;
@@ -1201,10 +1202,10 @@ public class TournamentService {
     private TournamentDto mapToDtoWithDetails(Tournament tournament) {
         TournamentDto dto = tournamentMapper.toDto(tournament);
 
-        clubService.getClubById(tournament.getClubId())
+        clubReads.findById(tournament.getClubId())
                 .ifPresent(club -> {
-                    dto.setClubNombre(club.getNombre());
-                    dto.setClubDireccion(club.getDireccionCompleta());
+                    dto.setClubNombre(club.name());
+                    dto.setClubDireccion(club.formattedAddress());
                 });
 
         // ИСПРАВЛЕНО: считаем только CONFIRMED регистрации для основного состава
@@ -1259,7 +1260,7 @@ public class TournamentService {
                 .map(Tournament::getClubId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long, ClubDto> clubsById = clubService.findClubsByIds(clubIds);
+        Map<Long, ClubDetails> clubsById = clubReads.findByIds(clubIds);
 
         Map<Long, Map<RegistrationStatus, Long>> singlesCounts = new HashMap<>();
         for (Object[] row : registrationRepository.countStatusesByTournamentIds(
@@ -1467,11 +1468,11 @@ public class TournamentService {
         }
 
         tournamentAccessService.assertCanManageAtClub(owner, tournament, clubId);
-        var club = clubService.getClubById(clubId)
-                .filter(candidate -> Boolean.TRUE.equals(candidate.getIsActive()))
+        var club = clubReads.findById(clubId)
+                .filter(ClubDetails::active)
                 .orElseThrow(() -> new InvalidStateException(messageSource.getMessage(
                         "admin.tournaments.form.field.club.select", null, LocaleContextHolder.getLocale())));
-        tournament.setClubId(club.getId());
+        tournament.setClubId(club.id());
     }
 
     private void updateTournamentFields(Tournament existing, TournamentDto dto) {
@@ -1561,17 +1562,17 @@ public class TournamentService {
 
     private TournamentDto mapToDtoWithBatchedData(
             Tournament tournament,
-            Map<Long, ClubDto> clubsById,
+            Map<Long, ClubDetails> clubsById,
             Map<Long, Map<RegistrationStatus, Long>> singlesCounts,
             Map<Long, Long> confirmedPairsById,
             Map<Long, Long> waitlistPairsById) {
 
         TournamentDto dto = tournamentMapper.toDto(tournament);
 
-        ClubDto club = clubsById.get(tournament.getClubId());
+        ClubDetails club = clubsById.get(tournament.getClubId());
         if (club != null) {
-            dto.setClubNombre(club.getNombre());
-            dto.setClubDireccion(club.getDireccionCompleta());
+            dto.setClubNombre(club.name());
+            dto.setClubDireccion(club.formattedAddress());
         }
 
         long confirmedSpots;
@@ -1809,8 +1810,8 @@ public class TournamentService {
     }
 
     private String resolveClubName(Long clubId) {
-        return clubService.getClubById(clubId)
-                .map(ClubDto::getNombre)
+        return clubReads.findById(clubId)
+                .map(ClubDetails::name)
                 .orElseGet(() -> {
                     log.warn("Club not found for id: {}", clubId);
                     return "Club";
