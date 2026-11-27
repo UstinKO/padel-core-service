@@ -53,6 +53,16 @@ try {
         const root=page.locator('[data-telegram-connect]');
         assert.equal(await root.getAttribute('data-state'),phase==='pending'?'READY':'CONNECTED');
         assert.equal(mutations,0);
+        const requestId = new URL(page.url()).searchParams.get('request');
+        for (const language of [scenario.language === 'ru' ? 'en' : 'ru',scenario.language]) {
+            await Promise.all([
+                page.waitForURL(url => url.searchParams.get('lang') === language && url.searchParams.get('request') === requestId),
+                page.locator('.tg-connect-languages').getByRole('link',{name:language.toUpperCase(),exact:true}).click()
+            ]);
+            assert.equal(await page.locator('h1').innerText(),title[language]);
+            assert.equal(await root.getAttribute('data-state'),phase==='pending'?'READY':'CONNECTED');
+            assert.equal(mutations,0);
+        }
         assert.equal(await page.locator('[data-player-name]').innerText().then(name=>name.startsWith('QA Telegram')),true);
         if (phase==='pending') {
             await page.screenshot({path:output+'/'+scenario.language+'-'+scenario.width+'-ready.png',fullPage:true});
@@ -71,7 +81,7 @@ try {
         assert.equal(requests.some(url=>url.includes(secret)),false);
         assert.equal((await page.request.get(fixture.baseUrl+'/telegram/connect')).headers()['referrer-policy'],'no-referrer');
         await page.screenshot({path:output+'/'+scenario.language+'-'+scenario.width+'-'+phase+'.png',fullPage:true});
-        checks.push(scenario.language+' '+scenario.width+': '+phase+', clean login destination, one explicit confirmation');
+        checks.push(scenario.language+' '+scenario.width+': '+phase+', locale switch preserves request, clean login destination, one explicit confirmation');
         await ctx.close();
     }
     if (phase==='pending') {

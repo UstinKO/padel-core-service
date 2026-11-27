@@ -7,7 +7,8 @@
     const t = key => strings[key] || key;
     let busy = false, state = root.dataset.state, botUrl = root.dataset.botUrl, generation = 0;
     const endpoint = '/api/players/me/telegram/onboarding?request=' + encodeURIComponent(root.dataset.requestId || '');
-    el('login').href = '/login?destination=' + encodeURIComponent(window.location.pathname + window.location.search);
+    const contextPath = '/telegram/connect?request=' + encodeURIComponent(root.dataset.requestId || '');
+    el('login').href = '/login?destination=' + encodeURIComponent(contextPath);
     const bot = value => {
         try {
             const url = new URL(value);
@@ -23,6 +24,7 @@
     const render = () => {
         root.dataset.state = state;
         root.setAttribute('aria-busy',String(busy));
+        root.querySelectorAll('.tg-connect-languages a').forEach(link => link.setAttribute('aria-disabled',String(busy)));
         el('state-message').textContent = t(state === 'INVALID' ? 'invalid' : state);
         el('account').hidden = !['READY','PENDING','CONNECTED'].includes(state);
         el('consent').hidden = state !== 'READY';
@@ -68,6 +70,9 @@
     };
     el('confirm').addEventListener('click', () => { if (state === 'READY') perform(true); });
     el('refresh').addEventListener('click', () => perform(false));
+    root.querySelectorAll('.tg-connect-languages a').forEach(link => link.addEventListener('click',event => {
+        if (busy) event.preventDefault();
+    }));
     render();
     const openFragment = () => {
         if (!window.location.hash) return;

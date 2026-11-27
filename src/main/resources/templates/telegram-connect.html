@@ -13,7 +13,7 @@
 <main class="tg-connect" data-telegram-connect th:attr="data-state=${link.state},data-bot-url=${link.botUrl},data-request-id=${requestId}">
     <a class="tg-connect-brand" href="/">1‑Padel</a>
     <nav class="tg-connect-languages" th:aria-label="#{telegram.connect.language}">
-        <a th:each="language : ${#strings.arraySplit('es,ru,en',',')}" th:href="@{/telegram/connect(lang=${language})}"
+        <a th:each="language : ${#strings.arraySplit('es,ru,en',',')}" th:href="@{/telegram/connect(lang=${language},request=${#strings.isEmpty(requestId) ? null : requestId})}"
            th:text="${#strings.toUpperCase(language)}" th:attr="aria-current=${#locale.language == language ? 'true' : null}"></a>
     </nav>
     <h1 th:text="#{telegram.connect.title}"></h1>

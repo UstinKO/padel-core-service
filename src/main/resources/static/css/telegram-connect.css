@@ -3,6 +3,7 @@
 .tg-connect-brand{font-size:1.5rem;font-weight:700;color:var(--primary-color,#ff6b35);text-decoration:none}
 .tg-connect-languages{display:flex;gap:.75rem;justify-content:flex-end;margin:.5rem 0 1.5rem}
 .tg-connect-languages a[aria-current=true]{font-weight:700;text-decoration:underline}
+.tg-connect-languages a[aria-disabled=true]{opacity:.5;pointer-events:none}
 .tg-connect h1{font-size:1.8rem;line-height:1.2;margin:1rem 0}.tg-connect p{margin:.8rem 0}
 .tg-connect [data-account]{background:#fff4ed;border-left:3px solid var(--primary-color,#ff6b35);padding:.6rem 1rem;margin:1.25rem 0;border-radius:6px}
 .tg-connect [data-account] p{margin:0 0 .3rem}.tg-connect [data-player-name]{font-size:1.15rem}
