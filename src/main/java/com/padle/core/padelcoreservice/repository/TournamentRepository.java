@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.repository;
 
+import com.padle.core.application.clubs.ClubTournamentUsage;
 import com.padle.core.padelcoreservice.model.Tournament;
 import com.padle.core.padelcoreservice.model.enums.GenderFormat;
 import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
@@ -17,7 +18,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TournamentRepository extends JpaRepository<Tournament, Long>, JpaSpecificationExecutor<Tournament> {
+public interface TournamentRepository extends JpaRepository<Tournament, Long>, JpaSpecificationExecutor<Tournament>,
+        ClubTournamentUsage {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Tournament t WHERE t.id = :id")
@@ -25,6 +27,7 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
 
     List<Tournament> findByClubId(Long clubId);
 
+    @Override
     boolean existsByClubId(Long clubId);
 
     List<Tournament> findByEstado(TournamentStatus estado);

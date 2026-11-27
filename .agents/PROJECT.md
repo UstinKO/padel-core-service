@@ -64,7 +64,7 @@ docker compose up -d
 
 ---
 
-Принята [фаза 6 / #1051](../docs/modular-monolith/phase-6/README.md). Порядок выделения хранения закреплён в ADR-0007. В #1439 публичная главная использует `PublicClubQuery.countActive`. В #1440 каталог, кабинет, регистрация и уведомления читают клубы через [InternalClubReadPort](../docs/modular-monolith/phase-6/internal-club-reads.md). Клубные entity и repository переходят в persistence в #1442 после подготовки потребителей.
+Принята [фаза 6 / #1051](../docs/modular-monolith/phase-6/README.md). Порядок выделения хранения закреплён в ADR-0007. В #1439 публичная главная использует `PublicClubQuery.countActive`. В #1440 каталог, кабинет, регистрация и уведомления читают клубы через [InternalClubReadPort](../docs/modular-monolith/phase-6/internal-club-reads.md). В #1441 клубные фасады используют [порты административного чтения и записи](../docs/modular-monolith/phase-6/admin-club-storage.md). Клубные entity и repository переходят в persistence в #1442 после подготовки потребителей.
 
 ## Navigation Map (URL → Template → Controller)
 
