@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<button th:fragment="help(topic)" type="button" class="action-help" data-action-help
+        aria-haspopup="dialog" aria-expanded="false"
+        th:attr="aria-label=${#messages.msg('action_help.open') + ': ' + #messages.msg('action_help.' + topic + '.title')},
+                 data-help-topic=${topic},
+                 data-help-title=${#messages.msg('action_help.' + topic + '.title')},
+                 data-help-text=${#messages.msg('action_help.' + topic + '.text')},
+                 data-help-close=#{action_help.close}">?</button>
+</body></html>
