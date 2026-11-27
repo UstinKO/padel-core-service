@@ -158,6 +158,7 @@ public class SoloRosterService {
             case PAIR -> tournaments.previewPairStatus(prepared.event(), pairRows(prepared)).name();
         };
         boolean override = command.action() != Action.REMOVE && existing.isEmpty()
+                && prepared.event().getCategoriaNivel() != Nivel.TODOS
                 && people.stream().anyMatch(person -> TournamentLevelPolicy.evaluate(prepared.event().getTipo(),
                 prepared.event().getCategoriaNivel(), Nivel.valueOf(person.level())).verdict() != TournamentLevelPolicy.Verdict.ALLOWED);
         return new Preview(state(prepared), people, status, override, existing.map(TournamentRegistration::getId).orElse(null),
