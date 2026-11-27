@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.registration.RegistrationStatus;
 
 import java.util.LinkedHashMap;
 import java.util.List;

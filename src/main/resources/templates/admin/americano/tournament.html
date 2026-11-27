@@ -81,8 +81,8 @@
 
         /* Ranking table */
         .ranking-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
-        .ranking-header{padding:1rem 1.5rem;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between}
-        .ranking-header h3{margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem}
+        .ranking-header{padding:1rem 1.5rem;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+        .ranking-header h3{margin:0;font-size:1rem;font-weight:600;display:flex;align-items:center;gap:.5rem;color:#fff}
         .table{width:100%;border-collapse:collapse;font-size:.875rem}
         .table thead tr{background:#f8fafc}
         .table th{padding:.65rem 1rem;text-align:left;font-weight:600;color:#64748b;border-bottom:2px solid #e2e8f0;white-space:nowrap;font-size:.8rem}
@@ -138,7 +138,7 @@
     <link rel="stylesheet" th:href="@{/css/additional-points.css}">
     <link rel="stylesheet" th:href="@{/css/individual-ranking.css}">
 </head>
-<body>
+<body class="individual-americano-help">
 <header th:replace="~{fragments/admin-header :: header(#{admin.americano.title})}"></header>
 
 <main class="admin-main" th:attr="data-preferences-event-id=${tournament.id}">
@@ -255,7 +255,7 @@
                                         style="background:#FF6B35; cursor:pointer; border:none;">
                                     <i class="fas fa-bullseye"></i> <span class="current-limit" th:text="${round.pointsPerMatch}">32</span> pts
                                     <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
-                                </button>
+                                </button><button th:replace="~{fragments/action-help :: help('americano-points')}"></button>
                                 <div class="points-menu" th:id="'pointsMenu-' + ${iterStat.index}"
                                      style="display:none; position:absolute; right:0; top:100%; margin-top:0.5rem; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:100; min-width:140px;">
                                     <div style="padding:0.5rem 0;">
@@ -288,7 +288,7 @@
                             <span th:text="#{admin.americano.label.bye_players}">Descansan en esta ronda</span>
                             <span style="font-weight:400;color:#b45309;font-size:.8rem"
                                   th:text="'(' + ${#lists.size(round.byePlayerNames)} + ' jugador(es))'"></span>
-                        </div>
+                        </div><button th:replace="~{fragments/action-help :: help('americano-rest')}"></button>
                         <div class="bye-players">
                         <span th:each="name : ${round.byePlayerNames}"
                               class="bye-tag"
@@ -336,7 +336,7 @@
                                                 onclick="showEditScore(this)">
                                             <i class="fas fa-edit"></i>
                                             <span th:text="#{admin.americano.btn.edit_score}">editar</span>
-                                        </button>
+                                        </button><button th:replace="~{fragments/action-help :: help('americano-edit')}"></button>
                                     </div>
                                     <!-- Форма ввода результата -->
                                     <div th:unless="${match.isCompleted}" class="score-input-form"
@@ -358,12 +358,12 @@
                                                 onclick="submitScore(this)"
                                                 th:text="#{admin.americano.btn.save_result}">
                                             Guardar
-                                        </button>
+                                        </button><button th:replace="~{fragments/action-help :: help('americano-score')}"></button>
                                     </div>
                                     <button th:unless="${tournament.estado.name() == 'FINALIZADO'}"
                                             type="button" class="btn btn-outline btn-sm" data-open-points
                                             th:attr="data-round-number=${round.roundNumber}"
-                                            th:text="#{additional.points.action}">± Puntos</button>
+                                            th:text="#{additional.points.action}">± Puntos</button><th:block th:unless="${tournament.estado.name() == 'FINALIZADO'}"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></th:block>
                                     <!-- Матч ещё не начат -->
                                     <div th:if="${match.status.name() == 'PENDING'}">
                                         <span class="vs-badge" style="background:#94a3b8">-</span>
@@ -385,9 +385,9 @@
         <!--/* ══════════════ ТАБЛИЦА РЕЙТИНГА ══════════════ */-->
         <div class="ranking-card individual-ranking-card" style="margin-top:2rem">
             <button th:if="${tournament.estado.name() == 'FINALIZADO'}" type="button" class="btn btn-outline"
-                    data-open-points th:text="#{additional.points.edit_results}">Editar resultados</button>
+                    data-open-points th:text="#{additional.points.edit_results}">Editar resultados</button><th:block th:if="${tournament.estado.name() == 'FINALIZADO'}"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></th:block>
             <div class="ranking-header">
-                <h3><i class="fas fa-chart-line"></i> <span th:text="#{admin.americano.section.ranking}">Clasificación</span></h3>
+                <h3><i class="fas fa-chart-line"></i> <span th:text="#{admin.americano.section.ranking}">Clasificación</span><button th:replace="~{fragments/action-help :: help('americano-ranking')}"></button></h3>
                 <div style="display:flex;gap:.5rem;align-items:center">
         <span style="font-size:.8rem;opacity:.75"
               th:if="${ranking != null}"
@@ -434,12 +434,13 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-trophy"></i>
                     <span th:text="#{admin.americano.btn.finish_tournament}">Finalizar torneo</span>
-                </button>
+                </button><button th:replace="~{fragments/action-help :: help('americano-finish')}"></button>
             </form>
         </div>
 
     </div>
 </main>
+<div hidden id="individual-help-copies" th:attr="data-round-start-label=#{admin.americano.btn.start_round},data-round-complete-label=#{admin.americano.btn.complete_round}"><template data-individual-help-copy="americano-round-start"><button th:replace="~{fragments/action-help :: help('americano-round-start')}"></button></template><template data-individual-help-copy="americano-round-complete"><button th:replace="~{fragments/action-help :: help('americano-round-complete')}"></button></template><template data-individual-help-copy="americano-score"><button th:replace="~{fragments/action-help :: help('americano-score')}"></button></template><template data-individual-help-copy="americano-edit"><button th:replace="~{fragments/action-help :: help('americano-edit')}"></button></template><template data-individual-help-copy="individual-additional"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></template></div>
 
 <script th:src="@{/js/csrf.js}"></script>
 <script th:src="@{/js/tournament-conduct.js}"></script>
@@ -500,6 +501,10 @@
     function changeRound(delta) { const n = current + delta; if (n >= 0 && n < total) showRound(n); }
     function switchRound(btn)   { showRound(parseInt(btn.dataset.idx)); }
 
+    function individualHelp(topic) {
+        return document.querySelector(`[data-individual-help-copy="${topic}"]`)?.innerHTML || '';
+    }
+
     function renderRoundControls(roundEl) {
         const ctrl = document.getElementById('roundControls');
         if (!ctrl || !roundEl) return;
@@ -510,15 +515,17 @@
         if (status === 'PENDING') {
             const btn = document.createElement('button');
             btn.className = 'round-control-btn';
-            btn.innerHTML = '<i class="fas fa-play"></i> Iniciar Ronda';
+            btn.textContent = document.getElementById('individual-help-copies').dataset.roundStartLabel;
             btn.onclick = () => startRound(roundId);
             ctrl.appendChild(btn);
+            ctrl.insertAdjacentHTML('beforeend', individualHelp(status === 'PENDING' ? 'americano-round-start' : 'americano-round-complete'));
         } else if (status === 'IN_PROGRESS') {
             const btn = document.createElement('button');
             btn.className = 'round-control-btn primary';
-            //btn.innerHTML = '<i class="fas fa-flag-checkered"></i> Finalizar Ronda';
+            btn.textContent = document.getElementById('individual-help-copies').dataset.roundCompleteLabel;
             btn.onclick = () => completeRound(roundId);
             ctrl.appendChild(btn);
+            ctrl.insertAdjacentHTML('beforeend', individualHelp(status === 'PENDING' ? 'americano-round-start' : 'americano-round-complete'));
         }
     }
 
@@ -647,8 +654,8 @@
                     data-points="${limit}"
                     onclick="showEditScore(this)">
                 <i class="fas fa-edit"></i> editar
-            </button>
-            ${AMERICANO_FINISHED ? '' : tournamentPoints.action('', match.roundNumber)}
+            </button>${individualHelp('americano-edit')}
+            ${AMERICANO_FINISHED ? '' : tournamentPoints.action('', match.roundNumber) + individualHelp('individual-additional')}
         </div>
     `;
 
@@ -724,7 +731,7 @@
                 <input type="number" class="score-input" id="s2-${uniqueId}" value="${t2}" min="0" max="${limit}">
             </div>
             <span class="score-hint">Suma = ${limit} pts</span>
-            <button class="submit-score-btn" data-match-id="${matchId}" data-points="${limit}">Guardar</button>
+            <button class="submit-score-btn" data-match-id="${matchId}" data-points="${limit}">Guardar</button>${individualHelp('americano-score')}
         </div>`;
 
         // Назначаем обработчик на новую кнопку

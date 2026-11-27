@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Review;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.Button;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.Message;
 import lombok.RequiredArgsConstructor;

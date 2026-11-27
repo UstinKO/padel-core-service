@@ -1,14 +1,16 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.exception.SoloRosterException;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.Payment;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.Payment;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.*;
-import com.padle.core.padelcoreservice.repository.PaymentRepository;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.persistence.tournament.PaymentRepository;
 import com.padle.core.padelcoreservice.repository.MatchRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.repository.americano.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

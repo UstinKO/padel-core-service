@@ -9,7 +9,7 @@ import com.padle.core.padelcoreservice.dto.americano.AmericanoTeamDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.dto.americano.RoundRobinStandingDto;
 import com.padle.core.padelcoreservice.dto.americano.RoundRobinAdditionalMatchDto;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import org.junit.jupiter.params.ParameterizedTest;

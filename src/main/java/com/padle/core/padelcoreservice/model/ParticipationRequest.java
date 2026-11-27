@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

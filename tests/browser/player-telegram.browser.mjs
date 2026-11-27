@@ -75,7 +75,7 @@ try {
         assert.equal(await page.locator('html').getAttribute('lang'), language);
         assert.equal((await prompt.locator('[data-tg-connect]').textContent()).trim(), labels[language].connect);
         assert.equal((await prompt.locator('[data-tg-whatsapp]').textContent()).trim(), labels[language].whatsapp);
-        assert.equal(await prompt.locator('button:visible').count(), 2);
+        assert.equal(await prompt.locator('button:visible').count(), 3);
         for (const width of [1440, 390, 320]) {
             await page.setViewportSize({ width, height: 1100 });
             await prompt.scrollIntoViewIfNeeded();

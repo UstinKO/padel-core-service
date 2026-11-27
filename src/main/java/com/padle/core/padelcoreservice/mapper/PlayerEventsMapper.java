@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.PlayerEvents.Event;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

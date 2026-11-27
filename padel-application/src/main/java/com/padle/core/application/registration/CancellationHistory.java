@@ -1,4 +1,4 @@
-package com.padle.core.padelcoreservice.dto;
+package com.padle.core.application.registration;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

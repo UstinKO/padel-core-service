@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.receipts.ReceiptFiles;
 import com.padle.core.padelcoreservice.receipts.ReceiptIntake;
 import com.padle.core.padelcoreservice.receipts.ReceiptRegistrations;

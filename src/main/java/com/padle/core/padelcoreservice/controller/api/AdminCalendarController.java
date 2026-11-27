@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.dto.calendar.AdminCalendarMonth;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.service.calendar.AdminCalendarService;
 import com.padle.core.padelcoreservice.service.calendar.EventSchedule;
 import lombok.RequiredArgsConstructor;

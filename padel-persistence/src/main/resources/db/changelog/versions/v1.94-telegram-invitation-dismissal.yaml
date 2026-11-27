@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.94-telegram-invitation-dismissal
+      author: codex
+      changes:
+        - addColumn:
+            tableName: player_contact_preferences
+            columns:
+              - column:
+                  name: telegram_invitation_dismissed
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
