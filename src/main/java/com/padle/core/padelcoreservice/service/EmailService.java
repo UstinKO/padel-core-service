@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.padelcoreservice.util.TournamentLevelText;
+
 import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.annotation.MetricTag;
 import com.padle.core.padelcoreservice.annotation.Timed;
@@ -121,6 +123,7 @@ public class EmailService {
             String completionUrl,
             int expiryHours,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("NEW_PARTNER_INVITATION");
 
@@ -208,6 +211,7 @@ public class EmailService {
             String clubName,
             String tournamentUrl,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("WAITLIST_AUTO_CONFIRM");
 
@@ -245,6 +249,7 @@ public class EmailService {
     @Async
     public void sendParticipationRequestEmail(String to, String participant, String tournamentName,
                                               java.util.UUID requestId, boolean delegated, Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
         try {
             Context context = createEmailContext(locale);
             context.setVariable("participant", participant);
@@ -271,6 +276,7 @@ public class EmailService {
             String tournamentName,
             Long tournamentId,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("NO_SPOTS_LEFT");
 
@@ -317,6 +323,7 @@ public class EmailService {
             String clubName,
             String cancellationDeadline,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("REGISTRATION_CONFIRMATION");
 
@@ -407,6 +414,7 @@ public class EmailService {
             String clubName,
             int waitlistPosition,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("WAITLIST_NOTIFICATION");
 
@@ -457,6 +465,7 @@ public class EmailService {
             String cancellationDeadline,
             TournamentType tournamentType,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("TOURNAMENT_CONFIRMATION");
 
@@ -497,7 +506,7 @@ public class EmailService {
                                    boolean waitlist, Locale locale) {
         Context context = createEmailContext(locale);
         context.setVariable("playerName", playerName);
-        context.setVariable("tournamentName", offer.eventName());
+        context.setVariable("tournamentName", TournamentLevelText.eventName(offer.eventName(), messageSource, locale));
         context.setVariable("tournamentDate", offer.startsAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         context.setVariable("tournamentTime", offer.startsAt().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         context.setVariable("clubName", clubName);
@@ -511,6 +520,7 @@ public class EmailService {
     public void sendPairCancellationEmail(String to, String playerName, String tournamentName,
                                           String tournamentDate, String tournamentTime, String clubName,
                                           PairTermsService.Cancellation quote, Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
         Context context = createEmailContext(locale);
         context.setVariable("playerName", playerName);
         context.setVariable("tournamentName", tournamentName);
@@ -527,6 +537,7 @@ public class EmailService {
     public void sendPartnerReplacedEmail(String to, PairReplacementNoticeService.Notice notice, Locale locale) {
         Context context = createEmailContext(locale);
         context.setVariable("notice", notice);
+        context.setVariable("tournamentName", TournamentLevelText.eventName(notice.tournamentName(), messageSource, locale));
         sendPairPolicyEmail(to, "PAIR_PARTNER_REPLACED", "email.partner_replaced.subject", notice.tournamentName(),
                 "email/partner-replaced", context);
     }
@@ -534,6 +545,7 @@ public class EmailService {
     @Async
     public void sendGuestPartnerNotice(String to, String partnerName, String eventName,
                                        GuestPartnerNotice.Kind kind, Locale locale) {
+        eventName = TournamentLevelText.eventName(eventName, messageSource, locale);
         Context context = createEmailContext(locale);
         context.setVariable("eventName", eventName);
         context.setVariable("partnerName", partnerName);
@@ -544,6 +556,7 @@ public class EmailService {
 
     private void sendPairPolicyEmail(String to, String type, String subjectKey, String tournamentName,
                                      String template, Context context) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, context.getLocale());
         emailMetricsService.recordEmailAttempt(type);
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
             emailMetricsService.recordEmailRejected(type, "DAILY_LIMIT");
@@ -573,6 +586,7 @@ public class EmailService {
             String clubName,
             String soloType,
             String adminTournamentUrl) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, Locale.getDefault());
 
         emailMetricsService.recordEmailAttempt("ADMIN_SOLO_REGISTRATION");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -615,6 +629,7 @@ public class EmailService {
             String tournamentDate,
             String tournamentUrl,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("LOOKING_FOR_PARTNER_NOTIFICATION");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -654,6 +669,7 @@ public class EmailService {
             String deadline,
             String tournamentUrl,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("PARTNER_DATA_REMINDER");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -696,6 +712,7 @@ public class EmailService {
             String clubName,
             String tournamentUrl,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("PARTNER_RESERVE");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -738,6 +755,7 @@ public class EmailService {
             String clubName,
             String cancellationReason,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("REGISTRATION_CANCELLED");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -780,6 +798,7 @@ public class EmailService {
             String tournamentTime,
             String clubName,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("MOVED_TO_RESERVE");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -822,6 +841,7 @@ public class EmailService {
             String confirmUrl,
             String declineUrl,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("PARTNER_FINAL_REMINDER");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {
@@ -861,6 +881,7 @@ public class EmailService {
             String tournamentDate,
             String acceptUrl,
             Locale locale) {
+        tournamentName = TournamentLevelText.eventName(tournamentName, messageSource, locale);
 
         emailMetricsService.recordEmailAttempt("PAIR_PROPOSAL");
         if (emailMetricsService.isDailyLimitReached(dailyEmailLimit)) {

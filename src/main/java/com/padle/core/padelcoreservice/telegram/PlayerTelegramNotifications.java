@@ -63,7 +63,7 @@ public class PlayerTelegramNotifications {
             String address = club.map(ClubDetails::address).orElse("");
             String when = tournament.getFechaHoraInicioCompleta().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String text = messages.text(reminder ? "reminder" : "request", locale,
-                    row.getPlayer().getNombreCompleto(), tournament.getNombre(), when, clubName, address);
+                    row.getPlayer().getNombreCompleto(), messages.eventName(tournament.getNombre(), locale), when, clubName, address);
             if (!receipts.buttons(row, player.getId(), locale).isEmpty()) {
                 text += "\n\n" + messages.text("receipt.instruction", locale);
             }

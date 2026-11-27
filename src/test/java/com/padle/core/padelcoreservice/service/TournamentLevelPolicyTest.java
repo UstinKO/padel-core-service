@@ -2,6 +2,8 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -142,11 +144,11 @@ class TournamentLevelPolicyTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Nivel.class, names = {"TODOS", "PRINCIPIANTES", "SIN_ESPECIFICAR",
+    @EnumSource(value = Nivel.class, names = {"PRINCIPIANTES",
             "C9_C8", "C7_C6", "C4_C3", "D7_D8", "D5_D4", "SUMA_13", "SUMA_16", "D5", "D4"})
     void categoriasNoSimples_noAplicanElChequeoIndependientementeDelNivelDelJugador(Nivel categoria) {
         // Ни одна из этих категорий не Nivel.isPlayerLevel — проверка не применяется даже
-        // для игрока без указанного уровня (SUMA_*, диапазоны, TODOS, PRINCIPIANTES и D5/D4
+        // для игрока без указанного уровня (SUMA_*, диапазоны, PRINCIPIANTES и D5/D4
         // вне этого правила, а не просто "далеко" от игрока).
         TournamentLevelPolicy.Result result =
                 TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, categoria, Nivel.SIN_ESPECIFICAR);
@@ -154,12 +156,28 @@ class TournamentLevelPolicyTest {
         assertThat(result.verdict()).isEqualTo(TournamentLevelPolicy.Verdict.ALLOWED);
     }
 
-    @Test
-    void categoriaNull_noAplicaElChequeo() {
-        TournamentLevelPolicy.Result result =
-                TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, null, Nivel.SIN_ESPECIFICAR);
+    @ParameterizedTest
+    @EnumSource(TournamentType.class)
+    void allLevelsAcceptsEveryRealPlayerLevelButRequiresACompleteProfile(TournamentType type) {
+        for (Nivel level : Nivel.playerLevels()) {
+            assertThat(TournamentLevelPolicy.evaluate(type, Nivel.TODOS, level).verdict())
+                    .as("%s / %s", type, level).isEqualTo(TournamentLevelPolicy.Verdict.ALLOWED);
+        }
+        for (Nivel invalid : Arrays.asList(null, Nivel.SIN_ESPECIFICAR, Nivel.TODOS, Nivel.SUMA_10)) {
+            assertThat(TournamentLevelPolicy.evaluate(type, Nivel.TODOS, invalid).verdict())
+                    .isEqualTo(TournamentLevelPolicy.Verdict.LEVEL_REQUIRED);
+        }
+        assertThat(TournamentLevelPolicy.requiresLevelCheck(type, Nivel.TODOS)).isTrue();
+        assertThat(TournamentLevelPolicy.evaluate(type, Nivel.SIN_ESPECIFICAR, Nivel.C9).verdict())
+                .isEqualTo(TournamentLevelPolicy.Verdict.INVALID_CATEGORY);
+    }
 
-        assertThat(result.verdict()).isEqualTo(TournamentLevelPolicy.Verdict.ALLOWED);
+    @Test
+    void categoriaNull_noEsUnaCategoriaAbierta() {
+        TournamentLevelPolicy.Result result =
+                TournamentLevelPolicy.evaluate(TournamentType.AMERICANO, null, Nivel.C9);
+
+        assertThat(result.verdict()).isEqualTo(TournamentLevelPolicy.Verdict.INVALID_CATEGORY);
     }
 
     @ParameterizedTest

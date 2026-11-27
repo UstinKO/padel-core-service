@@ -252,6 +252,8 @@ public class DoubleTournamentRegistrationService {
 
     private void checkPartnerLevel(TournamentType type, Nivel category, PlayerPadel partner) {
         switch (TournamentLevelPolicy.evaluate(type, category, partner.getNivelJugador()).verdict()) {
+            case INVALID_CATEGORY -> throw new TournamentRegistrationException(
+                    messageSource.getMessage("tournament.register.category_required", null, LocaleContextHolder.getLocale()));
             case LEVEL_REQUIRED -> throw new PairRegistrationException(PairRegistrationException.Reason.PARTNER_LEVEL_REQUIRED);
             case LEVEL_MISMATCH -> throw new PairRegistrationException(PairRegistrationException.Reason.PARTNER_LEVEL_MISMATCH);
             case ALLOWED -> { }
