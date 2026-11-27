@@ -5,6 +5,7 @@ import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.identity.PasswordResetToken;
 import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.PlayingSide;
 import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.service.*;
@@ -12,7 +13,9 @@ import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -100,6 +103,75 @@ class AccountIntegrationTest {
                         .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
                 .andExpect(redirectedUrl("/?welcome=true"));
         assertThat(players.existsByEmail(emailAddress)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"011 15-6100-8899,AR,+5491161008899,LEFT", "8 (912) 555-11-99,RU,+79125551199,RIGHT", "+79125551201,AR,+79125551201,EITHER"})
+    void webSignupReturnsToTournamentAndNormalizesPhone(String phone, String country, String normalized, PlayingSide side) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", "C7").param("telefono", phone).param("phoneCountry", country)
+                        .param("playingSide", side.name())
+                        .param("tournamentId", "48").param("destination", "https://example.org/")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/torneo/48#tournament-registration"));
+        var saved = players.findByEmail(address).orElseThrow();
+        assertThat(saved.getTelefono()).isEqualTo(normalized);
+        assertThat(saved.getNivelJugador()).isEqualTo(Nivel.C7);
+        assertThat(saved.getPlayingSide()).isEqualTo(side);
+        assertThat(saved.getTelegramUsername()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "SIN_ESPECIFICAR"})
+    void webSignupStillRequiresChosenLevel(String level) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", level).param("telefono", "+79125551200").param("tournamentId", "48")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "nivelJugador", "registro.web.level.required"))
+                .andExpect(model().attribute("tournamentId", 48L));
+        assertThat(players.existsByEmail(address)).isFalse();
+    }
+
+    @Test
+    void webSignupErrorRetainsCountryAndTournamentButClearsSecrets() throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        var result = mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", "C7").param("telefono", "123").param("phoneCountry", "RU")
+                        .param("playingSide", "LEFT")
+                        .param("tournamentId", "48")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "telefono", "contact.validation.PHONE_TOO_SHORT"))
+                .andExpect(model().attribute("tournamentId", 48L)).andReturn();
+        var input = (RegistroRequestDto) result.getModelAndView().getModel().get("registroRequest");
+        assertThat(input.getPhoneCountry()).isEqualTo("RU");
+        assertThat(input.getTelefono()).isEqualTo("123");
+        assertThat(input.getPlayingSide()).isEqualTo(PlayingSide.LEFT);
+        assertThat(input.getPassword()).isNull();
+        assertThat(input.getConfirmPassword()).isNull();
+        assertThat(players.existsByEmail(address)).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "0", "https://example.org", "99999999999999999999"})
+    void signupIgnoresInvalidTournamentTargets(String target) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        mvc.perform(get("/players/registro").param("tournamentId", target))
+                .andExpect(model().attributeDoesNotExist("tournamentId"));
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", UUID.randomUUID() + "@gmail.com")
+                        .param("nivelJugador", "C7").param("telefono", "+79125551200").param("tournamentId", target)
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/?welcome=true"));
     }
 
     @Test void realLoginSessionRotationProfileRefreshAndLogout() throws Exception {

@@ -2,6 +2,7 @@ package com.padle.core.padelcoreservice.marketing;
 
 import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.PlayingSide;
 import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.persistence.clubs.Club;
@@ -34,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnabledIfSystemProperty(named = "browser.qa", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1",
-        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
+        "spring.datasource.url=${REGISTRATION_BROWSER_QA_DB_URL:jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa}",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "app.analytics.meta.enabled=false", "app.analytics.meta.access-token=",
         "app.analytics.ga4-id=", "app.analytics.clarity-id=",
@@ -51,7 +53,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.mail.username=", "spring.mail.password=",
         "spring.security.oauth2.client.registration.google.client-id=test",
         "spring.security.oauth2.client.registration.google.client-secret=test",
-        "recaptcha.site-key=test", "recaptcha.secret-key=test"
+        "recaptcha.site-key=test", "recaptcha.secret-key=test", "recaptcha.enabled=false",
+        "app.pair-terms.enabled=true"
 })
 class RegistrationSourceBrowserTest {
     @LocalServerPort int port;
@@ -67,7 +70,10 @@ class RegistrationSourceBrowserTest {
     @MockitoBean TournamentNotificationService notifications;
 
     record Fixture(String baseUrl, String adminEmail, String playerEmail, String password,
-                   Long tournamentId, Long playerId) { }
+                   Long tournamentId, Long playerId, Long pairedTournamentId, List<Signup> signups) { }
+
+    record Signup(String email, String country, String phone, String localPhone,
+                  PlayingSide playingSide, String telegram, String partnerPhone) { }
 
     @Test
     void realBrowsersFollowCampaignRegistrationAndAdminReport() throws Exception {
@@ -88,6 +94,7 @@ class RegistrationSourceBrowserTest {
             assertThat(completed).as("Браузерная проверка завершилась вовремя").isTrue();
             assertThat(process.exitValue()).as(Files.readString(output.resolve("browser.log"))).isZero();
             verifySnapshot(fixture);
+            verifyNewPairs(fixture);
         } finally {
             Files.deleteIfExists(input);
             Files.deleteIfExists(directory);
@@ -96,6 +103,7 @@ class RegistrationSourceBrowserTest {
 
     private Fixture seed() {
         String suffix = UUID.randomUUID().toString();
+        String digits = Long.toString(1_000_000L + Integer.toUnsignedLong(suffix.hashCode()) % 9_000_000L);
         String password = "Browser-qa-" + suffix;
         var admin = owners.saveAndFlush(Owner.builder().email("qa-admin-" + suffix + "@example.test")
                 .password(passwords.encode(password)).firstName("Browser").lastName("QA")
@@ -103,15 +111,49 @@ class RegistrationSourceBrowserTest {
         var player = players.saveAndFlush(PlayerPadel.builder().nombre("Browser").apellido("Player")
                 .email("qa-player-" + suffix + "@example.test").passwordHash(passwords.encode(password))
                 .activo(true).emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9)
-                .telefono("+5491155550000").telegramUsername("browser_qa_player").build());
-        var club = clubs.saveAndFlush(Club.builder().nombre("Browser QA Club").isActive(true).build());
+                .telefono("+549115" + digits).telegramUsername("@browser_qa_" + suffix.replace("-", "").substring(0, 12)).build());
+        var club = clubs.saveAndFlush(Club.builder().nombre("Browser QA Club " + suffix).isActive(true).build());
         var event = tournaments.saveAndFlush(Tournament.builder().nombre("Browser QA Event").clubId(club.getId())
                 .fechaInicio(LocalDate.now().plusDays(7)).horaInicio(LocalTime.NOON).tipo(TournamentType.AMERICANO)
                 .modalidad(Modalidad.INDIVIDUAL).generoFormato(GenderFormat.MIXTO).categoriaNivel(Nivel.C9)
                 .cupoMax(16).precio(BigDecimal.ZERO).moneda("ARS").estado(TournamentStatus.REGISTRO_ABIERTO)
                 .contactoOrganizador("qa@example.test").build());
+        var paired = tournaments.saveAndFlush(Tournament.builder().nombre("Browser QA Paired Signup").clubId(club.getId())
+                .fechaInicio(LocalDate.now().plusDays(8)).horaInicio(LocalTime.NOON).tipo(TournamentType.AMERICANO_TEAMS)
+                .modalidad(Modalidad.DOBLES).generoFormato(GenderFormat.MIXTO).categoriaNivel(Nivel.C9)
+                .cupoMax(16).precio(BigDecimal.ZERO).moneda("ARS").estado(TournamentStatus.REGISTRO_ABIERTO)
+                .contactoOrganizador("qa@example.test").build());
+        var signups = List.of(
+                new Signup("signup-ar-" + suffix + "@gmail.com", "AR", "+549116" + digits,
+                        "011156" + digits, PlayingSide.LEFT, "", "+549117" + digits),
+                new Signup("signup-ru-" + suffix + "@gmail.com", "RU", "+7912" + digits,
+                        "8912" + digits, PlayingSide.RIGHT, "qa_" + suffix.replace("-", "").substring(0, 12), "+549118" + digits));
         return new Fixture("http://127.0.0.1:" + port, admin.getEmail(), player.getEmail(), password,
-                event.getId(), player.getId());
+                event.getId(), player.getId(), paired.getId(), signups);
+    }
+
+    private void verifyNewPairs(Fixture fixture) {
+        for (var signup : fixture.signups()) {
+            var player = players.findByEmail(signup.email()).orElseThrow();
+            assertThat(player.getTelefono()).isEqualTo(signup.phone());
+            assertThat(player.getNivelJugador()).isEqualTo(Nivel.C9);
+            assertThat(player.getPlayingSide()).isEqualTo(signup.playingSide());
+            if (signup.telegram().isEmpty()) {
+                assertThat(player.getTelegramUsername()).isNull();
+            } else {
+                assertThat(player.getTelegramUsername()).isEqualTo("@" + signup.telegram());
+            }
+            var partner = players.findByTelefono(signup.partnerPhone()).orElseThrow();
+            Integer rows = jdbc.queryForObject("""
+                    SELECT count(*) FROM tournament_registrations_db
+                    WHERE tournament_id = ? AND is_active = true AND status = 'CONFIRMED'
+                      AND ((player_id = ? AND partner_id = ?) OR (player_id = ? AND partner_id = ?))
+                    """, Integer.class, fixture.pairedTournamentId(), player.getId(), partner.getId(), partner.getId(), player.getId());
+            assertThat(rows).as("У пары ровно две взаимосвязанные подтверждённые записи").isEqualTo(2);
+        }
+        assertThat(jdbc.queryForObject("""
+                SELECT count(*) FROM tournament_registrations_db WHERE tournament_id = ? AND is_active = true
+                """, Integer.class, fixture.pairedTournamentId())).isEqualTo(4);
     }
 
     private void verifySnapshot(Fixture fixture) {

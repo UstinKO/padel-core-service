@@ -4,6 +4,10 @@ import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
+import com.padle.core.padelcoreservice.exception.ContactValidationException;
+import com.padle.core.padelcoreservice.service.PlayerContactService;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -25,92 +29,45 @@ public class PlayerContactController {
 
     private final PlayerService playerService;
     private final TournamentService tournamentService;
+    private final PlayerContactService contacts;
+    private final MessageSource messages;
 
-    /**
-     * Обновление контактных данных игрока (телефон и/или Telegram).
-     *
-     * Вызывается из модального окна на странице турнира / дашборде,
-     * когда игрок пытается зарегистрироваться на турнир, но у него
-     * нет ни телефона +54, ни Telegram ника.
-     *
-     * После сохранения фронт продолжает регистрацию на турнир.
-     */
+    /** Сохраняет обязательный телефон и необязательный Telegram перед записью. */
     @PatchMapping("/me/contact")
-    public ResponseEntity<Map<String, Object>> updateContact(
-            @RequestBody UpdateContactRequest request,
-            Authentication authentication) {
-
+    public ResponseEntity<ContactResponse> updateContact(
+            @RequestBody UpdateContactRequest request, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401)
-                    .body(Map.of("success", false, "message", "No autenticado"));
+            return contactError(401, "SIGN_IN_REQUIRED", "");
         }
-
-        PlayerPadel player = SecurityUtils.playerPrincipal(authentication.getPrincipal()).map(PlayerPrincipal::getId)
-                .flatMap(playerService::getPlayerById).orElse(null);
-
-        if (player == null) {
-            return ResponseEntity.status(401)
-                    .body(Map.of("success", false, "message", "Usuario no encontrado"));
+        var player = SecurityUtils.playerPrincipal(authentication.getPrincipal())
+                .map(PlayerPrincipal::getId).flatMap(playerService::getPlayerById);
+        if (player.isEmpty()) {
+            return contactError(401, "SIGN_IN_REQUIRED", "");
         }
-
-        // Валидация: хотя бы одно поле должно быть заполнено
-        boolean hasPhone    = request.getTelefono() != null
-                && !request.getTelefono().isBlank();
-        boolean hasTelegram = request.getTelegramUsername() != null
-                && !request.getTelegramUsername().isBlank();
-
-        if (!hasPhone && !hasTelegram) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,
-                            "message", "Debes ingresar al menos un dato de contacto"));
-        }
-
-        // Обновляем данные
-        if (hasPhone) {
-            String newPhone = request.getTelefono().trim();
-            player.setTelefono(newPhone);
-        }
-        if (hasTelegram) {
-            String tg = request.getTelegramUsername().trim();
-            // Добавляем @ если не указан
-            if (!tg.startsWith("@")) {
-                tg = "@" + tg;
-            }
-            if (!tg.equals(player.getTelegramUsername())
-                    && playerService.existsByTelegramUsername(tg)) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("success", false,
-                                "message", "Este usuario de Telegram ya está en uso por otro jugador"));
-            }
-            player.setTelegramUsername(tg);
-        }
-
         try {
-            playerService.save(player);
+            var contact = contacts.update(player.orElseThrow().getId(), request.telefono(), request.phoneCountry(), request.telegramUsername());
+            return ResponseEntity.ok(new ContactResponse(true, "", "", message("SAVED"),
+                    contact.telefono(), contact.telegramUsername()));
+        } catch (ContactValidationException e) {
+            return contactError(400, e.code(), e.field());
         } catch (ClaimPhoneInUseException e) {
-            return ResponseEntity.status(409).body(Map.of("success", false, "code", "PHONE_IN_USE",
-                    "message", e.getMessage(), "whatsappUrl", e.whatsappUrl().orElse("")));
+            return contactError(409, "PHONE_IN_USE", "telefono");
         } catch (DataIntegrityViolationException e) {
-            boolean isTelegramConflict = e.getMostSpecificCause().getMessage() != null
-                    && e.getMostSpecificCause().getMessage().contains("idx_player_telegram_username_unique");
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,
-                            "message", isTelegramConflict
-                                    ? "Este usuario de Telegram ya está en uso por otro jugador"
-                                    : "Este número de teléfono ya está en uso por otro jugador"));
+            return contactError(409, "CONTACT_IN_USE", "");
         }
-        log.info("Player {} updated contact: phone={}, telegram={}",
-                player.getId(),
-                hasPhone ? "set" : "unchanged",
-                hasTelegram ? "set" : "unchanged");
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Datos de contacto guardados",
-                "telefono", player.getTelefono() != null ? player.getTelefono() : "",
-                "telegramUsername", player.getTelegramUsername() != null ? player.getTelegramUsername() : ""
-        ));
     }
+
+    private ResponseEntity<ContactResponse> contactError(int status, String code, String field) {
+        return ResponseEntity.status(status).body(new ContactResponse(false, code, field, message(code), "", ""));
+    }
+
+    private String message(String code) {
+        return messages.getMessage("contact.validation." + code, null, LocaleContextHolder.getLocale());
+    }
+
+    public record UpdateContactRequest(String telefono, String phoneCountry, String telegramUsername) {}
+    public record ContactResponse(boolean success, String code, String field, String message,
+                                  String telefono, String telegramUsername) {}
 
     /**
      * Проверяет, есть ли у текущего игрока контактные данные.
@@ -123,19 +80,14 @@ public class PlayerContactController {
             return ResponseEntity.status(401).body(Map.of("hasContact", false));
         }
 
-        PlayerPadel player = SecurityUtils.playerPrincipal(authentication.getPrincipal()).map(PlayerPrincipal::getId)
-                .flatMap(playerService::getPlayerById).orElse(null);
+        var profile = SecurityUtils.playerPrincipal(authentication.getPrincipal()).map(PlayerPrincipal::getId)
+                .flatMap(playerService::getPlayerById);
 
-        if (player == null) {
+        if (profile.isEmpty()) {
             return ResponseEntity.status(401).body(Map.of("hasContact", false));
         }
 
-        // ДОБАВЬ ЛОГИРОВАНИЕ
-        log.info("Contact status for player {}: phone={}, telegram={}, hasContact={}",
-                player.getId(),
-                player.getTelefono(),
-                player.getTelegramUsername(),
-                player.hasValidContact());
+        PlayerPadel player = profile.orElseThrow();
 
         return ResponseEntity.ok(Map.of(
                 "hasContact", player.hasValidContact(),
@@ -189,15 +141,4 @@ public class PlayerContactController {
         );
     }
 
-    // ── DTO ──────────────────────────────────────────────────────────────────
-
-    public static class UpdateContactRequest {
-        private String telefono;
-        private String telegramUsername;
-
-        public String getTelefono() { return telefono; }
-        public void setTelefono(String telefono) { this.telefono = telefono; }
-        public String getTelegramUsername() { return telegramUsername; }
-        public void setTelegramUsername(String telegramUsername) { this.telegramUsername = telegramUsername; }
-    }
 }

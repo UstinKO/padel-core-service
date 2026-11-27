@@ -28,6 +28,7 @@
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/auth-entry.css}">
+    <link rel="stylesheet" th:href="@{/css/contact-check.css}">
 
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
@@ -35,7 +36,7 @@
 </head>
 <body class="auth-page-simple auth-entry auth-entry-register" data-clarity-mask="true">
 <!-- Header con nuevo logo y botón de login -->
-<header th:replace="~{fragments/auth-entry :: header('/players/registro', null)}"></header>
+<header th:replace="~{fragments/auth-entry :: header('/players/registro', ${tournamentId})}"></header>
 
 <main class="auth-main-simple">
     <div class="container">
@@ -45,7 +46,7 @@
                 <div class="auth-card-header">
                     <h1 class="auth-card-title" th:text="#{registro.heading}">Crear cuenta</h1>
                 </div>
-                <div th:replace="~{fragments/auth-entry :: google(null)}"></div>
+                <div th:replace="~{fragments/auth-entry :: google(${tournamentId})}"></div>
                 <p class="auth-entry-divider" th:text="#{registro.or_email}">o crea una cuenta con email</p>
 
                 <!-- Registration Form -->
@@ -53,6 +54,7 @@
                     data-password-rules=#{registro.field.password.hint},
                     data-captcha-required=#{registro.web.captcha},
                     data-submitting=#{auth.entry.submitting}">
+                    <input type="hidden" name="tournamentId" th:if="${tournamentId != null}" th:value="${tournamentId}">
                     <!-- Ограничение частоты запросов -->
                     <div th:if="${param.error != null and param.error[0] == 'rate-limit'}"
                          style="background:#fff7ed; border-left:4px solid #f59e0b; border-radius:8px;
@@ -114,28 +116,41 @@
                                th:text="${#fields.hasErrors('email') ? #fields.errors('email')[0] : ''}" aria-live="polite"></small>
                     </div>
                     <div class="form-group">
-                        <div class="auth-entry-inset">
-                            <input type="tel" id="telefono" name="telefono"
-                                   class="form-control"
-                                   placeholder=" " th:field="*{telefono}" aria-describedby="telefonoError" th:attr="aria-invalid=${#fields.hasErrors('telefono')}" required maxlength="20" autocomplete="tel">
-                            <label for="telefono"><span th:text="#{registro.field.telefono}"></span><small th:text="#{auth.entry.required}"></small></label>
+                        <div class="auth-entry-phone-row">
+                            <div class="auth-entry-dial-code">
+                                <span id="phoneCallingCode" aria-hidden="true">+54</span>
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                <select id="phoneCountry" name="phoneCountry" required autocomplete="country"
+                                        th:attr="data-selected=*{phoneCountry},aria-label=#{registro.phone.country}"></select>
+                            </div>
+                            <div class="auth-entry-inset">
+                                <input type="tel" id="telefono" name="telefono" class="form-control" placeholder=" "
+                                       th:field="*{telefono}" aria-describedby="telefonoHint telefonoError"
+                                       th:attr="aria-invalid=${#fields.hasErrors('telefono')}" required maxlength="80" autocomplete="tel" inputmode="tel">
+                                <label for="telefono"><span th:text="#{registro.field.telefono}"></span><small th:text="#{auth.entry.required}"></small></label>
+                            </div>
                         </div>
+                        <small id="telefonoHint" class="auth-entry-contact-help" hidden></small>
                         <small class="registration-field-error" id="telefonoError"
                                th:text="${#fields.hasErrors('telefono') ? #fields.errors('telefono')[#fields.errors('telefono').size() - 1] : ''}" aria-live="polite"></small>
                     </div>
                     <div class="form-group">
-                        <div class="auth-entry-inset">
+                        <div class="auth-entry-inset auth-entry-telegram">
                             <input type="text" id="telegramUsername" name="telegramUsername"
                                    class="form-control"
-                                   placeholder=" " th:field="*{telegramUsername}" aria-describedby="telegramUsernameError" th:attr="aria-invalid=${#fields.hasErrors('telegramUsername')}" maxlength="33" autocomplete="off">
-                            <label for="telegramUsername"><span th:text="#{registro.field.telegram}"></span><small th:text="#{auth.entry.optional}"></small></label>
+                                   placeholder=" " th:field="*{telegramUsername}" aria-describedby="telegramUsernameError registroTelegramHelp" th:attr="aria-invalid=${#fields.hasErrors('telegramUsername')}" maxlength="33" autocomplete="off" autocapitalize="none" spellcheck="false">
+                            <label for="telegramUsername"><span th:text="#{registro.field.telegram}"></span><small th:text="#{contact.telegram.available}"></small></label>
+                            <details class="contact-telegram-help">
+                                <summary th:attr="aria-label=#{contact.telegram.help.title}"><span aria-hidden="true">ⓘ</span></summary>
+                                <span id="registroTelegramHelp" class="contact-telegram-help-text" th:text="#{contact.telegram.help}"></span>
+                            </details>
                         </div>
                         <small class="registration-field-error" id="telegramUsernameError"
                                th:text="${#fields.hasErrors('telegramUsername') ? #fields.errors('telegramUsername')[0] : ''}" aria-live="polite"></small>
                     </div>
                     <div class="form-group">
                         <div class="auth-entry-inset">
-                            <select id="nivelJugador" name="nivelJugador" class="form-control" required th:field="*{nivelJugador}" aria-describedby="nivelJugadorError" th:attr="aria-invalid=${#fields.hasErrors('nivelJugador')}">
+                            <select id="nivelJugador" name="nivelJugador" class="form-control auth-entry-level" required th:field="*{nivelJugador}" aria-describedby="nivelJugadorError" th:attr="aria-invalid=${#fields.hasErrors('nivelJugador')}">
                                 <option value=""></option>
                                 <th:block th:replace="~{fragments/nivel-options :: options(${registroRequest.nivelJugador}, false)}"></th:block>
                             </select>
@@ -146,8 +161,7 @@
                     </div>
                     <div class="form-group">
                         <label for="playingSide" th:text="#{playingSide.question}"></label>
-                        <select id="playingSide" th:field="*{playingSide}" class="form-control" aria-describedby="signup-side-hint"><th:block th:replace="~{fragments/playing-side :: options(${registroRequest.playingSide})}"></th:block></select>
-                        <small id="signup-side-hint" class="form-text" th:text="#{playingSide.hint}"></small>
+                        <select id="playingSide" th:field="*{playingSide}" class="form-control"><th:block th:replace="~{fragments/playing-side :: options(${registroRequest.playingSide})}"></th:block></select>
                     </div>
                     <div class="auth-entry-pair auth-entry-passwords">
                         <div class="form-group">
@@ -182,6 +196,7 @@
                                    th:text="${#fields.hasErrors('confirmPassword') ? #fields.errors('confirmPassword')[0] : ''}" aria-live="polite"></small>
                         </div>
                     </div>
+
                     <p class="auth-entry-password-rules" id="passwordRules" th:text="#{registro.field.password.hint}"></p>
 
                     <!-- Условия использования -->
@@ -216,7 +231,7 @@
 
                 <p class="auth-entry-switch">
                     <span th:text="#{registro.has_account}">¿Ya tienes cuenta?</span>
-                    <a th:href="@{/login}" class="auth-link" th:text="#{registro.login_link}">Inicia sesión</a>
+                    <a th:href="@{/login(tournamentId=${tournamentId})}" class="auth-link" th:text="#{registro.login_link}">Inicia sesión</a>
                 </p>
             </div>
         </div>
@@ -237,6 +252,9 @@
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
 <script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/vendor/libphonenumber/libphonenumber-max.js}"></script>
+<script th:src="@{/js/vendor/libphonenumber/examples.mobile.js}"></script>
+<script th:src="@{/js/contact-fields.js}"></script>
 <script th:src="@{/js/web-signup.js}"></script>
 <script th:if="${recaptchaEnabled}" th:src="@{https://www.google.com/recaptcha/api.js(hl=${#locale.language})}" async defer></script>
 
