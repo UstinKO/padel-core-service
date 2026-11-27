@@ -8,6 +8,27 @@
 .telegram-panel [data-tg-status][data-error="true"] { color: #a02525; }
 .telegram-counters { display: flex; flex-wrap: wrap; gap: .6rem 1rem; padding: .75rem 0; }
 .telegram-counters strong { font-size: 1.1rem; }
+.telegram-disclosure-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .5rem 1rem; min-height: 44px; cursor: pointer; list-style: none; overflow-wrap: anywhere; }
+.telegram-disclosure-heading::-webkit-details-marker { display: none; }
+.telegram-disclosure-heading::marker { content: ''; }
+.telegram-disclosure-heading:focus-visible { outline: 2px solid var(--color-primary, #ff6b35); outline-offset: 5px; border-radius: .25rem; }
+.telegram-disclosure-heading h2 { margin: 0; min-width: 0; }
+.telegram-disclosure-action { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; color: var(--color-primary, #ff6b35); font-weight: 600; }
+.telegram-disclosure-arrow { width: .5rem; height: .5rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); flex-shrink: 0; }
+.telegram-disclosure[open] .telegram-disclosure-arrow { transform: rotate(45deg); }
+.telegram-disclosure-collapse, .telegram-disclosure[open] .telegram-disclosure-expand { display: none; }
+.telegram-disclosure[open] .telegram-disclosure-collapse { display: inline; }
+.telegram-disclosure-heading .telegram-counters { grid-column: 1 / -1; padding: 0; gap: .35rem 1rem; font-size: .875rem; }
+.telegram-disclosure-heading .telegram-counters > span { min-width: 0; }
+.telegram-disclosure-content { padding-top: .75rem; }
+.telegram-disclosure-content .telegram-participants { margin-top: 1rem; }
+.telegram-panel [data-tg-status]:empty { display: none; }
+.telegram-panel[data-tg-admin] > [data-tg-status] { margin-bottom: 0; }
+@media (max-width: 420px) {
+    .telegram-disclosure-heading { gap: .25rem .6rem; }
+    .telegram-disclosure-heading h2 { font-size: 1rem; }
+    .telegram-disclosure-action { font-size: .875rem; }
+}
 .telegram-participants { padding: 0; margin: 0; list-style: none; }
 .telegram-participants li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .35rem 1rem; padding: .65rem 0; border-top: 1px solid #eee; overflow-wrap: anywhere; }
 .telegram-participants li span { color: #5b566d; }
