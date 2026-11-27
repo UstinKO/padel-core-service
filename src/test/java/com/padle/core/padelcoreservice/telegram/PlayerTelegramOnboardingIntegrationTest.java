@@ -81,6 +81,83 @@ class PlayerTelegramOnboardingIntegrationTest {
                 jdbc.update("DELETE FROM player_telegram_deliveries WHERE dedupe_key=?",key)));
     }
 
+    @Test void siteJoinUsesLoginThenOnePersonalStartWithoutAnotherConfirmation() throws Exception {
+        var player=player();
+        mvc.perform(get("/telegram/join")).andExpect(status().isFound())
+                .andExpect(redirectedUrl("/login?destination=%2Ftelegram%2Fjoin"))
+                .andExpect(header().string("Cache-Control","no-store"))
+                .andExpect(header().string("Referrer-Policy","same-origin"));
+        mvc.perform(get("/telegram/join").with(user(player)))
+                .andExpect(status().isOk()).andExpect(model().attribute("join",
+                        new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("READY",player.getNombreCompleto())));
+        assertThat(tokenCount(player)).isZero();
+        assertThat(connections.preference(player.getId())).isEqualTo(ContactPreference.UNSPECIFIED);
+        mvc.perform(post("/telegram/join").with(user(player)))
+                .andExpect(status().isFound()).andExpect(redirectedUrl("/error/403"));
+        assertThat(tokenCount(player)).isZero();
+        String location=mvc.perform(post("/telegram/join").with(user(player)).with(csrf()).locale(Locale.ENGLISH))
+                .andExpect(status().isSeeOther()).andReturn().getResponse().getHeader("Location");
+        assertThat(location).matches("https://t.me/OnePadelQaBot\\?start=[A-Za-z0-9_-]{32}");
+        String token=location.substring(location.indexOf("start=")+6);
+        assertThat(tokenCount(player)).isEqualTo(1);
+        assertThat(connections.connection(player.getId())).isEmpty();
+        assertThat(sent).isEmpty();
+        poller.handle(new Update(uniqueUpdate(),new Message(1,new User(75101),new Chat(75101,"private"),"/start "+token),null));
+        assertThat(connections.byUser(75101)).map(Connection::playerId).contains(player.getId());
+        assertThat(tokenCount(player)).isZero();
+        assertThat(sent).hasSize(1);
+        mvc.perform(get("/telegram/join").with(user(player))).andExpect(status().isOk())
+                .andExpect(model().attribute("join",new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("CONNECTED",player.getNombreCompleto())));
+        var linkedAt=jdbc.queryForObject("SELECT linked_at FROM player_telegram_connections WHERE player_id=?",Object.class,player.getId());
+        mvc.perform(post("/telegram/join").with(user(player)).with(csrf()))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/telegram/join"));
+        poller.handle(new Update(uniqueUpdate(),new Message(2,new User(75102),new Chat(75102,"private"),"/start "+token),null));
+        assertThat(connections.byUser(75101)).map(Connection::playerId).contains(player.getId());
+        assertThat(connections.byUser(75102)).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT linked_at FROM player_telegram_connections WHERE player_id=?",Object.class,player.getId())).isEqualTo(linkedAt);
+        assertThat(tokenCount(player)).isZero();
+    }
+
+    @Test void siteJoinGuardsAvailabilityRolesAndKeepsLoginDestination() throws Exception {
+        var player=player();
+        when(properties.pilotEnabled()).thenReturn(true);
+        mvc.perform(get("/telegram/join")).andExpect(status().isOk());
+        mvc.perform(post("/telegram/join").with(user(player)).with(csrf()))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/telegram/join"));
+        assertThat(tokenCount(player)).isZero();
+        when(properties.pilotEnabled()).thenReturn(false);
+        mvc.perform(post("/telegram/join").with(user("organizer").roles("ORGANIZER")).with(csrf()))
+                .andExpect(status().isFound()).andExpect(redirectedUrl("/error/403"));
+        mvc.perform(get("/telegram/join").with(user("organizer").roles("ORGANIZER")))
+                .andExpect(status().isOk()).andExpect(model().attribute("join",
+                        new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("ACCOUNT_REQUIRED","")));
+        player.setActivo(false);
+        players.saveAndFlush(player);
+        mvc.perform(post("/telegram/join").with(user(player)).with(csrf()))
+                .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/telegram/join"))
+                .andExpect(flash().attribute("joinFailed",true));
+        assertThat(tokenCount(player)).isZero();
+        mvc.perform(post("/login").with(csrf()).param("username","missing-"+UUID.randomUUID()+"@example.test")
+                .param("password","fixture").param("destination","/telegram/join"))
+                .andExpect(status().isFound()).andExpect(redirectedUrl("/login?error=true&destination=%2Ftelegram%2Fjoin"));
+    }
+
+    @Test void siteInvitationIsSeparateAndRestrictedToAdministrators() throws Exception {
+        assertThat(onboarding.siteInvitation().url()).endsWith("/telegram/join").doesNotContain("?","#");
+        mvc.perform(get("/api/admin/telegram/site-invitation").with(user("admin").roles("SUPER_ADMIN")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.available").value(true))
+                .andExpect(jsonPath("$.url").value(onboarding.siteInvitation().url()));
+        mvc.perform(get("/api/admin/telegram/site-invitation").with(user(player())))
+                .andExpect(status().isForbidden());
+        assertThat(onboarding.invitation().url()).isEqualTo("https://t.me/OnePadelQaBot?start=connect");
+        when(properties.enabled()).thenReturn(false);
+        assertThat(onboarding.siteInvitation()).isEqualTo(new PlayerTelegramOnboarding.Invitation(false,""));
+    }
+
+    private long tokenCount(PlayerPadel player) {
+        return jdbc.queryForObject("SELECT count(*) FROM player_telegram_tokens WHERE player_id=?",Long.class,player.getId());
+    }
+
     @Test void twoPlayersConnectOnlyAfterTheirOwnTelegramConfirmation() {
         var first=player(); var second=player();
         String one=start(74101); String two=start(74102);

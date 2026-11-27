@@ -148,4 +148,29 @@ class OAuth2AuthenticationSuccessHandlerTest {
         org.mockito.Mockito.verify(response).sendRedirect(
                 "/app/#accessToken=access-token&refreshToken=refresh-token&expiresIn=86400000");
     }
+    @Test
+    void googleLoginRetainsSiteJoinThroughValidatedState() throws Exception {
+        var repository=new TournamentOAuth2AuthorizationRequestRepository();
+        var request=new org.springframework.mock.web.MockHttpServletRequest();
+        var response=new org.springframework.mock.web.MockHttpServletResponse();
+        request.setParameter("destination","/telegram/join");
+        var authorization=org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest.authorizationCode()
+                .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
+                .clientId("qa").redirectUri("http://localhost/login/oauth2/code/google").state("qa-state").build();
+        repository.saveAuthorizationRequest(authorization,request,response);
+        var callback=new org.springframework.mock.web.MockHttpServletRequest();
+        callback.setSession((org.springframework.mock.web.MockHttpSession)request.getSession());
+        callback.setParameter("state","qa-state");
+        assertThat(repository.removeAuthorizationRequest(callback,response)).isNotNull();
+        var player=PlayerPadel.builder().id(1L).email(PLAYER_EMAIL).activo(true).build();
+        var authentication=mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(new CustomOAuth2User(
+                mock(org.springframework.security.oauth2.core.user.OAuth2User.class),player));
+        var handler=new OAuth2AuthenticationSuccessHandler(mock(RememberMeServices.class),mock(JwtService.class));
+        handler.onAuthenticationSuccess(callback,response,authentication);
+        assertThat(response.getRedirectedUrl()).isEqualTo("/telegram/join");
+        assertThat(callback.getAttribute("destination")).isEqualTo("/telegram/join");
+        assertThat(repository.loadAuthorizationRequest(callback)).isNull();
+    }
+
 }

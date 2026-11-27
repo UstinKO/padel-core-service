@@ -136,6 +136,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/telegram/connect",
                                 "/telegram/connect/context",
+                                "/telegram/join",
                                 "/players/registro",
                                 "/players/registro/**",
                                 "/players/confirmar-email",
