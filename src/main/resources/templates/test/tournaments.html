@@ -969,17 +969,18 @@
     <!-- Сетка турниров -->
     <div class="tournament-grid" id="tournamentGrid">
         <div th:each="tournament : ${tournaments}"
+             th:with="localizedEventName=${@eventLevelText.eventName(tournament.nombre, #locale)}"
              class="tournament-card"
              th:attr="data-tournament-id=${tournament.id},
                       data-status=${tournament.estado},
-                      data-search=|${@eventLevelText.eventName(tournament.nombre, #locale)} ${tournament.clubNombre} ${tournament.fechaInicio}|,
+                      data-search=|${localizedEventName} ${tournament.clubNombre} ${tournament.fechaInicio}|,
                       data-registrations=${statsMap[__${tournament.id}__]?.confirmed ?: 0},
                       data-max=${tournament.cupoMax}">
 
             <div class="tournament-header">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <div class="tournament-title" th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Название турнира</div>
+                        <div class="tournament-title" th:text="${localizedEventName}">Название турнира</div>
                         <div class="tournament-meta">
                         <span class="status-badge"
                               th:classappend="'status-' + ${tournament.estado}"
@@ -1138,7 +1139,7 @@
                 <button class="btn btn-view w-100 mt-3"
                         onclick="viewTournamentPlayers(this)"
                         th:attr="data-tournament-id=${tournament.id},
-                            data-tournament-name=${@eventLevelText.eventName(tournament.nombre, #locale)}">
+                            data-tournament-name=${localizedEventName}">
                     <i class="bi bi-people me-2"></i>Просмотр игроков
                     <span class="badge bg-secondary ms-2" th:text="${stats?.totalRegistrations ?: 0}">0</span>
                 </button>
@@ -1148,7 +1149,7 @@
                     <button class="btn-register"
                             onclick="openRegisterModal(this)"
                             th:attr="data-tournament-id=${tournament.id},
-                                data-tournament-name=${@eventLevelText.eventName(tournament.nombre, #locale)},
+                                data-tournament-name=${localizedEventName},
                                 data-max-players=${tournament.cupoMax},
                                 data-current=${statsMap[__${tournament.id}__]?.confirmed ?: 0},
                                 data-modalidad=${tournament.modalidad.name()}">
@@ -1159,7 +1160,7 @@
                     <button class="btn-clear"
                             onclick="clearTestPlayers(this)"
                             th:attr="data-tournament-id=${tournament.id},
-                                data-tournament-name=${@eventLevelText.eventName(tournament.nombre, #locale)}"
+                                data-tournament-name=${localizedEventName}"
                             title="Очистить тестовые регистрации">
                         <i class="bi bi-trash"></i>
                     </button>
