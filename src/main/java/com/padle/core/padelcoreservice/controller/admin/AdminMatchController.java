@@ -5,7 +5,7 @@ import com.padle.core.padelcoreservice.dto.MatchDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.application.registration.RegistrationStatus;
 import com.padle.core.padelcoreservice.service.BracketService;
 import com.padle.core.padelcoreservice.service.MatchService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;

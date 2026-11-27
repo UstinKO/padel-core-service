@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.PaymentMethod;
+import com.padle.core.application.registration.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

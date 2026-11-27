@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.dto.calendar;
 
 import com.padle.core.padelcoreservice.model.enums.EventFormat;
 import com.padle.core.application.tournament.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;

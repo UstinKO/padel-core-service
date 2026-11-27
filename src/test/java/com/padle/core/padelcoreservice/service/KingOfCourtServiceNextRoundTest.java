@@ -7,7 +7,7 @@ import com.padle.core.padelcoreservice.model.KingOfCourtMatchResult;
 import com.padle.core.padelcoreservice.model.KingOfCourtPlayerStats;
 import com.padle.core.padelcoreservice.model.KingOfCourtRound;
 import com.padle.core.persistence.identity.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.KingOfCourtCourtRepository;
 import com.padle.core.padelcoreservice.repository.KingOfCourtMatchResultRepository;
@@ -15,7 +15,7 @@ import com.padle.core.padelcoreservice.repository.KingOfCourtPlayerStatsReposito
 import com.padle.core.padelcoreservice.repository.KingOfCourtRoundRepository;
 import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

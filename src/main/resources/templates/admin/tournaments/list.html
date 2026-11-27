@@ -215,7 +215,7 @@
                        style="color: #6366f1; border-color: #6366f1;"
                        title="Copiar torneo">
                         <i class="fas fa-copy"></i> <span th:text="#{admin.tournaments.list.btn.copy}">Copiar</span>
-                    </a><th:block th:if="${item.canCopy and item.tournament.tipo.name() == 'AMERICANO_TEAMS'}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block>
+                    </a><th:block th:if="${item.canCopy and (item.tournament.tipo.name() == 'AMERICANO_TEAMS' or item.tournament.tipo.name() == 'KING_OF_COURT' or item.tournament.tipo.name() == 'AMERICANO')}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block>
 
                     <!-- Кнопка Ver — для ADMIN (canView без isOwner) -->
                     <a th:if="${item.canView and !item.isOwner}"
@@ -311,7 +311,7 @@
                                class="btn-icon" title="Copiar torneo"
                                style="background: #6366f1; color: white;">
                                 <i class="fas fa-copy"></i>
-                            </a><th:block th:if="${item.canCopy and item.tournament.tipo.name() == 'AMERICANO_TEAMS'}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block>
+                            </a><th:block th:if="${item.canCopy and (item.tournament.tipo.name() == 'AMERICANO_TEAMS' or item.tournament.tipo.name() == 'KING_OF_COURT' or item.tournament.tipo.name() == 'AMERICANO')}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block>
 
                             <!-- Ver — для ADMIN (canView без isOwner) -->
                             <a th:if="${item.canView and !item.isOwner}"

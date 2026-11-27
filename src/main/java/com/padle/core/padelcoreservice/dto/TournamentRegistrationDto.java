@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.padle.core.application.identity.PlayingSide;
 
 import com.padle.core.application.tournament.Nivel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.application.registration.RegistrationStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
