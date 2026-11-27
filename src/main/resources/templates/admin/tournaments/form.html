@@ -41,7 +41,7 @@
                     <i class="fas fa-edit"></i>
                     <span th:text="#{admin.tournaments.form.title.edit}">Editar Torneo</span>
                 </h1>
-                <span data-pair-help hidden><th:block th:if="${isCopy != null}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block><th:block th:if="${tournament.id != null}"><button th:replace="~{fragments/action-help :: help('edit')}"></button></th:block></span>
+                <span data-event-help hidden><th:block th:if="${isCopy != null}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block><th:block th:if="${tournament.id != null}"><button th:replace="~{fragments/action-help :: help('edit')}"></button></th:block></span>
                 <p th:text="#{admin.tournaments.form.subtitle}">Complete los detalles del torneo a continuación</p>
             </div>
 
@@ -72,7 +72,7 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <div class="action-help-field-label"><label for="clubId" class="required" th:text="#{admin.tournaments.form.field.club}">Club</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('create')}"></button></span></div>
+                            <div class="action-help-field-label"><label for="clubId" class="required" th:text="#{admin.tournaments.form.field.club}">Club</label><span data-event-help hidden><button th:replace="~{fragments/action-help :: help('create')}"></button></span></div>
                             <select th:field="*{clubId}"
                                     id="clubId"
                                     class="form-control"
@@ -100,7 +100,7 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <div class="action-help-field-label"><label for="fechaInicio" class="required" th:text="#{admin.tournaments.form.field.date_start}">Fecha de Inicio</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('schedule')}"></button></span></div>
+                            <div class="action-help-field-label"><label for="fechaInicio" class="required" th:text="#{admin.tournaments.form.field.date_start}">Fecha de Inicio</label><span data-event-help hidden><button th:replace="~{fragments/action-help :: help('schedule')}"></button></span></div>
                             <input type="date"
                                    th:field="*{fechaInicio}"
                                    id="fechaInicio"
@@ -180,7 +180,7 @@
                         </div>
 
                         <div class="form-group">
-                            <div class="action-help-field-label"><label for="categoriaNivel" class="required" th:text="#{admin.tournaments.form.field.level}">Categoría / Nivel</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('category')}"></button></span></div>
+                            <div class="action-help-field-label"><label for="categoriaNivel" class="required" th:text="#{admin.tournaments.form.field.level}">Categoría / Nivel</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('category')}"></button></span><span data-individual-help hidden><button th:replace="~{fragments/action-help :: help('individual-category')}"></button></span></div>
                             <select th:field="*{categoriaNivel}"
                                     id="categoriaNivel"
                                     class="form-control"
@@ -202,7 +202,7 @@
                         </div>
 
                         <div class="form-group">
-                            <div class="action-help-field-label"><label for="tipo" class="required" th:text="#{admin.tournaments.form.field.type}">Tipo de Torneo</label><span data-pair-help data-pair-help-chooser hidden><button th:replace="~{fragments/action-help :: help('format')}"></button></span></div>
+                            <div class="action-help-field-label"><label for="tipo" class="required" th:text="#{admin.tournaments.form.field.type}">Tipo de Torneo</label><span data-pair-help data-pair-help-chooser hidden><button th:replace="~{fragments/action-help :: help('format')}"></button></span><span data-individual-help hidden><button th:replace="~{fragments/action-help :: help('individual-format')}"></button></span></div>
                             <select th:field="*{tipo}"
                                     id="tipo"
                                     class="form-control"
@@ -251,7 +251,7 @@
                         <div class="form-group">
                             <div class="action-help-field-label"><label for="cupoMax" id="cupoMaxLabel" class="required"
                                    th:text="#{admin.tournaments.form.field.capacity}"
-                                   th:attr="data-label-individual=#{admin.tournaments.form.field.capacity},data-label-pairs=#{admin.tournaments.form.field.capacity_pairs}">Cupo Máximo</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('capacity')}"></button></span></div>
+                                   th:attr="data-label-individual=#{admin.tournaments.form.field.capacity},data-label-pairs=#{admin.tournaments.form.field.capacity_pairs}">Cupo Máximo</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('capacity')}"></button></span><span data-individual-help hidden><button th:replace="~{fragments/action-help :: help('individual-capacity')}"></button></span></div>
                             <input type="number"
                                    th:field="*{cupoMax}"
                                    id="cupoMax"
@@ -367,7 +367,7 @@
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('organizerCountry')}" th:errors="*{organizerCountry}"></div>
                             </div>
                             <div class="form-group">
-                                <div class="action-help-field-label"><label for="organizerPhone" class="required" th:text="#{organizer.contact.phone}">WhatsApp del organizador</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('contact')}"></button></span></div>
+                                <div class="action-help-field-label"><label for="organizerPhone" class="required" th:text="#{organizer.contact.phone}">WhatsApp del organizador</label><span data-event-help hidden><button th:replace="~{fragments/action-help :: help('contact')}"></button></span></div>
                                 <input type="tel" inputmode="tel" th:field="*{organizerPhone}" id="organizerPhone" class="form-control" maxlength="500" required autocomplete="section-organizer tel"
                                        aria-describedby="organizerPhoneHelp organizerPhoneExample organizerPhoneError organizerPhoneServerError">
                             </div>
@@ -409,7 +409,7 @@
 
                     <!--/* Доступ: публичный / только по ссылке */-->
                     <div class="form-group">
-                        <div class="action-help-field-label"><label for="visibilidad" th:text="#{admin.tournaments.form.field.visibility}">Modo de acceso</label><span data-pair-help hidden><button th:replace="~{fragments/action-help :: help('visibility')}"></button></span></div>
+                        <div class="action-help-field-label"><label for="visibilidad" th:text="#{admin.tournaments.form.field.visibility}">Modo de acceso</label><span data-event-help hidden><button th:replace="~{fragments/action-help :: help('visibility')}"></button></span></div>
                         <select th:field="*{visibilidad}"
                                 id="visibilidad"
                                 class="form-control">

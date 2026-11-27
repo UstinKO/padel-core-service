@@ -46,7 +46,7 @@
     <details class="telegram-disclosure" data-tg-disclosure
              th:attr="data-preference-user-id=${#authentication.principal.id}">
         <summary class="telegram-disclosure-heading">
-            <h2 th:text="#{telegram.ui.adminTitle}"></h2><th:block th:if="${pairedHelp == true}"><button th:replace="~{fragments/action-help :: help('telegram')}"></button></th:block>
+            <h2 th:text="#{telegram.ui.adminTitle}"></h2><th:block th:if="${pairedHelp == true or individualHelp == true}"><button th:replace="~{fragments/action-help :: help('telegram')}"></button></th:block>
             <span class="telegram-disclosure-action">
                 <span class="telegram-disclosure-arrow" aria-hidden="true"></span>
                 <span class="telegram-disclosure-expand" th:text="#{telegram.ui.expand}"></span>
