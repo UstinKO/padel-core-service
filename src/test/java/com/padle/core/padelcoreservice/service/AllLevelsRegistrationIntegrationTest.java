@@ -22,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 })
 @Transactional
 class AllLevelsRegistrationIntegrationTest {
+    private static final AtomicLong PHONES = new AtomicLong(1110000000L);
     @Autowired TournamentService individual;
     @Autowired DoubleTournamentRegistrationService doubles;
     @Autowired TournamentRepository events;
@@ -115,10 +118,8 @@ class AllLevelsRegistrationIntegrationTest {
         var specific = event(TournamentType.KING_OF_COURT, GenderFormat.MASCULINO, Nivel.C9);
         assertThatThrownBy(() -> individual.registerPlayer(specific.getId(), player.getId()))
                 .isInstanceOf(TournamentRegistrationException.class);
-        var invalid = event(TournamentType.AMERICANO, GenderFormat.MIXTO, null);
-        assertThatThrownBy(() -> individual.registerPlayer(invalid.getId(), player.getId()))
-                .isInstanceOf(TournamentRegistrationException.class);
-        assertThat(registrations.findByTournamentIdAndPlayerId(invalid.getId(), player.getId())).isEmpty();
+        assertThatThrownBy(() -> event(TournamentType.AMERICANO, GenderFormat.MIXTO, null))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     private void registerPair(Tournament event, PlayerPadel first, PlayerPadel second) {
@@ -139,6 +140,6 @@ class AllLevelsRegistrationIntegrationTest {
         String suffix = UUID.randomUUID().toString();
         return players.saveAndFlush(PlayerPadel.builder().nombre("All levels QA").apellido(suffix)
                 .email(suffix + "@example.test").passwordHash("unused").activo(true).emailConfirmado(true)
-                .preferredLocale("es").nivelJugador(level).telefono("+5491123456789").build());
+                .preferredLocale("es").nivelJugador(level).telefono("+549" + PHONES.getAndIncrement()).build());
     }
 }
