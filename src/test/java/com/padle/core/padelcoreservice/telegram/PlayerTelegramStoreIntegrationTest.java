@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.List;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.ContactPreference;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -77,19 +78,19 @@ class PlayerTelegramStoreIntegrationTest {
     @Test void preferenceEndpointUsesSessionIdentityAndRequiresCsrfAndAValidValue() throws Exception {
         var first = player(); var second = player();
         String url = "/api/players/me/telegram/preference";
-        mvc.perform(put(url).with(user(first)).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(url).with(playerUser(first)).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"preference\":\"WHATSAPP\"}")).andExpect(status().isForbidden());
-        mvc.perform(put(url).with(user(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(url).with(playerUser(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"preference\":\"INVALID\"}")).andExpect(status().isUnprocessableEntity());
-        mvc.perform(put(url).with(user(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(url).with(playerUser(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{}")).andExpect(status().isUnprocessableEntity());
-        mvc.perform(put(url).with(user(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put(url).with(playerUser(first)).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"preference\":\"WHATSAPP\",\"playerId\":" + second.getId() + "}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.preference").value("WHATSAPP"))
                 .andExpect(header().string("Cache-Control", "no-store"));
         assertThat(store.preference(first.getId())).isEqualTo(ContactPreference.WHATSAPP);
         assertThat(store.preference(second.getId())).isEqualTo(ContactPreference.UNSPECIFIED);
-        mvc.perform(get("/api/admin/tournaments/42/telegram").with(user(first)))
+        mvc.perform(get("/api/admin/tournaments/42/telegram").with(playerUser(first)))
                 .andExpect(status().isForbidden());
     }
 }

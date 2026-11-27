@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.controller.view;
 
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
@@ -35,8 +35,8 @@ public class KingOfCourtViewController {
 
         KingOfCourtStateDTO viewData = kingOfCourtService.getCurrentState(king.getId());
 
-        PlayerPadel player = SecurityUtils.extractPlayer(
-                authentication != null ? authentication.getPrincipal() : null);
+        PlayerPrincipal player = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
 
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", king.getTournament().getId());
@@ -74,8 +74,8 @@ public class KingOfCourtViewController {
         TournamentKingOfCourt king = kings.get(0);
         KingOfCourtStateDTO viewData = kingOfCourtService.getCurrentState(king.getId());
 
-        PlayerPadel player = SecurityUtils.extractPlayer(
-                authentication != null ? authentication.getPrincipal() : null);
+        PlayerPrincipal player = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
 
         model.addAttribute("kingData", viewData);
         model.addAttribute("tournamentId", tournamentId);

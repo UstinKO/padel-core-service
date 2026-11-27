@@ -10,12 +10,14 @@ import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.logging.AlertSeverity;
 import com.padle.core.padelcoreservice.logging.StructuredAlert;
+import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.service.DoubleTournamentRegistrationService;
+import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +45,7 @@ public class PlayerDashboardController {
     private final TournamentService tournamentService;
     private final ObjectMapper objectMapper;
     private final DoubleTournamentRegistrationService doubleTournamentRegistrationService;
-    private final PlayerRepository playerRepository;
+    private final PlayerService players;
 
     @Timed(
             name = "player.dashboard.time",
@@ -56,13 +57,12 @@ public class PlayerDashboardController {
         log.info("Accessing dashboard with principal type: {}",
                 principal != null ? principal.getClass().getName() : "null");
 
-        // Извлекаем PlayerPadel из principal
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
+        PlayerPrincipal player = SecurityUtils.playerPrincipal(principal).orElse(null);
 
         if (player == null) {
             // Если principal — это Owner (SUPER_ADMIN или ORGANIZER),
             // редиректим на админ-панель, а не на /login
-            if (principal instanceof com.padle.core.padelcoreservice.model.Owner) {
+            if (principal instanceof Owner) {
                 log.info("Principal is Owner, redirecting to admin panel");
                 return "redirect:/admin";
             }
@@ -82,7 +82,7 @@ public class PlayerDashboardController {
             List<TournamentDto> upcomingTournaments =
                     tournamentService.getVisibleTournamentsForPlayer(Set.copyOf(myTournamentIds));
 
-            model.addAttribute("player", player);
+            model.addAttribute("player", players.getPlayerById(player.getId()).orElseThrow());
             model.addAttribute("torneosInscritos", myTournamentIds.size());
 
             // Передаем данные турниров в JSON для JavaScript
@@ -111,10 +111,8 @@ public class PlayerDashboardController {
     @PostMapping("/players/tournaments/{tournamentId}/register")
     @ResponseBody
     public ResponseEntity<?> registerForTournament(@PathVariable Long tournamentId,
-                                                   @AuthenticationPrincipal Object principal,
+                                                   @AuthenticationPrincipal PlayerPrincipal player,
                                                    HttpServletRequest request) {
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
-
         if (player == null) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -125,7 +123,7 @@ public class PlayerDashboardController {
         log.info("Player {} registering for tournament {}", player.getId(), tournamentId);
 
         // ПРОВЕРКА КОНТАКТОВ - возвращаем needContact, а не ошибку
-        if (!player.hasValidContact()) {
+        if (players.getPlayerById(player.getId()).filter(PlayerPadel::hasValidContact).isEmpty()) {
             log.warn("Player {} has no valid contact (phone or telegram)", player.getId());
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -183,11 +181,9 @@ public class PlayerDashboardController {
     @PostMapping("/players/tournaments/{tournamentId}/cancel")
     @ResponseBody
     public ResponseEntity<?> cancelRegistration(@PathVariable Long tournamentId,
-                                                @AuthenticationPrincipal Object principal,
+                                                @AuthenticationPrincipal PlayerPrincipal player,
                                                 @RequestParam(required = false) String reason,
                                                 @RequestHeader(value="If-Registration-Version",required=false) Long expectedVersion) {
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
-
         if (player == null) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
         }
@@ -236,38 +232,14 @@ public class PlayerDashboardController {
                 || e instanceof ResourceNotFoundException;
     }
 
-    /**
-     * Вспомогательный метод для извлечения PlayerPadel из principal
-     */
-    private PlayerPadel extractPlayerFromPrincipal(Object principal) {
-        if (principal == null) {
-            return null;
-        }
-
-        if (principal instanceof CustomOAuth2User) {
-            return ((CustomOAuth2User) principal).getPlayer();
-        } else if (principal instanceof PlayerPadel) {
-            return (PlayerPadel) principal;
-        } else if (principal instanceof UserDetails) {
-            String email = ((UserDetails) principal).getUsername();
-            log.info("Principal is UserDetails: {}", email);
-            return playerRepository.findByEmail(email).orElse(null); // ← загружаем из БД
-        }
-
-        log.warn("Unknown principal type: {}", principal.getClass().getName());
-        return null;
-    }
-
     @PostMapping("/players/tournaments/{tournamentId}/cancel-double")
     @ResponseBody
     public ResponseEntity<?> cancelDoubleRegistration(@PathVariable Long tournamentId,
-                                                      @AuthenticationPrincipal Object principal,
+                                                      @AuthenticationPrincipal PlayerPrincipal player,
                                                       @RequestParam String option,
                                                       @RequestParam(required = false) String reason,
                                                       @RequestParam(required = false) String replaceData,
                                                 @RequestHeader(value="If-Registration-Version",required=false) Long expectedVersion) {
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
-
         if (player == null) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
         }
@@ -363,9 +335,7 @@ public class PlayerDashboardController {
     @GetMapping("/players/tournaments/{tournamentId}/my-registration")
     @ResponseBody
     public ResponseEntity<?> getMyRegistration(@PathVariable Long tournamentId,
-                                               @AuthenticationPrincipal Object principal) {
-        PlayerPadel player = extractPlayerFromPrincipal(principal);
-
+                                               @AuthenticationPrincipal PlayerPrincipal player) {
         if (player == null) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Usuario no autenticado"));
         }

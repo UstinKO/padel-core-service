@@ -1,11 +1,12 @@
 package com.padle.core.padelcoreservice.controller.view;
 
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoPlayerDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
@@ -19,7 +20,6 @@ import com.padle.core.padelcoreservice.service.TournamentLevelPolicy;
 import com.padle.core.padelcoreservice.model.enums.Modalidad;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
-import com.padle.core.padelcoreservice.util.SecurityUtils;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -62,8 +62,7 @@ public class TournamentViewController {
         log.info("Viewing tournament details for id: {}", id);
 
         try {
-            PlayerPadel player = SecurityUtils.extractPlayer(principal);
-
+            PlayerPrincipal player = SecurityUtils.playerPrincipal(principal).orElse(null);
             Optional<TournamentDto> tournamentOpt = tournamentService.getActiveTournamentById(id);
 
             if (tournamentOpt.isEmpty()) {

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.file.Files;
@@ -18,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerAuthentication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,7 +45,7 @@ class PreviewEloIdentityViewTest {
         var model = new ExtendedModelMap();
         var player = new PlayerPadel();
         player.setId(8L);
-        view.ranking(model, new UsernamePasswordAuthenticationToken(player, null, player.getAuthorities()),
+        view.ranking(model, playerAuthentication(player),
                 new MockHttpServletResponse());
         var players = (Map<?, ?>) model.get("previewEloByPlayer");
         assertThat(players.get(8L)).isSameAs(players.get(1L)).isNotNull();
@@ -56,7 +56,7 @@ class PreviewEloIdentityViewTest {
         var outsider = new PlayerPadel();
         outsider.setId(2L);
         var unchanged = new ExtendedModelMap();
-        view.ranking(unchanged, new UsernamePasswordAuthenticationToken(outsider, null, outsider.getAuthorities()),
+        view.ranking(unchanged, playerAuthentication(outsider),
                 new MockHttpServletResponse());
         assertThat(unchanged).isEmpty();
         view.ranking(new ExtendedModelMap(), null, new MockHttpServletResponse());

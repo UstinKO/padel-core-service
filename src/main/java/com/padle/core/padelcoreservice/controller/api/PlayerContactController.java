@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.dto.PlayerResponseDto;
 import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,7 +23,6 @@ import java.util.Map;
 @Slf4j
 public class PlayerContactController {
 
-    private final PlayerRepository playerRepository;
     private final PlayerService playerService;
     private final TournamentService tournamentService;
 
@@ -47,7 +45,8 @@ public class PlayerContactController {
                     .body(Map.of("success", false, "message", "No autenticado"));
         }
 
-        PlayerPadel player = extractPlayer(authentication.getPrincipal());
+        PlayerPadel player = SecurityUtils.playerPrincipal(authentication.getPrincipal()).map(PlayerPrincipal::getId)
+                .flatMap(playerService::getPlayerById).orElse(null);
 
         if (player == null) {
             return ResponseEntity.status(401)
@@ -124,7 +123,8 @@ public class PlayerContactController {
             return ResponseEntity.status(401).body(Map.of("hasContact", false));
         }
 
-        PlayerPadel player = extractPlayer(authentication.getPrincipal());
+        PlayerPadel player = SecurityUtils.playerPrincipal(authentication.getPrincipal()).map(PlayerPrincipal::getId)
+                .flatMap(playerService::getPlayerById).orElse(null);
 
         if (player == null) {
             return ResponseEntity.status(401).body(Map.of("hasContact", false));
@@ -159,7 +159,7 @@ public class PlayerContactController {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "No autenticado"));
         }
 
-        PlayerPadel player = extractPlayer(authentication.getPrincipal());
+        PlayerPrincipal player = SecurityUtils.playerPrincipal(authentication.getPrincipal()).orElse(null);
         if (player == null) {
             return ResponseEntity.status(403).body(Map.of("success", false, "message", "Solo disponible para jugadores"));
         }
@@ -169,32 +169,6 @@ public class PlayerContactController {
                 "upcoming", overview.upcoming(),
                 "historical", overview.historical()
         ));
-    }
-
-    /**
-     * Универсальный метод для извлечения PlayerPadel из principal
-     */
-    private PlayerPadel extractPlayer(Object principal) {
-        if (principal == null) {
-            return null;
-        }
-
-        if (principal instanceof PlayerPadel) {
-            return (PlayerPadel) principal;
-        }
-
-        if (principal instanceof CustomOAuth2User) {
-            return ((CustomOAuth2User) principal).getPlayer();
-        }
-
-        if (principal instanceof UserDetails) {
-            // Для обычной формы логина
-            String email = ((UserDetails) principal).getUsername();
-            return playerRepository.findByEmail(email).orElse(null);
-        }
-
-        log.warn("Unknown principal type: {}", principal.getClass().getName());
-        return null;
     }
 
     @GetMapping("/search")
@@ -207,8 +181,8 @@ public class PlayerContactController {
             return ResponseEntity.ok(List.of());
         }
 
-        PlayerPadel currentPlayer = extractPlayer(authentication.getPrincipal());
-        Long excludeId = currentPlayer != null ? currentPlayer.getId() : -1L;
+        Long excludeId = SecurityUtils.playerPrincipal(authentication.getPrincipal())
+                .map(PlayerPrincipal::getId).orElse(-1L);
 
         return ResponseEntity.ok(
                 playerService.searchPartnerCandidates(query.trim(), tournamentId, excludeId)

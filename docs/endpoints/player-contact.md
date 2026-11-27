@@ -13,7 +13,7 @@
 ### Алгоритм
 
 1. Проверяет аутентификацию.
-2. Извлекает `PlayerPadel` из principal (поддерживает `PlayerPadel`, `CustomOAuth2User`, `UserDetails`).
+2. Читает профиль через `PlayerService` по ID игрока из `PlayerPrincipal`.
 3. Валидирует: хотя бы одно поле (`telefono` или `telegramUsername`) непустое.
 4. Телефон: должен начинаться с `+54` (аргентинский формат).
 5. Telegram: автоматически добавляет `@` если не указан.
@@ -77,7 +77,7 @@
 
 ### Алгоритм
 
-1. Извлекает игрока из principal.
+1. Читает профиль через `PlayerService` по ID из `PlayerPrincipal`.
 2. Вызывает `player.hasValidContact()` — телефон `+54` ИЛИ непустой Telegram.
 3. Возвращает детализированный статус.
 
@@ -111,7 +111,7 @@
 
 ### Алгоритм
 
-1. Извлекает `PlayerPadel` из principal (как и остальные `/api/players/me/**` в этом контроллере).
+1. Берёт ID игрока из `PlayerPrincipal`.
 2. `TournamentService.getMyTournamentsOverview(playerId)` — то же разбиение по `TournamentStatus`, что и в дашборде игрока (`getHistoricalAndActiveTournamentsByPlayer`): `upcoming` — турниры в `PUBLICADO`/`REGISTRO_ABIERTO`, `historical` — `CERRADO`/`FINALIZADO`/`CANCELADO`. Источник — тот же `findActiveRegistrationsByPlayerId` (фильтр по `isActive`, не по `status`), поэтому отменённые регистрации не попадают ни в один из списков.
 3. Запись/отмена регистрации через этот эндпоинт не делаются — используются существующие `POST /players/tournaments/{id}/register|cancel|cancel-double`.
 

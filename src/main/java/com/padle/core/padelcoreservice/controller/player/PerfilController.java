@@ -1,10 +1,15 @@
 package com.padle.core.padelcoreservice.controller.player;
 
+import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
+import com.padle.core.padelcoreservice.security.PlayerSessionAuthentication;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
 import com.padle.core.padelcoreservice.exception.ClaimPhoneInUseException;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.service.PlayerService;
-import com.padle.core.padelcoreservice.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,25 +29,24 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class PerfilController {
 
     private final PlayerService playerService;
+    private final PlayerSessionAuthentication playerSessions;
 
     @GetMapping
-    public String verPerfil(Model model, @AuthenticationPrincipal Object principal) {
-        PlayerPadel player = SecurityUtils.extractPlayer(principal);
-
-        if (player == null) {
+    public String verPerfil(Model model, @AuthenticationPrincipal PlayerPrincipal principal) {
+        if (principal == null) {
             log.warn("Intento de acceso a perfil sin autenticación");
             return "redirect:/login";
         }
 
-        log.info("Viendo perfil de jugador: {}", player.getEmail());
+        log.info("Viendo perfil de jugador: {}", principal.getEmail());
 
-        model.addAttribute("player", playerService.getPlayerById(player.getId()).orElseThrow());
+        model.addAttribute("player", playerService.getPlayerById(principal.getId()).orElseThrow());
         return "players/perfil";
     }
 
     @PostMapping("/actualizar")
     public String actualizarPerfil(
-            @AuthenticationPrincipal Object principal,
+            @AuthenticationPrincipal PlayerPrincipal principal,
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String apellido,
             @RequestParam(required = false) String email,
@@ -54,18 +58,18 @@ public class PerfilController {
             @RequestParam(required = false) String currentPassword,
             @RequestParam(required = false) String newPassword,
             @RequestParam(required = false) String confirmPassword,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, Authentication authentication,
+            HttpServletRequest request, HttpServletResponse response) {
 
-        PlayerPadel player = SecurityUtils.extractPlayer(principal);
-
-        if (player == null) {
+        if (principal == null) {
             log.warn("Intento de actualizar perfil sin autenticación");
             return "redirect:/login";
         }
 
-        log.info("Actualizando perfil de jugador: {}", player.getEmail());
+        log.info("Actualizando perfil de jugador: {}", principal.getEmail());
 
         try {
+            PlayerPadel player = playerService.getPlayerById(principal.getId()).orElseThrow();
             boolean actualizado = false;
 
             if (nombre != null && !nombre.isEmpty() && !nombre.equals(player.getNombre())) {
@@ -193,6 +197,7 @@ public class PerfilController {
 
             if (actualizado) {
                 playerService.actualizarJugador(player);
+                playerSessions.replace(authentication, PlayerPrincipalMapper.INSTANCE.toPrincipal(player), request, response);
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Perfil actualizado correctamente");
             } else {

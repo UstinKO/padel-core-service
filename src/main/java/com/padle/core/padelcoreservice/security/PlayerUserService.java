@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.security;
 
+import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PlayerUserService { // Убрали implements UserDetailsService
+public class PlayerUserService {
 
     private final PlayerRepository playerRepository;
 
     @Transactional(readOnly = true)
-    public PlayerPadel loadUserByUsername(String email) throws UsernameNotFoundException {
+    public PlayerPrincipal loadUserByUsername(String email) throws UsernameNotFoundException {
         log.debug("Loading player by email: {}", email);
 
         PlayerPadel player = playerRepository.findByEmail(email)
@@ -26,6 +27,6 @@ public class PlayerUserService { // Убрали implements UserDetailsService
             throw new UsernameNotFoundException("Player account is not active: " + email);
         }
 
-        return player;
+        return PlayerPrincipalMapper.INSTANCE.toPrincipal(player);
     }
 }

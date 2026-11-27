@@ -6,8 +6,8 @@ import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.service.*;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -17,6 +17,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +27,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.oauthPrincipal;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -135,6 +140,47 @@ class AccountIntegrationTest {
                 .andExpect(jsonPath("$.session.id").value(player.getId()));
     }
 
+    @Test
+    void upgradesExistingPlayerSessionAndRetainsAuthorities() throws Exception {
+        var player = player();
+        var previous = UsernamePasswordAuthenticationToken.authenticated(player, null, List.of(
+                new SimpleGrantedAuthority("ROLE_PLAYER"), new SimpleGrantedAuthority("FACTOR_PASSWORD")));
+        var session = new MockHttpSession();
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                new SecurityContextImpl(previous));
+
+        mvc.perform(get("/api/auth/session").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(player.getId()))
+                .andExpect(jsonPath("$.userType").value("PLAYER"));
+
+        var security = (SecurityContext) session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        assertThat(security.getAuthentication().getPrincipal()).isInstanceOf(PlayerPrincipal.class);
+        assertThat(security.getAuthentication().getAuthorities()).extracting(GrantedAuthority::getAuthority)
+                .containsExactlyInAnyOrder("ROLE_PLAYER", "FACTOR_PASSWORD");
+    }
+
+    @Test
+    void updatingGuestEmailInLegacyProfileKeepsCurrentSession() throws Exception {
+        var guest = player();
+        guest.setEmail(UUID.randomUUID() + "@1padel.guest");
+        players.saveAndFlush(guest);
+        var login = mvc.perform(post("/login").with(csrf()).accept("application/json")
+                        .param("username", guest.getEmail()).param("password", "secret-password"))
+                .andExpect(status().isOk()).andReturn();
+        var session = (MockHttpSession) login.getRequest().getSession(false);
+        String email = UUID.randomUUID() + "@example.com";
+
+        mvc.perform(post("/perfil/actualizar").session(session).with(csrf())
+                        .param("email", email).param("nivelJugador", "C7"))
+                .andExpect(redirectedUrl("/perfil"))
+                .andExpect(flash().attributeExists("successMessage"));
+        mvc.perform(get("/api/auth/session").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(guest.getId()))
+                .andExpect(jsonPath("$.email").value(email));
+    }
+
     @Test void failedLoginAndCsrfAreJsonAndLocalized() throws Exception {
         mvc.perform(post("/login").with(csrf()).accept("application/json").param("lang","ru")
                 .param("username","missing@gmail.com").param("password","wrong"))
@@ -150,17 +196,18 @@ class AccountIntegrationTest {
         mvc.perform(get("/api/players/me").with(user(owner))).andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("PLAYER_REQUIRED"));
     }
     @Test void googlePrincipalCanReadOwnProfileWithoutKnownPassword() throws Exception {
-        var p=player(); var oauth=new CustomOAuth2User(mock(OAuth2User.class),p);
+        var p=player(); var oauth=oauthPrincipal(mock(OAuth2User.class),p);
         var auth=new UsernamePasswordAuthenticationToken(oauth,null,oauth.getAuthorities());
         mvc.perform(get("/api/players/me").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(p.getId()));
         mvc.perform(get("/api/auth/session").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.authenticated").value(true));
+        mvc.perform(get("/api/auth/me").with(authentication(auth))).andExpect(status().isUnauthorized());
     }
     @Test
     void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields() throws Exception {
         var player = player();
         player.setNivelJugador(Nivel.SIN_ESPECIFICAR);
         players.saveAndFlush(player);
-        var oauth = new CustomOAuth2User(mock(OAuth2User.class), player);
+        var oauth = oauthPrincipal(mock(OAuth2User.class), player);
         var auth = new UsernamePasswordAuthenticationToken(oauth, null, oauth.getAuthorities());
 
         mvc.perform(patch("/api/players/me/level").with(authentication(auth)).with(csrf())
@@ -175,10 +222,10 @@ class AccountIntegrationTest {
     void rejectsMissingCsrfAndNonPlayerLevelsWithoutChangingProfile() throws Exception {
         var player = player();
 
-        mvc.perform(patch("/api/players/me/level").with(user(player))
+        mvc.perform(patch("/api/players/me/level").with(playerUser(player))
                         .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
                 .andExpect(status().isForbidden());
-        mvc.perform(patch("/api/players/me/level").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/level").with(playerUser(player)).with(csrf())
                         .contentType("application/json").content("{\"nivelJugador\":\"SIN_ESPECIFICAR\"}"))
                 .andExpect(status().isUnprocessableEntity());
 
@@ -187,20 +234,20 @@ class AccountIntegrationTest {
 
     @Test void invalidProfileAndPasswordDoNotPartiallyMutatePlayer() throws Exception {
         var p=player();
-        mvc.perform(put("/api/players/me").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(put("/api/players/me").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content(update(p).replace(p.getTelegramUsername(),"")))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.fieldErrors[0].code").value("CONTACT_REQUIRED"));
         assertThat(players.findById(p.getId()).orElseThrow().getNombre()).isEqualTo("Maria");
-        mvc.perform(post("/api/players/me/password").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(post("/api/players/me/password").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"currentPassword\":\"wrong\",\"newPassword\":\"another-secret\",\"confirmPassword\":\"another-secret\"}"))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.fieldErrors[0].code").value("CURRENT_PASSWORD_INVALID"));
     }
     @Test void validPasswordChangeUsesCurrentPassword() throws Exception {
         var p=player();
-        mvc.perform(post("/api/players/me/password").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(post("/api/players/me/password").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"currentPassword\":\"secret-password\",\"newPassword\":\"another-secret\",\"confirmPassword\":\"another-secret\"}"))
                 .andExpect(status().isOk());
-        assertThat(encoder.matches("another-secret",players.findById(p.getId()).orElseThrow().getPassword())).isTrue();
+        assertThat(encoder.matches("another-secret",players.findById(p.getId()).orElseThrow().getPasswordHash())).isTrue();
     }
     private String registration(String email) {
         return "{\"nombre\":\"Maria\",\"apellido\":\"Garcia\",\"email\":\""+email+"\",\"telegramUsername\":\"@player_"+UUID.randomUUID().toString().substring(0,8)+"\",\"password\":\"secret-password\",\"confirmPassword\":\"secret-password\",\"nivelJugador\":\"C7\"}";

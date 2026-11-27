@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Year;
 import java.util.UUID;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -73,7 +74,7 @@ class PageModelAdviceApplicationTest {
                 .preferredLocale("es")
                 .build());
 
-        mockMvc.perform(get("/perfil").with(user(player)))
+        mockMvc.perform(get("/perfil").with(playerUser(player)))
                 .andExpect(status().isOk())
                 .andExpect(view().name("players/perfil"))
                 .andExpect(model().attribute("player", player))

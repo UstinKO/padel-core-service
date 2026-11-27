@@ -28,6 +28,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -85,13 +86,13 @@ class C3SupportIntegrationTest {
     @ValueSource(strings = {"C3", "С3", "с3"})
     void profileJsonIsCanonicalAfterSaveAndFreshAuthentication(String input) throws Exception {
         var player = player(Nivel.C7);
-        mvc.perform(patch("/api/players/me/level").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/level").with(playerUser(player)).with(csrf())
                         .contentType("application/json").content("{\"nivelJugador\":\""+input+"\"}"))
                 .andExpect(status().isNoContent());
         entities.clear();
         var fresh = players.findById(player.getId()).orElseThrow();
         assertThat(fresh.getNivelJugador()).isEqualTo(Nivel.C3);
-        mvc.perform(get("/api/players/me").with(user(fresh)))
+        mvc.perform(get("/api/players/me").with(playerUser(fresh)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.nivelJugador").value("C3"));
     }
 

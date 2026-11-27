@@ -52,8 +52,8 @@ public class PlayingSideService {
     private PlayerPadel locked(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated())
             throw new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED");
-        var player = SecurityUtils.extractPlayer(authentication.getPrincipal());
-        if (player == null) throw new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED");
+        var player = SecurityUtils.playerPrincipal(authentication.getPrincipal())
+                .orElseThrow(() -> new AccountException(HttpStatus.FORBIDDEN, "PLAYER_REQUIRED"));
         return players.lockPlayers(List.of(player.getId())).stream().filter(PlayerPadel::isActivo).findFirst()
                 .orElseThrow(() -> new AccountException(HttpStatus.UNAUTHORIZED, "SESSION_REQUIRED"));
     }

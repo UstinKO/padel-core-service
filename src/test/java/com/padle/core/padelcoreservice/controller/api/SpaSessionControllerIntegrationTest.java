@@ -22,6 +22,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.Objects;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.principal;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.hamcrest.Matchers.nullValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -93,7 +95,7 @@ class SpaSessionControllerIntegrationTest {
                 .emailConfirmado(true)
                 .build());
 
-        var result = mockMvc.perform(get("/api/auth/session").with(user(player)))
+        var result = mockMvc.perform(get("/api/auth/session").with(playerUser(player)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.authenticated").value(true))
                 .andExpect(jsonPath("$.userType").value("PLAYER"))
@@ -177,7 +179,8 @@ class SpaSessionControllerIntegrationTest {
                 .activo(true)
                 .emailConfirmado(true)
                 .build());
-        var rememberMe = new RememberMeAuthenticationToken("test-key", player, player.getAuthorities());
+        var principal = principal(player);
+        var rememberMe = new RememberMeAuthenticationToken("test-key", principal, principal.getAuthorities());
 
         var result = mockMvc.perform(get("/api/auth/session").with(authentication(rememberMe)))
                 .andExpect(status().isOk())

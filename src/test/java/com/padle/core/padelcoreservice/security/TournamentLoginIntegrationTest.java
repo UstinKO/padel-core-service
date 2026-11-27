@@ -3,7 +3,6 @@ package com.padle.core.padelcoreservice.security;
 import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.Nivel;
 import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.oauthPrincipal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -93,7 +93,7 @@ class TournamentLoginIntegrationTest {
         var player = player();
         OAuth2User providerUser = mock(OAuth2User.class);
         when(providerUser.getAttributes()).thenReturn(Map.of("sub", "test-provider-player"));
-        when(googleUsers.loadUser(any())).thenReturn(new CustomOAuth2User(providerUser, player));
+        when(googleUsers.loadUser(any())).thenReturn(oauthPrincipal(providerUser, player));
         when(googleTokens.getTokenResponse(any())).thenReturn(OAuth2AccessTokenResponse.withToken("test-token")
                 .tokenType(OAuth2AccessToken.TokenType.BEARER).expiresIn(60)
                 .scopes(Set.of("email", "profile")).build());
