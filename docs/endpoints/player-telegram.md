@@ -1,3 +1,9 @@
+## Статистика подключений и отказ от приглашения
+
+GET `/api/admin/telegram/connections` доступен только SUPER_ADMIN, возвращает no-store и агрегаты registered/connected/notConnected/whatsapp/declined/guests. Только активные профили; гости вынесены отдельно, четыре категории обычных профилей не пересекаются. Считается действующая личная связь, независимо от переключателей отправки. Контакты и идентификаторы Telegram не выдаются.
+
+GET `/api/players/me/telegram` дополнен invitationDismissed. PUT `/api/players/me/telegram/invitation` принимает `{ "dismissed": true }` (или false для возврата). Требуются собственный активный обычный PLAYER, допуск пилота и CSRF. Отказ хранится между устройствами и не меняет Telegram/WhatsApp, связи, регистрацию или отправку. В профиле подключение остаётся доступным. Спецификация: [LFPT-1492](../../specs/features/LFPT-1492-telegram-connections.md).
+
 # Telegram для игроков
 
 ## Короткая общая ссылка с сайта

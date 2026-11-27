@@ -50,6 +50,18 @@ public class PlayerTelegramController {
         return links.preference(accounts.player(auth), change.preference());
     }
 
+    @PutMapping("/players/me/telegram/invitation")
+    @PreAuthorize("hasRole('PLAYER')")
+    public LinkStatus invitation(Authentication auth, @Valid @RequestBody InvitationChange change) {
+        return links.invitation(accounts.player(auth), change.dismissed());
+    }
+
+    @GetMapping("/admin/telegram/connections")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ConnectionStatistics connections() {
+        return store.connectionStatistics();
+    }
+
     @DeleteMapping("/players/me/telegram")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('PLAYER')")
