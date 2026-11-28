@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="'King of Court - ' + ${tournament.nombre}">King of Court</title>
+    <title th:text="'King of Court - ' + ${@eventLevelText.eventName(tournament.nombre, #locale)}">King of Court</title>
 
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -46,7 +46,7 @@
         <div class="admin-header">
             <h1 class="admin-title">
                 <i class="fas fa-crown" style="color: #fbbf24;"></i>
-                <span th:text="${tournament.nombre}">Torneo</span>
+                <span th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo</span>
             </h1>
             <div class="admin-subtitle">
                 <span class="badge" th:text="#{admin.koc.round.label} + ' ' + ${kingTournament.currentRound}">Ronda 1</span>
@@ -75,7 +75,7 @@
                            th:value="${kingTournament.youtubeLink}">
                     <button class="btn btn-primary" onclick="window.kingOfCourt?.saveYoutubeLink()">
                         <i class="fas fa-save"></i> <span th:text="#{admin.koc.youtube.save}">Guardar</span>
-                    </button>
+                    </button><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('koc-youtube')}"></button></th:block>
                 </div>
             </div>
         </div>
@@ -86,7 +86,7 @@
             <h2 th:text="#{admin.koc.finished.title}">¡Torneo finalizado!</h2>
             <p th:text="#{admin.koc.finished.text}">La clasificación final está disponible a continuación</p>
             <button th:if="${admin}" type="button" class="btn btn-outline" data-open-points
-                    th:text="#{additional.points.edit_results}">Editar resultados</button>
+                    th:text="#{additional.points.edit_results}">Editar resultados</button><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></th:block>
         </div>
 
         <!-- Grid de canchas -->
@@ -112,20 +112,20 @@
              th:if="${admin and not kingTournament.isFinished}">
 
             <!-- Следующий раунд — показывается JS когда все результаты введены -->
-            <button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
+            <span class="solo-action-help" data-help-for="nextRoundBtn" hidden><button id="nextRoundBtn" class="btn btn-primary" style="display: none;">
                 <i class="fas fa-forward"></i> <span th:text="#{admin.koc.btn.next_round_start}">Iniciar siguiente ronda</span>
-            </button>
+            </button><button th:replace="~{fragments/action-help :: help('koc-next')}"></button></span>
 
-            <button id="resetRoundBtn" class="btn btn-warning" type="button" style="display: none;"
+            <span class="solo-action-help" data-help-for="resetRoundBtn" hidden><button id="resetRoundBtn" class="btn btn-warning" type="button" style="display: none;"
                     th:data-confirm="#{conduct.koc.confirm_round}"
                     onclick="window.kingOfCourt?.resetRound()">
                 <i class="fas fa-undo"></i> <span th:text="#{conduct.koc.reset_round}">Restablecer ronda actual</span>
-            </button>
+            </button><button th:replace="~{fragments/action-help :: help('koc-reset')}"></button></span>
 
             <!-- Завершить турнир -->
-            <button id="endTournamentBtn" class="btn btn-danger" type="button" style="display: none;">
+            <span class="solo-action-help" data-help-for="endTournamentBtn" hidden><button id="endTournamentBtn" class="btn btn-danger" type="button" style="display: none;">
                 <i class="fas fa-flag-checkered"></i> <span th:text="#{admin.koc.btn.end}">Finalizar torneo</span>
-            </button>
+            </button><button th:replace="~{fragments/action-help :: help('koc-finish')}"></button></span>
         </div>
 
         <!-- Ranking e historial en dos columnas -->
@@ -133,7 +133,7 @@
             <!-- Ranking en vivo -->
             <div class="admin-card individual-ranking-card">
                 <div class="admin-card-header">
-                    <h2><i class="fas fa-chart-line"></i> <span th:text="#{admin.koc.section.ranking}">Clasificación en vivo</span></h2>
+                    <h2><i class="fas fa-chart-line"></i> <span th:text="#{admin.koc.section.ranking}">Clasificación en vivo</span><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('koc-ranking')}"></button></th:block></h2>
                     <a href="#" onclick="window.kingOfCourt?.loadData()" class="btn-icon" title="Actualizar">
                         <i class="fas fa-sync-alt"></i>
                     </a>
@@ -144,7 +144,7 @@
             <!-- Historial de partidos -->
             <div class="admin-card">
                 <div class="admin-card-header">
-                    <h2><i class="fas fa-history"></i> <span th:text="#{admin.koc.section.history}">Historial de partidos</span></h2>
+                    <h2><i class="fas fa-history"></i> <span th:text="#{admin.koc.section.history}">Historial de partidos</span><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('individual-history')}"></button></th:block></h2>
                 </div>
                 <div class="admin-card-body">
                     <ul id="matchHistory" class="history-list" style="list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto;">
@@ -156,17 +156,17 @@
 
         <!-- Кнопка шаринга — всегда видна -->
         <div class="admin-actions" style="justify-content: center; margin-top: 1.5rem;">
-            <button onclick="shareAdminTournament()"
+            <span class="solo-action-help"><button onclick="shareAdminTournament()"
                     class="btn btn-outline"
                     style="display:flex; align-items:center; gap:.5rem;">
                 <i class="fas fa-share-alt"></i> <span th:text="#{admin.koc.btn.share}">Compartir torneo</span>
-            </button>
+            </button><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('individual-share')}"></button></th:block></span>
         </div>
 
         <div th:if="${admin}"
              style="display:flex; justify-content:center; margin-top:1rem;">
             <form th:action="@{'/admin/tournaments/king-of-court/' + ${kingTournament.id} + '/reset'}"
-                  method="post" id="restartTournamentForm"
+                  method="post" id="restartTournamentForm" class="solo-action-help"
                   th:data-confirm="#{conduct.koc.confirm_restart}"
                   onsubmit="return confirm(this.dataset.confirm)">
                 <input type="hidden" name="expectedConductVersion" th:value="${conductVersion}">
@@ -174,7 +174,7 @@
                         class="btn btn-outline"
                         style="border-color:#dc2626; color:#dc2626; gap:.5rem; display:flex; align-items:center;">
                     <i class="fas fa-redo-alt"></i> <span th:text="#{conduct.koc.restart}">Reiniciar torneo</span>
-                </button>
+                </button><th:block th:if="${admin}"><button th:replace="~{fragments/action-help :: help('koc-restart')}"></button></th:block>
             </form>
         </div>
 
@@ -187,6 +187,7 @@
     </div>
 </main>
 
+<div hidden th:if="${admin}" id="individual-help-copies"><template data-individual-help-copy="koc-score"><button th:replace="~{fragments/action-help :: help('koc-score')}"></button></template><template data-individual-help-copy="koc-edit"><button th:replace="~{fragments/action-help :: help('koc-edit')}"></button></template><template data-individual-help-copy="individual-additional"><button th:replace="~{fragments/action-help :: help('individual-additional')}"></button></template></div>
 <!-- Fragmentos de modales -->
 <div th:replace="~{fragments/king-of-court-modals :: resultModal}"></div>
 <div th:replace="~{fragments/king-of-court-modals :: historyModal}"></div>
@@ -224,7 +225,7 @@
     /*<![CDATA[*/
     function shareAdminTournament() {
         const kingId = /*[[${kingTournament.id}]]*/ 0;
-        const tournamentName = /*[[${tournament.nombre}]]*/ 'Torneo';
+        const tournamentName = /*[[${@eventLevelText.eventName(tournament.nombre, #locale)}]]*/ 'Torneo';
         const publicUrl = window.location.origin + '/tournaments/king-of-court/' + kingId;
         showSharePanel(tournamentName, publicUrl);
     }

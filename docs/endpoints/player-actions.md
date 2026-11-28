@@ -16,7 +16,7 @@
 
 ### Алгоритм
 
-1. Извлекает `PlayerPadel` из principal (`CustomOAuth2User`, `PlayerPadel` или `UserDetails` — загрузка из БД).
+1. Читает профиль по ID из `PlayerPrincipal` через `PlayerService`.
 2. Если principal — `Owner`, редиректит на `/admin`.
 3. Загружает через `TournamentService.getVisibleTournamentsForPlayer(activeRegistrationTournamentIds)` открытые турниры. Турниры «Только по ссылке» включаются только при активной записи текущего игрока.
 4. Загружает ID турниров, на которые игрок уже зарегистрирован.
@@ -46,7 +46,7 @@
 
 ### Алгоритм
 
-1. Извлекает игрока из principal.
+1. Берёт ID текущего игрока из `PlayerPrincipal`.
 2. Проверяет `player.hasValidContact()`: телефон `+54` ИЛИ Telegram username должны быть заполнены.
 3. Если контакта нет — возвращает `400` с `"needContact": true` (фронт показывает модалку добавления контакта).
 4. Вызывает `TournamentService.registerPlayer(tournamentId, playerId)`.

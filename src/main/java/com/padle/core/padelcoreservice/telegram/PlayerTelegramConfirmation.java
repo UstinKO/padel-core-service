@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Review;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.Button;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.Message;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class PlayerTelegramConfirmation {
         String key = "confirmed:" + review.requestId() + ":" + expectedStart + ":" + playerId;
         try {
             delivery.sendOnce(key, review.tournamentId(), null, original.chat().id(),
-                    messages.text("confirmationMessage", locale, review.tournamentName()), List.of());
+                    messages.text("confirmationMessage", locale, messages.eventName(review.tournamentName(), locale)), List.of());
         } finally {
             var links = List.of(List.of(
                     Button.link(messages.text("view", locale), baseUrl + "/torneo/" + review.tournamentId()),

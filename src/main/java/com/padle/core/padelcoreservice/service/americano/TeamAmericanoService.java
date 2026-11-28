@@ -14,21 +14,21 @@ import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.americano.AmericanoRound;
 import com.padle.core.padelcoreservice.model.americano.AmericanoTeam;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.model.enums.TournamentPhase;
 import com.padle.core.padelcoreservice.model.enums.RoundRobinScoringMode;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoRoundRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoTeamRepository;
@@ -457,7 +457,7 @@ public class TeamAmericanoService {
      * Находит команду по одному из её игроков (player1 или player2).
      */
     private Optional<AmericanoTeam> findTeamByPlayer(Long tournamentId,
-                                                     com.padle.core.padelcoreservice.model.PlayerPadel player) {
+                                                     com.padle.core.persistence.identity.PlayerPadel player) {
         if (player == null) return Optional.empty();
         Optional<AmericanoTeam> byP1 =
                 teamRepository.findByTournamentIdAndPlayer1Id(tournamentId, player.getId());
@@ -604,8 +604,8 @@ public class TeamAmericanoService {
     /** Простой контейнер данных пары */
     private static class PairData {
         TournamentRegistration mainReg;
-        com.padle.core.padelcoreservice.model.PlayerPadel player1;
-        com.padle.core.padelcoreservice.model.PlayerPadel player2;     // null если не зарегистрирован
+        com.padle.core.persistence.identity.PlayerPadel player1;
+        com.padle.core.persistence.identity.PlayerPadel player2;     // null если не зарегистрирован
         String player2Name;   // имя незарегистрированного партнёра
         String player2Phone;
     }

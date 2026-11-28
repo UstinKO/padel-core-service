@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.application.registration.MarketingEvents.Delivery;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ public class MetaCapiClient {
                       String content_type, int num_items, int paid_participants) { }
     public record Result(boolean accepted, int httpStatus, int messageCount) { }
 
-    Envelope payload(MarketingOutbox.Delivery delivery) {
+    Envelope payload(Delivery delivery) {
         UserData user = new UserData(List.of(hash(delivery.visitorId().toString())), delivery.fbc(), delivery.fbp());
         CustomData custom = new CustomData(delivery.amount(), delivery.currency(),
                 List.of(Long.toString(delivery.tournamentId())), "product", 1, delivery.paidParticipants());
@@ -55,7 +56,7 @@ public class MetaCapiClient {
         return new Envelope(List.of(event), properties.testMode() ? properties.testEventCode() : null);
     }
 
-    public Result send(MarketingOutbox.Delivery delivery) {
+    public Result send(Delivery delivery) {
         if (!properties.serverEnabled()) {
             return new Result(false, 0, 0);
         }

@@ -1,6 +1,7 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.mapper.PlayerPrincipalMapper;
+import com.padle.core.persistence.identity.PlayerPadel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -31,7 +32,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         PlayerPadel player = userManagementService.createOrUpdateUser(email, firstName, lastName, registrationId);
 
-        return new CustomOAuth2User(oAuth2User, player);
+        return new OAuth2PlayerPrincipal(oAuth2User, PlayerPrincipalMapper.INSTANCE.toPrincipal(player));
     }
 
     private String extractEmail(Map<String, Object> attributes, String registrationId) {

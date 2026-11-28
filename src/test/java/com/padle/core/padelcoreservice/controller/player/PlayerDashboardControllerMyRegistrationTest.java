@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.controller.player;
 
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.registration.RegistrationStatus;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,7 +72,7 @@ class PlayerDashboardControllerMyRegistrationTest {
 
         when(tournamentService.getRegistration(7L, 42L)).thenReturn(Optional.of(dto));
 
-        mockMvc.perform(get("/players/tournaments/7/my-registration").with(user(player())))
+        mockMvc.perform(get("/players/tournaments/7/my-registration").with(playerUser(player())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.registered").value(true))
                 .andExpect(jsonPath("$.registrationId").value(501))
@@ -100,7 +100,7 @@ class PlayerDashboardControllerMyRegistrationTest {
 
         when(tournamentService.getRegistration(7L, 42L)).thenReturn(Optional.of(dto));
 
-        mockMvc.perform(get("/players/tournaments/7/my-registration").with(user(player())))
+        mockMvc.perform(get("/players/tournaments/7/my-registration").with(playerUser(player())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("WAITLIST"))
                 .andExpect(jsonPath("$.waitlistPosition").value(3))
@@ -112,7 +112,7 @@ class PlayerDashboardControllerMyRegistrationTest {
     void sinRegistroActivo_devuelveSoloRegisteredFalse() throws Exception {
         when(tournamentService.getRegistration(7L, 42L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/players/tournaments/7/my-registration").with(user(player())))
+        mockMvc.perform(get("/players/tournaments/7/my-registration").with(playerUser(player())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.registered").value(false))
                 .andExpect(jsonPath("$.registrationId").doesNotExist())

@@ -1,6 +1,5 @@
 package com.padle.core.padelcoreservice.rating.feedback;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
 import com.padle.core.padelcoreservice.rating.feedback.EloPilotFeedbackRepository.MailStatus;
 import com.padle.core.padelcoreservice.rating.feedback.EloPilotFeedbackRepository.Source;
 import com.padle.core.padelcoreservice.rating.feedback.EloPilotFeedbackRepository.Topic;
@@ -33,10 +32,9 @@ public class EloPilotFeedbackService {
         this.inboxUrl = baseUrl.replaceFirst("/+$", "") + "/admin/rating-feedback";
     }
 
-    public void submit(PlayerPadel player, UUID requestKey, Source source, Topic topic, String message) {
-        String author = (player.getNombre() + " " + player.getApellido()).strip();
+    public void submit(Long playerId, String author, UUID requestKey, Source source, Topic topic, String message) {
         // Вставка завершается до SMTP. Повтор того же запроса не создаёт отзыв или второе письмо.
-        repository.insert(player.getId(), author, requestKey, source, topic, message)
+        repository.insert(playerId, author, requestKey, source, topic, message)
                 .ifPresent(this::notifyAdmin);
     }
 

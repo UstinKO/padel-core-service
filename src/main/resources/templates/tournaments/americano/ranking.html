@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${tournament.nombre} + ' - Clasificación | 1-Padel'">Clasificación | 1-Padel</title>
+    <title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' - Clasificación | 1-Padel'">Clasificación | 1-Padel</title>
 
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
     <link rel="alternate icon" th:href="@{/images/favicon.ico}">
@@ -118,10 +118,10 @@
         <!-- Header турнира -->
         <div class="tournament-header">
             <div class="tournament-title-section">
-                <h1 th:text="${tournament.nombre}">Torneo Americano</h1>
+                <h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo Americano</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="${tournament.generoFormato}">Masculino</span>
-                    <span class="badge badge-level" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
                     <span class="badge badge-type">Americano</span>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.repository;
 
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.model.Ranking;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

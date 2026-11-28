@@ -24,8 +24,9 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <link rel="stylesheet" th:href="@{/css/guest-profile-claim.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-action-help.css}">
 </head>
-<body>
+<body class="admin-section-help-page">
 <header th:replace="~{fragments/admin-header :: header(#{admin.players.list.title})}"></header>
 
 <main class="admin-main">
@@ -66,6 +67,7 @@
                                th:value="${guestLastName}" maxlength="100">
                     </div>
                     <button class="btn btn-primary" type="submit" th:text="#{admin.players.guest.submit}">Crear perfil</button>
+                    <button th:replace="~{fragments/action-help :: help('ap-guest')}"></button>
                 </form>
             </div>
         </details>
@@ -99,17 +101,23 @@
         <!-- Поиск игроков + фильтр по уровню (#272) -->
         <div style="margin: 1.25rem 0 1.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:flex-start;">
             <div style="flex:1 1 260px; max-width:480px;">
-                <div class="input-with-icon">
-                    <i class="fas fa-search input-icon"></i>
-                    <input type="text" id="playerSearch" autocomplete="off" class="form-control"
-                           th:placeholder="#{admin.players.list.search.placeholder}">
+                <div class="admin-help-field">
+                    <div class="input-with-icon">
+                        <i class="fas fa-search input-icon"></i>
+                        <input type="text" id="playerSearch" autocomplete="off" class="form-control"
+                               th:placeholder="#{admin.players.list.search.placeholder}">
+                    </div>
+                    <button th:replace="~{fragments/action-help :: help('ap-search')}"></button>
                 </div>
                 <p id="searchHint" style="margin:.4rem 0 0 .25rem; font-size:.8rem; color:#94a3b8;"></p>
             </div>
-            <select id="nivelFilter" class="form-control" style="width:auto; min-width:180px;">
-                <option value="__all__" selected="selected" th:text="#{admin.players.list.filter.nivel.all}">Todos los niveles</option>
-                <th:block th:replace="~{fragments/nivel-options :: options(null, true)}"></th:block>
-            </select>
+            <div class="admin-help-field">
+                <select id="nivelFilter" class="form-control" style="width:auto; min-width:180px;">
+                    <option value="__all__" selected="selected" th:text="#{admin.players.list.filter.nivel.all}">Todos los niveles</option>
+                    <th:block th:replace="~{fragments/nivel-options :: options(null, true)}"></th:block>
+                </select>
+                <button th:replace="~{fragments/action-help :: help('ap-search')}"></button>
+            </div>
         </div>
 
         <!-- Карточки игроков для мобильных -->
@@ -149,12 +157,15 @@
                     </div>
                     <div class="player-detail-item">
                         <i class="fas fa-chart-line"></i>
-                        <select th:if="${isSuperAdmin}" class="form-control"
-                                style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
-                                th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
-                                onchange="saveNivelInline(this)">
-                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
-                        </select>
+                        <div class="admin-help-field" th:if="${isSuperAdmin}">
+                            <select class="form-control"
+                                    style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
+                                    th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
+                                    onchange="saveNivelInline(this)">
+                                <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
+                            </select>
+                            <button th:replace="~{fragments/action-help :: help('ap-level-inline')}"></button>
+                        </div>
                         <span th:unless="${isSuperAdmin}"
                               th:text="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR'} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
                     </div>
@@ -185,17 +196,21 @@
                             <i class="fab fa-whatsapp"></i>
                         </a>
                         <button type="button" class="btn-icon"
-                                th:if="${isSuperAdmin and T(com.padle.core.padelcoreservice.model.PlayerPadel).isGuestEmail(player.email)}"
+                                th:if="${isSuperAdmin and T(com.padle.core.application.identity.PlayerIdentity).isGuestEmail(player.email)}"
                                 th:title="#{admin.players.details.btn.guest_credentials}"
                                 th:onclick="'showGuestCredentialsModal(' + ${player.id} + ')'">
                             <i class="fas fa-key"></i>
                         </button>
+                        <th:block th:if="${isSuperAdmin and T(com.padle.core.application.identity.PlayerIdentity).isGuestEmail(player.email)}">
+                            <button th:replace="~{fragments/action-help :: help('ap-credentials')}"></button>
+                        </th:block>
                         <form th:if="${isSuperAdmin and !playersWithRegistrations.contains(player.id)}"
                               th:action="@{'/admin/players/' + ${player.id} + '/delete'}" method="post" style="display: inline;"
                               onsubmit="return confirm(t('admin.players.list.confirm.delete'))">
                             <button type="submit" class="btn-icon delete" th:title="#{admin.players.list.btn.delete}">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            <button th:replace="~{fragments/action-help :: help('ap-delete')}"></button>
                         </form>
                     </div>
                 </div>
@@ -246,12 +261,15 @@
                         </span>
                     </td>
                     <td>
-                        <select th:if="${isSuperAdmin}" class="form-control"
-                                style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
-                                th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
-                                onchange="saveNivelInline(this)">
-                            <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
-                        </select>
+                        <div class="admin-help-field" th:if="${isSuperAdmin}">
+                            <select class="form-control"
+                                    style="width:auto; padding:.35rem .5rem; font-size:.85rem;"
+                                    th:data-url="@{'/admin/players/' + ${player.id} + '/nivel'}"
+                                    onchange="saveNivelInline(this)">
+                                <th:block th:replace="~{fragments/nivel-options :: options(${player.nivelJugador}, true)}"></th:block>
+                            </select>
+                            <button th:replace="~{fragments/action-help :: help('ap-level-inline')}"></button>
+                        </div>
                         <span th:unless="${isSuperAdmin}"
                               th:text="${player.nivelJugador != null and player.nivelJugador.name() != 'SIN_ESPECIFICAR'} ? ${player.nivelJugador.name()} : #{admin.common.not_specified}">C7</span>
                     </td>
@@ -274,11 +292,14 @@
                                 <i class="fab fa-whatsapp"></i>
                             </a>
                             <button type="button" class="btn-icon"
-                                    th:if="${isSuperAdmin and T(com.padle.core.padelcoreservice.model.PlayerPadel).isGuestEmail(player.email)}"
+                                    th:if="${isSuperAdmin and T(com.padle.core.application.identity.PlayerIdentity).isGuestEmail(player.email)}"
                                     th:title="#{admin.players.details.btn.guest_credentials}"
                                     th:onclick="'showGuestCredentialsModal(' + ${player.id} + ')'">
                                 <i class="fas fa-key"></i>
                             </button>
+                            <th:block th:if="${isSuperAdmin and T(com.padle.core.application.identity.PlayerIdentity).isGuestEmail(player.email)}">
+                                <button th:replace="~{fragments/action-help :: help('ap-credentials')}"></button>
+                            </th:block>
                             <form th:if="${isSuperAdmin and !playersWithRegistrations.contains(player.id)}"
                                   th:action="@{'/admin/players/' + ${player.id} + '/delete'}"
                                   method="post"
@@ -287,6 +308,7 @@
                                 <button type="submit" class="btn-icon delete" th:title="#{admin.players.list.btn.delete}">
                                     <i class="fas fa-trash"></i>
                                 </button>
+                                <button th:replace="~{fragments/action-help :: help('ap-delete')}"></button>
                             </form>
                         </div>
                     </td>
@@ -333,14 +355,20 @@
                 <p id="guestCredError" class="text-danger" style="color:#ef4444; display:none; margin-bottom:1rem;"></p>
 
                 <div class="modal-actions" style="display:flex; flex-direction:column; gap:.75rem;">
-                    <button type="button" class="btn btn-primary" style="width:100%;" onclick="regenerateGuestCredentials()">
-                        <i class="fas fa-sync"></i>
-                        <span th:text="#{admin.players.details.modal.guest_credentials.btn.regenerate}">Generar nueva</span>
-                    </button>
-                    <button type="button" class="btn btn-outline" style="width:100%;" id="guestCredCopyBtn" onclick="copyGuestCredentials()">
-                        <i class="fas fa-copy"></i>
-                        <span th:text="#{admin.players.details.modal.guest_credentials.btn.copy}">Copiar</span>
-                    </button>
+                    <div class="admin-help-action">
+                        <button type="button" class="btn btn-primary" style="width:100%;" onclick="regenerateGuestCredentials()">
+                            <i class="fas fa-sync"></i>
+                            <span th:text="#{admin.players.details.modal.guest_credentials.btn.regenerate}">Generar nueva</span>
+                        </button>
+                        <button th:replace="~{fragments/action-help :: help('ap-credentials')}"></button>
+                    </div>
+                    <div class="admin-help-action">
+                        <button type="button" class="btn btn-outline" style="width:100%;" id="guestCredCopyBtn" onclick="copyGuestCredentials()">
+                            <i class="fas fa-copy"></i>
+                            <span th:text="#{admin.players.details.modal.guest_credentials.btn.copy}">Copiar</span>
+                        </button>
+                        <button th:replace="~{fragments/action-help :: help('ap-credentials-copy')}"></button>
+                    </div>
                 </div>
             </div>
         </div>

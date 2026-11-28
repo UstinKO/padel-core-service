@@ -1,0 +1,28 @@
+package com.padle.core.application.tournament;
+
+public enum TournamentType {
+    KING_OF_COURT("Rey de Cancha"),
+    AMERICANO("Americano"),
+    AMERICANO_TEAMS("Americano Equipos"),
+    CANCHA_ABIERTA("Cancha Abierta"),
+    PADEL_CLINIC("Clínica de Pádel");
+
+    private final String value;
+
+    TournamentType(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public static TournamentType fromValue(String value) {
+        for (TournamentType type : TournamentType.values()) {
+            if (type.value.equals(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown tournament type: " + value);
+    }
+}

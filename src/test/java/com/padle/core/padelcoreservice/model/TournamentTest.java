@@ -1,7 +1,8 @@
 package com.padle.core.padelcoreservice.model;
 
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.tournament.Tournament;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;

@@ -8,6 +8,8 @@ Spring Boot монолит для управления падель-турнир
 
 ## Документация
 
+[Короткая помощь организатору](organizer-action-help.md): подсказки парных и индивидуальных турниров, административного календаря и управления игроками.
+
 Переход среды разработки на Codex: [правила, запуск и активация конвейера](codex-migration.md).
 Точка входа для агента — корневой `AGENTS.md`, подробные правила — `.agents/`.
 
@@ -22,9 +24,10 @@ Spring Boot монолит для управления падель-турнир
 | [Auth Flow](auth-flow) | Form Login, JWT, Google OAuth2, rate limiting, защита регистрации |
 | [Пилот рейтинга Elo](rating-pilot) | Ограничение доступа, проверенная история, автоматический пересчёт и тестовый откат |
 | [Архитектура приложения](architecture) | Слои, AOP observability, Prometheus/Loki/Grafana, Docker, CI/CD |
-| [Многомодульный монолит](modular-monolith/README.md) | Семь целевых модулей и ADR; рабочий reactor, десять вычислений engines, два сценария чтения и две команды application. Read-фаза 4 принята, фазу 5 завершает независимая приёмка; приложение работоспособно после каждой задачи |
+| [Многомодульный монолит](modular-monolith/README.md) | Рабочие модули, текущая фаза хранения и целевой граф. [Где менять код и тесты](../.agents/PROJECT.md#размещение-исходников) |
 | [Инфраструктурная безопасность](infrastructure-security) | Nginx, CrowdSec, UFW, Docker port isolation, SSL, runbook инцидентов. **Приватный документ — не в репозитории** (детали защиты сервера) |
 | [Swarm на одной ВМ](swarm/README.md) | Инвентаризация 19.11.2026, схемы, ADR, ресурсы, риски и порядок #1207–#1218 |
+| [Проведение турнира при отказе двух провайдеров](microservices/README.md) | Автономное судейство, сохранность счёта, Elo и смета. [Смета на 500 пользователей одного веб-приложения](microservices/customer-capacity.md) · [Карта сервисов и схемы взаимодействия](microservices/architecture-map.md) · [Шлюз и скорость ответа](microservices/gateway-and-services.md) · [Границы сервисов по коду и нагрузке](microservices/service-boundaries.md) · [Пять сервисов, базы и протоколы связи](microservices/data-and-contracts.md) · [Аудит пилота](microservices/pilot-readiness.md) · [Испытания команды](microservices/pilot-checks.md) · [Согласование с заказчиком](microservices/customer-agreement.md) |
 | [Исторический план микросервисов](microservices-migration-plan) | Справочный материал связей и рисков; текущий план — многомодульный монолит, Swarm исследуется отдельно |
 | [Дизайн-токены as-is](design-tokens-as-is) | Аудит текущих цветов/типографики/отступов из 14 CSS-файлов перед переносом фронтенда на React |
 | [Архетипы экранов](screen-archetypes) | 56 Thymeleaf-шаблонов сгруппированы в 13 layout-архетипов для захвата в Figma |
@@ -47,6 +50,7 @@ Spring Boot монолит для управления падель-турнир
 | Изменение в коде | Что обновить |
 |------------------|--------------|
 | Новый, изменённый или удалённый HTTP-эндпоинт | Таблица домена в [domain-overview](domain-overview); подробности — в `endpoints/<файл>.md`, если эндпоинт там описан; таблицы URL в `.agents/PROJECT.md` |
+| Перенос кода в другой модуль | [Карта исходников](../.agents/PROJECT.md#размещение-исходников) и документ текущего среза [фазы хранения](modular-monolith/phase-6/README.md) |
 | Liquibase-миграция, поле entity, значение enum | [database-architecture](database-architecture): колонка, enum, «История миграций», версия схемы в шапке; «Текущая версия» в [architecture](architecture) и в `.agents/PROJECT.md` |
 | `SecurityConfig`, `@PreAuthorize`, фильтры, JWT | [auth-flow](auth-flow), строка «Аутентификация» в `endpoints/*.md` |
 | Email-шаблон | Таблица шаблонов в [domain-overview](domain-overview) § Notifications и в `.agents/PROJECT.md` |
@@ -110,7 +114,7 @@ SITE_KEY, SECRET_KEY
 
 | Тип | Таблица | Роли |
 |-----|---------|------|
-| `PlayerPadel` | `player_padel_db` | `ROLE_PLAYER` |
+| `PlayerPrincipal` (сессия), `PlayerPadel` в `padel-persistence` | `player_padel_db` | `ROLE_PLAYER` |
 | `Owner` (сессия), `OwnerEntity` (хранение) | `owners_db` | `ROLE_SUPER_ADMIN`, `ROLE_ORGANIZER`, `ROLE_ADMIN`, `ROLE_CLUB_ADMIN` |
 
 ---
@@ -146,3 +150,7 @@ SITE_KEY, SECRET_KEY
 [Разделение служебного и тестового трафика](analytics-traffic.md) — обезличенные признаки MVC-страниц и границы чистого периода GA4.
 
 Объединение выбранных профилей: [контракт, конфликты и аудит](guest-profile-merge.md).
+
+- [Универсальный экспорт результатов](endpoints/tournament-results-export.md) — Excel / CSV одного мероприятия, только SUPER_ADMIN, контакты по явному выбору.
+
+- [Экспорт результатов в админке](results-export-interface.md) — выбор Excel / CSV и отдельный режим телефонов.

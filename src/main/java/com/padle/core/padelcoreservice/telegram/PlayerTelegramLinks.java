@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,7 @@ public class PlayerTelegramLinks {
         boolean eligible = access.allowsPlayer(player.getId()) && player.isActivo() && !player.isGuestAccount();
         return new LinkStatus(eligible && available(),
                 eligible && store.connection(player.getId()).filter(Connection::enabled).isPresent(),
-                store.preference(player.getId()), eligible);
+                store.preference(player.getId()), eligible, store.invitationDismissed(player.getId()));
     }
 
     public LinkStatus preference(PlayerPadel player, ContactPreference preference) {
@@ -39,6 +39,14 @@ public class PlayerTelegramLinks {
             throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
         }
         store.preference(player.getId(), preference);
+        return status(player);
+    }
+
+    public LinkStatus invitation(PlayerPadel player, boolean dismissed) {
+        if (!access.allowsPlayer(player.getId()) || !player.isActivo() || player.isGuestAccount()) {
+            throw new AccountException(HttpStatus.CONFLICT, "TELEGRAM_UNAVAILABLE");
+        }
+        store.invitationDismissed(player.getId(), dismissed);
         return status(player);
     }
 

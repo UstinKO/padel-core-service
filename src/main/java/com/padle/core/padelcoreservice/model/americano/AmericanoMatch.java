@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.model.americano;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import com.padle.core.padelcoreservice.model.enums.PlayoffStage;
 import jakarta.persistence.*;
@@ -29,7 +29,7 @@ public class AmericanoMatch {
 
     @ManyToOne
     @JoinColumn(name = "tournament_id", nullable = false)
-    private com.padle.core.padelcoreservice.model.Tournament tournament;
+    private com.padle.core.persistence.tournament.Tournament tournament;
 
     @Column(name = "match_number", nullable = false)
     private Integer matchNumber; // Номер матча в раунде

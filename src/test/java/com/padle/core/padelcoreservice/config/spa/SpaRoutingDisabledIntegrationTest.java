@@ -1,15 +1,20 @@
 package com.padle.core.padelcoreservice.config.spa;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 import java.util.List;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,6 +36,9 @@ class SpaRoutingDisabledIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private PlayerRepository players;
 
     @Test
     void currentProductionRoutesAreNotForwardedToSpa() throws Exception {
@@ -58,11 +66,13 @@ class SpaRoutingDisabledIntegrationTest {
     }
 
     @Test
+    @Transactional
     void signedInPlayerSeesOriginalCabinetWithParticipationPanel() throws Exception {
-        var player = PlayerPadel.builder()
-                .id(42L).nombre("Preview").apellido("Player").email("player@example.test")
-                .activo(true).emailConfirmado(true).fechaRegistro(LocalDateTime.now()).build();
-        var response = mockMvc.perform(get("/players/dashboard").with(user(player)))
+        var player = players.save(PlayerPadel.builder()
+                .nombre("Preview").apellido("Player").email(UUID.randomUUID() + "@example.test")
+                .passwordHash("fixture").nivelJugador(Nivel.C7).preferredLocale("es")
+                .activo(true).emailConfirmado(true).build());
+        var response = mockMvc.perform(get("/players/dashboard").with(playerUser(player)))
                 .andExpect(status().isOk())
                 .andExpect(view().name("players/dashboard"))
                 .andReturn().getResponse();

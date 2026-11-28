@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${tournament.nombre} + ' - Americano Equipos | 1-Padel'">Americano Equipos | 1-Padel</title>
+    <title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' - Americano Equipos | 1-Padel'">Americano Equipos | 1-Padel</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -162,10 +162,10 @@
 
     <!-- Banner -->
     <div class="tournament-banner">
-        <h1 th:text="${tournament.nombre}">Americano Equipos</h1>
+        <h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Americano Equipos</h1>
         <div class="tournament-meta">
             <span class="meta-badge" th:text="${tournament.generoFormato}">Mixto</span>
-            <span class="meta-badge" th:text="${tournament.categoriaNivel}">C7</span>
+            <span class="meta-badge" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
             <span class="meta-badge">Americano Equipos</span>
             <span class="meta-badge" th:text="${tournament.estado}">En curso</span>
         </div>
@@ -410,10 +410,10 @@
         <div class="bracket-export-meta">
             <img th:src="@{/images/1.svg}" alt="1-Padel" width="56" height="56">
             <div>
-                <p class="name" th:text="${tournament.nombre}">Torneo</p>
+                <p class="name" th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Torneo</p>
                 <div class="badges">
                     <span th:if="${tournament.generoFormato}" th:text="${tournament.generoFormato}">Mixto</span>
-                    <span th:if="${tournament.categoriaNivel}" th:text="${tournament.categoriaNivel}">C7</span>
+                    <span th:if="${tournament.categoriaNivel}" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">C7</span>
                     <span th:if="${tournament.fechaInicio}" th:text="${#temporals.format(tournament.fechaInicio, 'dd.MM.yyyy')}">01.01.2026</span>
                     <span th:if="${tournament.clubNombre}" th:text="${tournament.clubNombre}">Club</span>
                 </div>

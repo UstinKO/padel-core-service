@@ -166,7 +166,7 @@
                 </form>
                 <p class="auth-entry-switch">
                     <span th:text="#{login.no_account}">¿No tienes cuenta?</span>
-                    <a th:href="@{/players/registro}" class="auth-link" th:text="#{login.register_free}">Regístrate gratis</a>
+                    <a th:href="@{/players/registro(tournamentId=${tournamentId})}" class="auth-link" th:text="#{login.register_free}">Regístrate gratis</a>
                 </p>
             </div>
         </div>

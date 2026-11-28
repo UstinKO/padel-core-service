@@ -2,9 +2,9 @@ package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +32,7 @@ import com.padle.core.padelcoreservice.security.TelegramOnboardingSession;
 import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -87,15 +88,15 @@ class PlayerTelegramOnboardingIntegrationTest {
                 .andExpect(redirectedUrl("/login?destination=%2Ftelegram%2Fjoin"))
                 .andExpect(header().string("Cache-Control","no-store"))
                 .andExpect(header().string("Referrer-Policy","same-origin"));
-        mvc.perform(get("/telegram/join").with(user(player)))
+        mvc.perform(get("/telegram/join").with(playerUser(player)))
                 .andExpect(status().isOk()).andExpect(model().attribute("join",
                         new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("READY",player.getNombreCompleto())));
         assertThat(tokenCount(player)).isZero();
         assertThat(connections.preference(player.getId())).isEqualTo(ContactPreference.UNSPECIFIED);
-        mvc.perform(post("/telegram/join").with(user(player)))
+        mvc.perform(post("/telegram/join").with(playerUser(player)))
                 .andExpect(status().isFound()).andExpect(redirectedUrl("/error/403"));
         assertThat(tokenCount(player)).isZero();
-        String location=mvc.perform(post("/telegram/join").with(user(player)).with(csrf()).locale(Locale.ENGLISH))
+        String location=mvc.perform(post("/telegram/join").with(playerUser(player)).with(csrf()).locale(Locale.ENGLISH))
                 .andExpect(status().isSeeOther()).andReturn().getResponse().getHeader("Location");
         assertThat(location).matches("https://t.me/OnePadelQaBot\\?start=[A-Za-z0-9_-]{32}");
         String token=location.substring(location.indexOf("start=")+6);
@@ -106,10 +107,10 @@ class PlayerTelegramOnboardingIntegrationTest {
         assertThat(connections.byUser(75101)).map(Connection::playerId).contains(player.getId());
         assertThat(tokenCount(player)).isZero();
         assertThat(sent).hasSize(1);
-        mvc.perform(get("/telegram/join").with(user(player))).andExpect(status().isOk())
+        mvc.perform(get("/telegram/join").with(playerUser(player))).andExpect(status().isOk())
                 .andExpect(model().attribute("join",new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("CONNECTED",player.getNombreCompleto())));
         var linkedAt=jdbc.queryForObject("SELECT linked_at FROM player_telegram_connections WHERE player_id=?",Object.class,player.getId());
-        mvc.perform(post("/telegram/join").with(user(player)).with(csrf()))
+        mvc.perform(post("/telegram/join").with(playerUser(player)).with(csrf()))
                 .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/telegram/join"));
         poller.handle(new Update(uniqueUpdate(),new Message(2,new User(75102),new Chat(75102,"private"),"/start "+token),null));
         assertThat(connections.byUser(75101)).map(Connection::playerId).contains(player.getId());
@@ -122,7 +123,7 @@ class PlayerTelegramOnboardingIntegrationTest {
         var player=player();
         when(properties.pilotEnabled()).thenReturn(true);
         mvc.perform(get("/telegram/join")).andExpect(status().isOk());
-        mvc.perform(post("/telegram/join").with(user(player)).with(csrf()))
+        mvc.perform(post("/telegram/join").with(playerUser(player)).with(csrf()))
                 .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/telegram/join"));
         assertThat(tokenCount(player)).isZero();
         when(properties.pilotEnabled()).thenReturn(false);
@@ -133,7 +134,7 @@ class PlayerTelegramOnboardingIntegrationTest {
                         new com.padle.core.padelcoreservice.controller.TelegramJoinController.Join("ACCOUNT_REQUIRED","")));
         player.setActivo(false);
         players.saveAndFlush(player);
-        mvc.perform(post("/telegram/join").with(user(player)).with(csrf()))
+        mvc.perform(post("/telegram/join").with(playerUser(player)).with(csrf()))
                 .andExpect(status().isSeeOther()).andExpect(redirectedUrl("/telegram/join"))
                 .andExpect(flash().attribute("joinFailed",true));
         assertThat(tokenCount(player)).isZero();
@@ -147,7 +148,7 @@ class PlayerTelegramOnboardingIntegrationTest {
         mvc.perform(get("/api/admin/telegram/site-invitation").with(user("admin").roles("SUPER_ADMIN")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.available").value(true))
                 .andExpect(jsonPath("$.url").value(onboarding.siteInvitation().url()));
-        mvc.perform(get("/api/admin/telegram/site-invitation").with(user(player())))
+        mvc.perform(get("/api/admin/telegram/site-invitation").with(playerUser(player())))
                 .andExpect(status().isForbidden());
         assertThat(onboarding.invitation().url()).isEqualTo("https://t.me/OnePadelQaBot?start=connect");
         when(properties.enabled()).thenReturn(false);
@@ -183,9 +184,9 @@ class PlayerTelegramOnboardingIntegrationTest {
         var first=player(); var second=player();
         String token=start(74201);
         String json="{\"token\":\""+token+"\",\"playerId\":"+second.getId()+"}";
-        mvc.perform(post("/api/players/me/telegram/onboarding").with(user(first))
+        mvc.perform(post("/api/players/me/telegram/onboarding").with(playerUser(first))
                 .param("request",requestId(token).toString()).sessionAttr(TelegramOnboardingSession.KEY,Map.of(requestId(token).toString(),token)).contentType("application/json").content(json)).andExpect(status().isForbidden());
-        mvc.perform(post("/api/players/me/telegram/onboarding").with(user(first)).with(csrf())
+        mvc.perform(post("/api/players/me/telegram/onboarding").with(playerUser(first)).with(csrf())
                 .param("request",requestId(token).toString()).sessionAttr(TelegramOnboardingSession.KEY,Map.of(requestId(token).toString(),token)).contentType("application/json").content(json)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.playerName").value(first.getNombreCompleto()))
                 .andExpect(jsonPath("$.state").value("PENDING"))
@@ -281,14 +282,14 @@ class PlayerTelegramOnboardingIntegrationTest {
         var session=(MockHttpSession)context.getRequest().getSession(false);
         mvc.perform(get("/telegram/connect").param("request",requestId(token).toString()).session(session)).andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login?destination="+URLEncoder.encode(TelegramOnboardingSession.destination(requestId(token)),StandardCharsets.UTF_8)));
-        mvc.perform(get("/api/players/me/telegram/onboarding").param("request",requestId(token).toString()).session(session).with(user(player)))
+        mvc.perform(get("/api/players/me/telegram/onboarding").param("request",requestId(token).toString()).session(session).with(playerUser(player)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("READY"));
         assertThat(connections.connection(player.getId())).isEmpty();
         mvc.perform(post("/login").with(csrf()).param("username","missing-"+UUID.randomUUID()+"@example.test")
                 .param("password","fixture").param("destination","/telegram/connect"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login?error=true&destination=%2Ftelegram%2Fconnect"));
-        mvc.perform(post("/api/players/me/telegram/onboarding").with(user(player)).with(csrf()))
+        mvc.perform(post("/api/players/me/telegram/onboarding").with(playerUser(player)).with(csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("TELEGRAM_LINK_INVALID"));
     }
 
@@ -316,11 +317,11 @@ class PlayerTelegramOnboardingIntegrationTest {
         TelegramOnboardingSession.remember(session,requestId(one),one);
         TelegramOnboardingSession.remember(session,requestId(two),two);
         mvc.perform(post("/api/players/me/telegram/onboarding").param("request",requestId(one).toString())
-                .session(session).with(user(first)).with(csrf())).andExpect(status().isOk());
+                .session(session).with(playerUser(first)).with(csrf())).andExpect(status().isOk());
         assertThat(pending.review(PlayerTelegramLinks.hash(one)).orElseThrow().playerId()).isEqualTo(first.getId());
         assertThat(pending.review(PlayerTelegramLinks.hash(two)).orElseThrow().playerId()).isNull();
         mvc.perform(post("/api/players/me/telegram/onboarding").param("request",requestId(two).toString())
-                .session(session).with(user(second)).with(csrf())).andExpect(status().isOk());
+                .session(session).with(playerUser(second)).with(csrf())).andExpect(status().isOk());
         assertThat(onboarding.complete(requestId(one),75001)).contains(first.getId());
         assertThat(onboarding.complete(requestId(two),75002)).contains(second.getId());
     }

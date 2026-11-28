@@ -47,6 +47,7 @@
     </style>
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/contact-check.css}">
 </head>
 <body th:classappend="${previewEloByPlayer != null and previewEloByPlayer.get(player.id) != null} ? 'elo-cabinet' : ''">
 <!-- Header con navegación para usuarios autenticados -->
@@ -126,6 +127,8 @@
             <section th:if="${eloRow != null}" id="player-elo" class="elo-preview elo-preview-card"
                      th:insert="~{fragments/elo-preview :: playerCard}"></section>
         </th:block>
+
+        <section th:replace="~{fragments/player-telegram :: invitation}"></section>
 
         <!-- Stats Cards -->
         <div class="stats-grid">
@@ -218,6 +221,7 @@
                         </label>
                         <select id="dashboardNivel" class="filter-select">
                             <option value="todos" th:text="#{filter.nivel.all}">Todos</option>
+                            <option value="TODOS" th:text="#{calendar.level.TODOS}">Todos los niveles</option>
                             <option value="Principiante">Principiante</option>
                             <option value="C9">C9</option>
                             <option value="C8">C8</option>
@@ -635,6 +639,9 @@
 <script th:src="@{/js/dashboard.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-preview-evolution.js}" defer></script>
 <script th:src="@{/js/participation.js}" defer></script>
+<script th:src="@{/js/vendor/libphonenumber/libphonenumber-max.js}"></script>
+<script th:src="@{/js/vendor/libphonenumber/examples.mobile.js}"></script>
+<script th:src="@{/js/contact-fields.js}"></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
 <script th:if="${previewEloByPlayer != null}" th:src="@{/js/elo-feedback.js}" defer></script>

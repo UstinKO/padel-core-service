@@ -1,10 +1,28 @@
 package com.padle.core.padelcoreservice.marketing;
 
+import com.padle.core.persistence.tournament.JdbcMarketingEvents;
+import com.padle.core.persistence.tournament.MarketingJournal;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.dto.PaymentUpdateDto;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Payment;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.PaymentMethod;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.PaymentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.PaymentService;
 import com.padle.core.padelcoreservice.service.TournamentService;
@@ -34,6 +52,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -52,9 +71,10 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @Transactional
 @AutoConfigureMockMvc
 class MarketingIntegrationTest {
+    private static final java.util.concurrent.atomic.AtomicLong PHONE_SEQUENCE =
+            new java.util.concurrent.atomic.AtomicLong(10000000);
     @Autowired MarketingContextService context;
     @Autowired MarketingOutbox outbox;
-    @Autowired MarketingJournal journal;
     @Autowired AttributionRegistrationJournal attribution;
     @Autowired MarketingReportService report;
     @Autowired PaymentService paymentService;
@@ -107,7 +127,7 @@ class MarketingIntegrationTest {
         var pending = outbox.browserEvents(browser);
         assertThat(pending).hasSize(2);
         outbox.acknowledge(pending.get(0).eventId(), browser);
-        assertThat(new MarketingOutbox(jdbc, new MetaProperties(true, "930260823500064", "", "v26.0", true, ""), context)
+        assertThat(new MarketingOutbox(new JdbcMarketingEvents(jdbc), new MetaProperties(true, "930260823500064", "", "v26.0", true, ""), context)
                 .browserEvents(browser)).hasSize(1);
     }
 
@@ -162,7 +182,7 @@ class MarketingIntegrationTest {
         payments.saveAndFlush(payment);
         assertThat(purchases(payment.getId())).hasSize(1);
         jdbc.update("UPDATE marketing_events_db SET next_attempt_at = CURRENT_TIMESTAMP WHERE event_id = ?", first.eventId());
-        var restarted = new MarketingOutbox(jdbc,
+        var restarted = new MarketingOutbox(new JdbcMarketingEvents(jdbc),
                 new MetaProperties(true, "930260823500064", "", "v26.0", true, ""), context);
         var retry = restarted.claim().orElseThrow();
         assertThat(retry.eventId()).isEqualTo(first.eventId());
@@ -231,7 +251,7 @@ class MarketingIntegrationTest {
         assertThat(outbox.claim()).isEmpty();
         outbox.finish(first, false, 503);
         jdbc.update("UPDATE marketing_events_db SET next_attempt_at = CURRENT_TIMESTAMP WHERE event_id = ?", first.eventId());
-        var restarted = new MarketingOutbox(jdbc, new MetaProperties(true, "930260823500064", "", "v26.0", true, ""), context);
+        var restarted = new MarketingOutbox(new JdbcMarketingEvents(jdbc), new MetaProperties(true, "930260823500064", "", "v26.0", true, ""), context);
         var second = restarted.claim().orElseThrow();
         assertThat(second.eventId()).isEqualTo(first.eventId());
         assertThat(second.occurredAt()).isEqualTo(first.occurredAt());
@@ -281,7 +301,8 @@ class MarketingIntegrationTest {
         var registration = registration(RegistrationStatus.CONFIRMED);
         Payment payment = payment(registration, "300", "ARS", null);
         jdbc.update("DELETE FROM marketing_events_db WHERE payment_id = ?", payment.getId());
-        var disabled = new MarketingJournal(jdbc, new MetaProperties(false, "", "", "", true, ""), context, attribution);
+        var disabled = new MarketingJournal(jdbc, new RequestRegistrationJournalContext(
+                new MetaProperties(false, "", "", "", true, ""), context, attribution));
         payment.setAmount(new BigDecimal("500"));
         disabled.payment(payment);
         entities.detach(payment);
@@ -331,7 +352,7 @@ class MarketingIntegrationTest {
         mvc.perform(get("/admin/marketing/export.csv").param("tournamentId", Long.toString(tournamentId)))
                 .andExpect(status().is3xxRedirection());
         mvc.perform(get("/admin/marketing/export.csv").param("tournamentId", Long.toString(tournamentId))
-                .with(user(player()))).andExpect(redirectedUrl("/error/403"));
+                .with(playerUser(player()))).andExpect(redirectedUrl("/error/403"));
         Owner other = Owner.builder().id(9999L).email("owner@example.test").password("test")
                 .role(OwnerRole.ORGANIZER).isActive(true).build();
         mvc.perform(get("/admin/marketing/export.csv").param("tournamentId", Long.toString(tournamentId))
@@ -381,7 +402,7 @@ class MarketingIntegrationTest {
     @Test
     void testModeEventsAreNeverReplayedIntoProductionMode() {
         payment(registration(RegistrationStatus.CONFIRMED), "1000", "ARS", null);
-        var production = new MarketingOutbox(jdbc, new MetaProperties(true, "930260823500064", "", "v26.0", false, ""), context);
+        var production = new MarketingOutbox(new JdbcMarketingEvents(jdbc), new MetaProperties(true, "930260823500064", "", "v26.0", false, ""), context);
         assertThat(production.claim()).isEmpty();
         assertThat(production.browserEvents(browser)).isEmpty();
         assertThat(outbox.claim()).isPresent();
@@ -436,7 +457,7 @@ class MarketingIntegrationTest {
     private PlayerPadel player() {
         return players.saveAndFlush(PlayerPadel.builder().nombre("Игрок").apellido("Тест")
                 .email(UUID.randomUUID() + "@example.test").passwordHash("test-hash").activo(true)
-                .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9)
+                .emailConfirmado(true).preferredLocale("es").nivelJugador(Nivel.C9).telefono("+54911" + PHONE_SEQUENCE.incrementAndGet())
                 .telegramUsername("test" + UUID.randomUUID().toString().replace("-", "").substring(0, 10)).build());
     }
 

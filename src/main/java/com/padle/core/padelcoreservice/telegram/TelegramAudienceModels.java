@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.Set;

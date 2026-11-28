@@ -1,13 +1,14 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.registration.CancellationHistory;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
-import com.padle.core.padelcoreservice.model.enums.PaymentStatus;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 

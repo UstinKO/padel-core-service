@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.repository;
 
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -6,7 +6,7 @@
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${tournament.nombre} + ' - Admin Americano Equipos | 1-Padel'">Admin Americano Equipos</title>
+    <title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' - Admin Americano Equipos | 1-Padel'">Admin Americano Equipos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -185,10 +185,10 @@
         <!-- Заголовок -->
         <div class="tournament-header" style="margin-bottom:1.5rem">
             <div class="tournament-title-section">
-                <h1 th:text="${tournament.nombre}">Americano Equipos</h1>
+                <h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Americano Equipos</h1>
                 <div class="tournament-badges">
                     <span class="badge" th:text="#{__${'enum.genero.' + tournament.generoFormato.name()}__}">Mixto</span>
-                    <span class="badge badge-level" th:text="${#strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
+                    <span class="badge badge-level" th:text="${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : #strings.replace(tournament.categoriaNivel, 'C4_C3', 'C4/C3')}">C7</span>
                     <span class="badge badge-type" th:text="#{__${'enum.tipo.' + tournament.tipo.name()}__}">Americano Equipos</span>
                     <span class="badge badge-status" th:text="#{__${'enum.estado.' + tournament.estado.name()}__}"
                           th:classappend="'badge-' + ${tournament.estado.toString().toLowerCase()}">En curso</span>
@@ -243,7 +243,7 @@
                                     onclick="return confirm(t('admin.playoff.confirm.import'))">
                                 <i class="fas fa-file-import"></i>
                                 <span th:text="#{admin.playoff.btn.import}">Importar inscripciones</span>
-                            </button>
+                            </button><button th:replace="~{fragments/action-help :: help('import')}"></button>
                         </form>
                     </div>
                 </div>
@@ -324,8 +324,8 @@
                         <th>#</th>
                         <th th:text="#{admin.playoff.col.pair}">Pareja</th>
                         <th th:text="#{admin.playoff.col.origin}">Origen</th>
-                        <th th:title="#{admin.playoff.col.paid_title}" th:text="#{admin.playoff.col.paid}">Pag.</th>
-                        <th th:title="#{admin.playoff.col.attended_title}" th:text="#{admin.playoff.col.attended}">Asi.</th>
+                        <th th:title="#{admin.playoff.col.paid_title}"><span th:text="#{admin.playoff.col.paid}">Pag.</span><button th:replace="~{fragments/action-help :: help('payment')}"></button></th>
+                        <th th:title="#{admin.playoff.col.attended_title}"><span th:text="#{admin.playoff.col.attended}">Asi.</span><button th:replace="~{fragments/action-help :: help('attendance')}"></button></th>
                         <th th:text="#{admin.playoff.col.admin_note}">Nota admin</th>
                         <th th:if="${qualStarted}" th:text="#{admin.playoff.col.sets}">Sets G/P</th>
                         <th th:if="${qualStarted}" th:text="#{admin.playoff.col.games}">Games G/P</th>
@@ -448,7 +448,7 @@
             <div class="section-header">
                 <h3>
                     <i class="fas fa-list-ol"></i>
-                    <span th:text="#{admin.playoff.section.qualification}">Calificación</span>
+                    <span th:text="#{admin.playoff.section.qualification}">Calificación</span><button th:replace="~{fragments/action-help :: help('ranking')}"></button>
                 </h3>
                 <span class="info-pill" th:if="${qualStarted}">
                     <i class="fas fa-check"></i>
@@ -472,7 +472,7 @@
                             onclick="return confirm(t('admin.playoff.confirm.start_qual'))">
                         <i class="fas fa-play"></i>
                         <span th:text="#{admin.playoff.btn.start_qual}">Iniciar calificación</span>
-                    </button>
+                    </button><button th:replace="~{fragments/action-help :: help('start')}"></button>
                 </form>
                 <div th:if="${#lists.size(teams) < 2}"
                      style="margin-top:.75rem;font-size:.82rem;color:#94a3b8">
@@ -567,11 +567,11 @@
                         <button type="button" class="btn btn-primary btn-sm" onclick="createQualMatch()">
                             <i class="fas fa-play"></i>
                             <span th:text="#{admin.playoff.qual.new_match.submit}">Crear partido</span>
-                        </button>
+                        </button><button th:replace="~{fragments/action-help :: help('match')}"></button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="addToQueue()">
                             <i class="fas fa-clock"></i>
                             <span th:text="#{admin.playoff.qual.new_match.add_to_queue}">Agregar a la cola</span>
-                        </button>
+                        </button><button th:replace="~{fragments/action-help :: help('queue')}"></button>
                     </div>
                     <p id="newMatchHint" style="margin:.5rem 0 0;font-size:.8rem;color:#94a3b8"></p>
                     <p id="qualDoneHint" style="margin:.35rem 0 0;font-size:.78rem;color:#94a3b8"></p>
@@ -612,9 +612,9 @@
                                   data-seeding=#{team_playoff.early.manual.seeding},
                                   data-teams=#{team_playoff.early.manual.teams},
                                   data-error=#{team_playoff.early.error}">
-                    <h4 id="earlyPlayoffTitle" th:text="#{team_playoff.early.title}">Playoff anticipado</h4>
+                    <h4 style="display:inline" id="earlyPlayoffTitle" th:text="#{team_playoff.early.title}">Playoff anticipado</h4><button th:replace="~{fragments/action-help :: help('early')}"></button>
                     <p id="earlySummary" aria-live="polite"></p>
-                    <p id="earlyProjected" hidden></p>
+                    <p id="earlyProjected" hidden></p><span id="earlyByeHelp" hidden><button th:replace="~{fragments/action-help :: help('bye')}"></button></span>
                     <p id="earlyReason" aria-live="polite"></p>
                     <div id="earlySuggestions" class="early-suggestions"></div>
                     <details id="earlyManual">
@@ -672,7 +672,7 @@
                                         <button type="button" class="icon-btn"
                                                 th:attr="data-court-match=${match.id},aria-label=#{admin.playoff.courts.title}" th:title="#{admin.playoff.courts.title}">
                                             <i class="fas fa-exchange-alt"></i>
-                                        </button>
+                                        </button><button th:replace="~{fragments/action-help :: help('court')}"></button>
                                     </span>
                                 </div>
 
@@ -723,7 +723,7 @@
                                                    min="0" max="6" value="4" placeholder="B">
                                             <button class="save-btn"
                                                     th:attr="data-match-id=${match.id},data-tid=${tournament.id}"
-                                                    onclick="submitQualScore(this)">OK</button>
+                                                    onclick="submitQualScore(this)">OK</button><button th:replace="~{fragments/action-help :: help('score')}"></button>
                                         </div>
                                     </div>
 
@@ -768,7 +768,7 @@
                                 onclick="return confirm(t('admin.playoff.confirm.start_playoff'))">
                             <i class="fas fa-trophy"></i>
                             <span th:text="#{admin.playoff.btn.start_playoff}">Iniciar Playoff</span>
-                        </button>
+                        </button><button th:replace="~{fragments/action-help :: help('playoff')}"></button>
                     </form>
                 </div>
 
@@ -801,7 +801,7 @@
             <div class="section-header">
                 <h3>
                     <i class="fas fa-trophy"></i>
-                    <span th:text="#{admin.playoff.section.playoff}">Playoff</span>
+                    <span th:text="#{admin.playoff.section.playoff}">Playoff</span><button th:replace="~{fragments/action-help :: help('finish')}"></button>
                 </h3>
                 <form th:action="@{'/tournaments/team-playoff/admin/' + ${tournament.id} + '/regenerate-playoff'}"
                       method="post" style="display:inline">
@@ -833,7 +833,7 @@
                                 <button type="button" class="icon-btn"
                                         th:attr="data-court-match=${match.id},aria-label=#{admin.playoff.courts.title}" th:title="#{admin.playoff.courts.title}">
                                     <i class="fas fa-exchange-alt"></i>
-                                </button>
+                                </button><button th:replace="~{fragments/action-help :: help('court')}"></button>
                             </span>
                             <span th:if="${match.playoffStage != null}" class="playoff-stage-label"
                                   th:text="#{${'team_playoff.stage.' + #strings.toLowerCase(match.playoffStage)}}">SEMI_FINAL</span>
@@ -862,11 +862,11 @@
                                         th:attr="data-swap-match=${match.id},data-swap-slot=1"
                                         th:title="#{admin.playoff.swap.title}" th:aria-label="#{admin.playoff.swap.title}">
                                     <i class="fas fa-exchange-alt" aria-hidden="true"></i>
-                                </button>
+                                </button><button th:replace="~{fragments/action-help :: help('swap')}"></button>
                                 <button th:if="${(match.isCompleted or match.playoffPlayStarted == true) and match.team1Player1Name != null and match.team2Player1Name != null}"
                                         type="button" class="btn btn-outline btn-sm"
                                         th:attr="data-swap-match=${match.id},data-swap-slot=1,data-correction='true'"
-                                        th:text="#{admin.playoff.swap.correct}"></button>
+                                        th:text="#{admin.playoff.swap.correct}"></button><button th:replace="~{fragments/action-help :: help('swap')}"></button>
                             </div>
 
                             <div class="vs-block">
@@ -892,7 +892,7 @@
                                            min="0" max="7" value="4">
                                     <button class="save-btn"
                                             th:attr="data-match-id=${match.id},data-tid=${tournament.id}"
-                                            onclick="submitPlayoffScore(this)">OK</button>
+                                            onclick="submitPlayoffScore(this)">OK</button><button th:replace="~{fragments/action-help :: help('score')}"></button>
                                 </div>
                                 <span th:if="${not match.isCompleted and (match.team1Player1Name == null or match.team2Player1Name == null)}"
                                       class="tbd" th:text="#{admin.playoff.tbd}">Esperando...</span>
@@ -912,11 +912,11 @@
                                         th:attr="data-swap-match=${match.id},data-swap-slot=2"
                                         th:title="#{admin.playoff.swap.title}" th:aria-label="#{admin.playoff.swap.title}">
                                     <i class="fas fa-exchange-alt" aria-hidden="true"></i>
-                                </button>
+                                </button><button th:replace="~{fragments/action-help :: help('swap')}"></button>
                                 <button th:if="${(match.isCompleted or match.playoffPlayStarted == true) and match.team1Player1Name != null and match.team2Player1Name != null}"
                                         type="button" class="btn btn-outline btn-sm"
                                         th:attr="data-swap-match=${match.id},data-swap-slot=2,data-correction='true'"
-                                        th:text="#{admin.playoff.swap.correct}"></button>
+                                        th:text="#{admin.playoff.swap.correct}"></button><button th:replace="~{fragments/action-help :: help('swap')}"></button>
                             </div>
                         </div>
                     </div>
@@ -1013,7 +1013,10 @@
     </dialog>
     <p data-start-error class="alert alert-danger" role="alert" hidden></p>
     <dialog id="playoff-courts" class="playoff-exchange" aria-labelledby="court-assignment-title">
-        <h2 id="court-assignment-title" th:text="#{admin.playoff.courts.title}"></h2>
+        <div class="action-help-heading">
+            <h2 id="court-assignment-title" th:text="#{admin.playoff.courts.title}"></h2>
+            <button th:replace="~{fragments/action-help :: help('court')}"></button>
+        </div>
         <p data-court-status role="status" aria-live="polite"></p>
         <fieldset data-court-options th:attr="aria-label=#{admin.playoff.courts.court}"></fieldset>
         <div data-court-preview></div>
@@ -1407,7 +1410,7 @@
                             <button type="button" class="save-btn" onclick="submitTeamChange(${m.id}, 1)">OK</button>
                         </div>`}
                     </div>
-                    <div class="vs-block"><span class="vs-badge">VS</span></div>
+                    <div class="vs-block"><span class="vs-badge">VS</span>${document.querySelector('[data-help-copy="swap"]')?.innerHTML || ''}</div>
                     <div class="team-right">
                         <div class="team-name">${m.team2Number ? '<strong>№' + m.team2Number + '</strong> ' : ''}${queueText(m.team2Player1Name || 'TBD')}${m.team2Player2Name ? ' / ' + queueText(m.team2Player2Name) : ''}</div>
                         ${m.playoffStage ? `<button type="button" class="icon-btn"
@@ -1433,7 +1436,7 @@
                     <button type="button" class="btn btn-primary btn-sm" ${freeCourts.length ? '' : 'disabled'}
                             onclick="assignCourtFromQueue(${m.id})" title="${freeCourts.length ? '' : MSG_QUEUE_NO_COURTS}">
                         <i class="fas fa-play"></i> ${MSG_QUEUE_ASSIGN}
-                    </button>
+                    </button>${document.querySelector('[data-help-copy="court"]')?.innerHTML || ''}
                     ${m.playoffStage ? '' : `<button type="button" class="btn btn-outline btn-sm" onclick="removeFromQueueAction(${m.id})">
                         <i class="fas fa-times"></i> ${MSG_QUEUE_REMOVE}
                     </button>`}
@@ -1559,7 +1562,7 @@
             <span class="vs-badge">VS</span>
             <input type="number" class="score-inp" id="qg2-${matchId}" value="${g2}" min="0" max="6">
             <button class="save-btn" data-match-id="${matchId}" data-tid="${TOURNAMENT_ID}"
-                    onclick="submitQualScore(this)">OK</button>
+                    onclick="submitQualScore(this)">OK</button>${document.querySelector('[data-help-copy="score"]')?.innerHTML || ''}
         </div>`;
     }
 
@@ -1649,7 +1652,7 @@
             <span class="vs-badge">VS</span>
             <input type="number" class="score-inp" id="pg2-${matchId}" value="${g2}" min="0" max="7">
             <button class="save-btn" data-match-id="${matchId}" data-tid="${TOURNAMENT_ID}"
-                    onclick="submitPlayoffScore(this)">OK</button>
+                    onclick="submitPlayoffScore(this)">OK</button>${document.querySelector('[data-help-copy="score"]')?.innerHTML || ''}
         </div>`;
     }
 
@@ -1697,5 +1700,6 @@
 </script>
 <script th:src="@{/js/share-panel.js}"></script>
 <script defer th:src="@{/js/team-playoff-early.js}"></script>
+<div id="playoff-action-help-copies" hidden><span data-help-copy="score"><button th:replace="~{fragments/action-help :: help('score')}"></button></span><span data-help-copy="swap"><button th:replace="~{fragments/action-help :: help('swap')}"></button></span><span data-help-copy="court"><button th:replace="~{fragments/action-help :: help('court')}"></button></span></div>
 </body>
 </html>

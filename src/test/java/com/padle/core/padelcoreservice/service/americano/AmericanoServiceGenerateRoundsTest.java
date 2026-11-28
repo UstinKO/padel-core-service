@@ -2,19 +2,19 @@ package com.padle.core.padelcoreservice.service.americano;
 
 import com.padle.core.padelcoreservice.dto.americano.AmericanoConfigDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.americano.AmericanoPlayer;
 import com.padle.core.padelcoreservice.model.enums.AmericanoFormatType;
 import com.padle.core.padelcoreservice.model.enums.AmericanoPlayerStatus;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoPlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
-import com.padle.core.padelcoreservice.repository.CancellationHistoryRepository;
+import com.padle.core.application.registration.RegistrationCancellationHistory;
 import static org.mockito.Mockito.mock;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,7 +41,7 @@ class AmericanoServiceGenerateRoundsTest {
 
     @Spy
     private RegistrationCancellationService cancellations = new RegistrationCancellationService(
-            mock(CancellationHistoryRepository.class),null,null,null,null);
+            mock(RegistrationCancellationHistory.class),null,null,null,null);
 
     @InjectMocks private AmericanoService americanoService;
 

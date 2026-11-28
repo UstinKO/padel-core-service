@@ -16,23 +16,23 @@ import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.PairRegistrationException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.model.ParticipationRequest.Trigger;
 import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository;
 import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository.Response;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
 import com.padle.core.padelcoreservice.service.cancellation.CancellationContext;
-import com.padle.core.padelcoreservice.dto.CancellationHistory.*;
+import com.padle.core.application.registration.CancellationHistory.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -252,6 +252,8 @@ public class DoubleTournamentRegistrationService {
 
     private void checkPartnerLevel(TournamentType type, Nivel category, PlayerPadel partner) {
         switch (TournamentLevelPolicy.evaluate(type, category, partner.getNivelJugador()).verdict()) {
+            case INVALID_CATEGORY -> throw new TournamentRegistrationException(
+                    messageSource.getMessage("tournament.register.category_required", null, LocaleContextHolder.getLocale()));
             case LEVEL_REQUIRED -> throw new PairRegistrationException(PairRegistrationException.Reason.PARTNER_LEVEL_REQUIRED);
             case LEVEL_MISMATCH -> throw new PairRegistrationException(PairRegistrationException.Reason.PARTNER_LEVEL_MISMATCH);
             case ALLOWED -> { }

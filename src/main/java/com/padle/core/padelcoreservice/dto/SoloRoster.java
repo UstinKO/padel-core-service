@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

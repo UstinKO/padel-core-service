@@ -1,12 +1,27 @@
 package com.padle.core.padelcoreservice.receipts;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.PaymentMethod;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.*;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.PaymentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.when;
@@ -143,7 +159,7 @@ class ReceiptIntegrationTest {
     @Test void fileAndReviewRequireTheCorrectOrganizerAndCsrf() throws Exception {
         var owner = owner(); var other = owner(); var row = row(owner); var receipt = receipt(row,11006);
         mvc.perform(get(url(row,receipt.id())+"/file").with(user(other))).andExpect(status().isForbidden());
-        mvc.perform(get(url(row,receipt.id())+"/file").with(user(row.getPlayer()))).andExpect(status().isForbidden());
+        mvc.perform(get(url(row,receipt.id())+"/file").with(playerUser(row.getPlayer()))).andExpect(status().isForbidden());
         mvc.perform(post(url(row,receipt.id())+"/reject").with(user(owner)).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"reason\":\"fixture\"}")).andExpect(status().isForbidden());
         mvc.perform(get(url(row,receipt.id())+"/file").with(user(owner))).andExpect(status().isOk())

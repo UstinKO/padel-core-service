@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.repository.americano;
 
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;

@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.ClubDto;
 import com.padle.core.padelcoreservice.dto.OwnerDto;
@@ -7,9 +11,15 @@ import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.service.ClubService;

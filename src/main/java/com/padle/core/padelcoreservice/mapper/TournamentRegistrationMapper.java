@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.LookingForPartnerDto;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -18,7 +18,7 @@ public interface TournamentRegistrationMapper {
     @Mapping(source = "player.email", target = "playerEmail")
     @Mapping(source = "player.telefono", target = "playerPhone")
     @Mapping(source = "player.telegramUsername", target = "playerTelegram")
-    @Mapping(target = "playerNivel", expression = "java(com.padle.core.padelcoreservice.model.enums.Nivel.orNullIfSinEspecificar(registration.getPlayer().getNivelJugador()))")
+    @Mapping(target = "playerNivel", expression = "java(com.padle.core.application.tournament.Nivel.orNullIfSinEspecificar(registration.getPlayer().getNivelJugador()))")
     @Mapping(source = "tournament.id", target = "tournamentId")
     @Mapping(source = "tournament.nombre", target = "tournamentNombre")
     @Mapping(source = "partner.id", target = "partnerId")
@@ -46,9 +46,9 @@ public interface TournamentRegistrationMapper {
 
     TournamentRegistration toEntity(TournamentRegistrationDto dto);
 
-    default com.padle.core.padelcoreservice.model.enums.Nivel getPartnerNivel(TournamentRegistration registration) {
+    default com.padle.core.application.tournament.Nivel getPartnerNivel(TournamentRegistration registration) {
         if (registration.getPartner() != null) {
-            return com.padle.core.padelcoreservice.model.enums.Nivel.orNullIfSinEspecificar(
+            return com.padle.core.application.tournament.Nivel.orNullIfSinEspecificar(
                     registration.getPartner().getNivelJugador());
         }
         return null;

@@ -191,7 +191,7 @@ try {
       if (fixture.mode === 'POINTS') assert.deepEqual(circle.ranking.map(team => team.totalScore), [90, 86, 82, 78, 74, 70]);
       else assert.deepEqual(circle.ranking.map(team => team.gameDifference), [10, 6, 2, -2, -6, -10]);
       const final = await additional(fixture, teams, 5, 6, 1, 1);
-      await expect(admin.locator('.rr-finish button')).toBeDisabled();
+      await expect(admin.locator('.rr-finish button[type=submit]')).toBeDisabled();
       await score(final.id, lose, win);
       const beforeCorrection = await ranking(id);
       assert.equal(beforeCorrection.finalRanking[0].teamNumber, 6);
@@ -218,12 +218,12 @@ try {
       assert.deepEqual(placed.finalRanking.map(team => team.teamNumber), [6, 5, 4, 3, 2, 1]);
       const free = await additional(fixture, teams, 1, 3, null, 1);
       assert.deepEqual((await ranking(id)).finalRanking, placed.finalRanking);
-      await expect(admin.locator('.rr-finish button')).toBeDisabled();
+      await expect(admin.locator('.rr-finish button[type=submit]')).toBeDisabled();
       await score(free.id, win, lose);
       const completed = await ranking(id);
       assert.deepEqual(completed.ranking, circle.ranking);
       assert.deepEqual(completed.finalRanking, placed.finalRanking);
-      await Promise.all([admin.waitForNavigation({ waitUntil: 'domcontentloaded' }), admin.locator('.rr-finish button').click()]);
+      await Promise.all([admin.waitForNavigation({ waitUntil: 'domcontentloaded' }), admin.locator('.rr-finish button[type=submit]').click()]);
       assert.deepEqual(await ranking(id), completed);
     }
     const body = await ranking(id);

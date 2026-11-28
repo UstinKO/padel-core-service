@@ -1,11 +1,11 @@
 package com.padle.core.padelcoreservice.receipts;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

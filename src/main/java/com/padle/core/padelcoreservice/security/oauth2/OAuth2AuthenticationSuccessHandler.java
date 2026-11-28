@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.security.oauth2;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.security.JwtService;
 import com.padle.core.padelcoreservice.security.AccountDestination;
 import com.padle.core.padelcoreservice.security.TournamentLogin;
@@ -34,8 +34,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
 
-        CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
-        PlayerPadel player = oAuth2User.getPlayer();
+        PlayerPrincipal player = (OAuth2PlayerPrincipal) authentication.getPrincipal();
 
         log.info("OAuth2 login exitoso para: {} (ID: {})", player.getEmail(), player.getId());
 

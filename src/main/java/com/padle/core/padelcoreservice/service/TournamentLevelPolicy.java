@@ -2,9 +2,9 @@ package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.exception.PlayerLevelRequiredException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.tournament.TournamentType;
 import org.springframework.context.MessageSource;
 
 import java.util.Arrays;
@@ -26,7 +26,7 @@ public final class TournamentLevelPolicy {
     private static final int MAX_STEP_DIFFERENCE = 1;
 
     // Открытые форматы, где организатор не ограничивает участников по уровню —
-    // правило не применяется независимо от categoriaNivel.
+    // проверка разницы ступеней не применяется. Для TODOS уровень профиля обязателен.
     private static final Set<TournamentType> EXEMPT_TYPES =
             EnumSet.of(TournamentType.CANCHA_ABIERTA, TournamentType.PADEL_CLINIC);
 
@@ -36,7 +36,8 @@ public final class TournamentLevelPolicy {
     public enum Verdict {
         ALLOWED,
         LEVEL_REQUIRED,
-        LEVEL_MISMATCH
+        LEVEL_MISMATCH,
+        INVALID_CATEGORY
     }
 
     public record Result(Verdict verdict, List<Nivel> allowedLevels) {
@@ -47,13 +48,21 @@ public final class TournamentLevelPolicy {
 
     // Правило применяется только к "простым" категориям, напрямую сопоставимым с уровнем
     // игрока (Nivel.isPlayerLevel — те же значения, что и PlayerPadel.nivelJugador).
-    // Диапазоны (C9_C8, D7_D8...), TODOS, PRINCIPIANTES, SUMA_* и D5/D4 (ещё не назначаемые
+    // Диапазоны (C9_C8, D7_D8...), PRINCIPIANTES, SUMA_* и D5/D4 (ещё не назначаемые
     // игроку) — структурно "непростые" категории и остаются без ограничения.
     public static boolean requiresLevelCheck(TournamentType tipo, Nivel categoriaNivel) {
-        return Nivel.isPlayerLevel(categoriaNivel) && !EXEMPT_TYPES.contains(tipo);
+        return categoriaNivel == Nivel.TODOS
+                || (Nivel.isPlayerLevel(categoriaNivel) && !EXEMPT_TYPES.contains(tipo));
     }
 
     public static Result evaluate(TournamentType tipo, Nivel categoriaNivel, Nivel playerLevel) {
+        if (categoriaNivel == null || categoriaNivel == Nivel.SIN_ESPECIFICAR) {
+            return new Result(Verdict.INVALID_CATEGORY, List.of());
+        }
+        if (categoriaNivel == Nivel.TODOS) {
+            return Nivel.isPlayerLevel(playerLevel) ? Result.allowed()
+                    : new Result(Verdict.LEVEL_REQUIRED, List.of());
+        }
         if (!requiresLevelCheck(tipo, categoriaNivel)) {
             return Result.allowed();
         }
@@ -82,6 +91,8 @@ public final class TournamentLevelPolicy {
                                        MessageSource messageSource, Locale locale) {
         Result result = evaluate(tipo, categoriaNivel, playerLevel);
         switch (result.verdict()) {
+            case INVALID_CATEGORY -> throw new TournamentRegistrationException(
+                    messageSource.getMessage("tournament.register.category_required", null, locale));
             case LEVEL_REQUIRED -> throw new PlayerLevelRequiredException(
                     messageSource.getMessage("tournament.register.level_required", null, locale));
             case LEVEL_MISMATCH -> {

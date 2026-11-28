@@ -1,11 +1,23 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.dto.SoloRoster.*;
-import com.padle.core.padelcoreservice.dto.CancellationHistory.Scope;
+import com.padle.core.application.registration.CancellationHistory.Scope;
 import com.padle.core.padelcoreservice.exception.SoloRosterException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Payment;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.PaymentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.repository.PairProposalResponseRepository.Response;
 import com.padle.core.padelcoreservice.repository.americano.AmericanoMatchRepository;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
@@ -155,6 +167,7 @@ public class SoloRosterService {
             case PAIR -> tournaments.previewPairStatus(prepared.event(), pairRows(prepared)).name();
         };
         boolean override = command.action() != Action.REMOVE && existing.isEmpty()
+                && prepared.event().getCategoriaNivel() != Nivel.TODOS
                 && people.stream().anyMatch(person -> TournamentLevelPolicy.evaluate(prepared.event().getTipo(),
                 prepared.event().getCategoriaNivel(), Nivel.valueOf(person.level())).verdict() != TournamentLevelPolicy.Verdict.ALLOWED);
         return new Preview(state(prepared), people, status, override, existing.map(TournamentRegistration::getId).orElse(null),

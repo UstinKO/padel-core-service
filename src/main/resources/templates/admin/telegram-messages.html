@@ -10,6 +10,7 @@
     <script th:src="@{/js/csrf.js}" defer></script>
     <script th:src="@{/js/telegram-messages.js}" defer></script>
     <script th:src="@{/js/telegram-invitation.js}" defer></script>
+    <th:block th:if="${#strings.isEmpty(audienceTournamentId)}" th:replace="~{fragments/telegram-connections :: assets}"></th:block>
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{telegram.compose.title})}"></header>
@@ -22,6 +23,7 @@
     <a th:href="${#strings.isEmpty(audienceTournamentId)} ? @{/admin} : @{/admin/tournaments/{id}/payments(id=${audienceTournamentId})}"
        th:text="#{telegram.compose.back}"></a>
     <h1 th:text="#{telegram.compose.title}"></h1>
+    <th:block th:if="${#strings.isEmpty(audienceTournamentId)}"><section th:replace="~{fragments/telegram-connections :: statistics}"></section></th:block>
     <section class="tg-compose-panel" data-telegram-invitation hidden
              th:attr="data-copied=#{telegram.connect.copied},data-manual=#{telegram.connect.manual}">
         <h2 th:text="#{telegram.connect.inviteTitle}"></h2>

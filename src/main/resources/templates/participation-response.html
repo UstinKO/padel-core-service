@@ -13,7 +13,7 @@
 <main class="participation-page participation">
     <section class="participation-card" aria-labelledby="participationHeading">
         <h1 id="participationHeading" th:text="#{participation.title}">Participación en torneos</h1>
-        <h2 th:text="${request.tournamentName}"></h2>
+        <h2 th:text="${@eventLevelText.eventName(request.tournamentName, #locale)}"></h2>
         <p th:text="${request.playerName}"></p>
         <p th:if="${request.delegated}" th:text="#{participation.delegated}"></p>
         <p class="participation-status" role="status"

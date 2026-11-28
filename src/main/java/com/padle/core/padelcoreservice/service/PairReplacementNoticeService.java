@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;

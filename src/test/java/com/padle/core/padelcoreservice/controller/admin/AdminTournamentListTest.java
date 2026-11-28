@@ -4,12 +4,12 @@ import com.padle.core.padelcoreservice.model.enums.EventFormat;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.model.enums.OwnerRole;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.OrganizerOrganizationService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;

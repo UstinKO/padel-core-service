@@ -50,7 +50,9 @@ public class EloPilotFeedbackController {
         if (validation.hasErrors()) {
             return ResponseEntity.badRequest().build();
         }
-        feedback.submit(SecurityUtils.extractPlayer(authentication.getPrincipal()), submission.requestKey(),
+        var player = SecurityUtils.playerPrincipal(authentication.getPrincipal())
+                .orElseThrow(() -> new AccessDeniedException("Нет доступа к пилоту Elo"));
+        feedback.submit(player.getId(), player.getNombreCompleto().strip(), submission.requestKey(),
                 submission.source(), submission.topic(), submission.message().strip());
         return ResponseEntity.noContent().build();
     }

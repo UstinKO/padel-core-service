@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.application.identity.OwnerAccount;
 import com.padle.core.application.identity.OwnerAccounts;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
@@ -8,10 +9,12 @@ import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.OwnerPrincipalMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.telegram.CampaignModels.*;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.ContactPreference;

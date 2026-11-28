@@ -1,0 +1,354 @@
+package com.padle.core.persistence.tournament;
+
+import com.padle.core.application.registration.RegistrationStatus;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.Optional;
+
+@Repository
+public interface TournamentRegistrationRepository extends JpaRepository<TournamentRegistration, Long> {
+    @Query("SELECT r FROM TournamentRegistration r JOIN FETCH r.tournament JOIN FETCH r.player "
+            + "WHERE r.player.id = :playerId AND r.isActive = true ORDER BY r.registrationDate DESC")
+    List<TournamentRegistration> findReceiptChoices(@Param("playerId") long playerId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM TournamentRegistration r WHERE r.id = :id")
+    Optional<TournamentRegistration> lockById(@Param("id") Long id);
+
+    List<TournamentRegistration> findByTournamentId(Long tournamentId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr WHERE tr.tournament.id = :tournamentId AND tr.player.id = :playerId")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerId(@Param("tournamentId") Long tournamentId, @Param("playerId") Long playerId);
+
+    List<TournamentRegistration> findByTournamentIdAndStatus(Long tournamentId, RegistrationStatus status);
+
+    // "Игрок клуба" для CLUB_ADMIN — есть хотя бы одна регистрация (любого статуса)
+    // на турнир этого клуба.
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr WHERE tr.tournament.clubId = :clubId")
+    List<Long> findDistinctPlayerIdsByTournamentClubId(@Param("clubId") Long clubId);
+
+    boolean existsByTournamentClubIdAndPlayerId(Long clubId, Long playerId);
+
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr WHERE tr.tournament.ownerId = :ownerId")
+    Set<Long> findPlayerIdsByTournamentOwnerId(@Param("ownerId") Long ownerId);
+
+    boolean existsByTournamentOwnerIdAndPlayerId(Long ownerId, Long playerId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' " +
+            "AND tr.isActive = true AND tr.tournament.ownerId = :ownerId")
+    long countWaitlistByTournamentOwnerId(@Param("ownerId") Long ownerId);
+
+    // Bug #4 fix: добавлен фильтр isActive = true, чтобы исключить "мусорные" отменённые
+    // записи с некорректными статусами (возможны после миграции данных между серверами).
+    // Без этого фильтра confirmedSpots в processWaitlistForTournament мог быть завышен,
+    // что приводило к некорректному расчёту availableSlots.
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId AND tr.status = :status AND tr.isActive = true")
+    long countByTournamentIdAndStatus(@Param("tournamentId") Long tournamentId,
+                                      @Param("status") RegistrationStatus status);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId AND tr.status IN :statuses AND tr.isActive = true")
+    long countByTournamentIdAndStatusIn(@Param("tournamentId") Long tournamentId,
+                                        @Param("statuses") List<RegistrationStatus> statuses);
+
+    @Query("SELECT MAX(tr.waitlistPosition) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId AND tr.status = 'WAITLIST'")
+    Optional<Integer> findMaxWaitlistPosition(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.player.id = :playerId AND tr.isActive = true")
+    List<TournamentRegistration> findActiveRegistrationsByPlayerId(@Param("playerId") Long playerId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.status = 'WAITLIST' AND tr.isActive = true")
+    long countTotalWaitlist();
+
+    @Query("""
+            SELECT tr FROM TournamentRegistration tr JOIN FETCH tr.tournament LEFT JOIN FETCH tr.partner
+            WHERE tr.player.id = :playerId
+            """)
+    List<TournamentRegistration> findForPlayerEvents(long playerId);
+
+    @Query("""
+            SELECT tr.tournament.id FROM TournamentRegistration tr
+            WHERE tr.id = :registrationId AND tr.player.id = :playerId
+            """)
+    Optional<Long> findOwnedEventId(long registrationId, long playerId);
+
+    // Клубная статистика главной админ-панели — CLUB_ADMIN видит только лист
+    // ожидания турниров своего клуба.
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
+            "WHERE tr.status = 'WAITLIST' AND tr.isActive = true AND tr.tournament.clubId = :clubId")
+    long countTotalWaitlistByClub(@Param("clubId") Long clubId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr WHERE tr.player.id = :playerId AND tr.status = :status")
+    long countByPlayerIdAndStatus(@Param("playerId") Long playerId, @Param("status") RegistrationStatus status);
+
+    // В TournamentRegistrationRepository добавить:
+
+    List<TournamentRegistration> findByTournamentIdAndStatusOrderByWaitlistPositionAsc(
+            Long tournamentId, RegistrationStatus status);
+
+    List<TournamentRegistration> findByTournamentIdOrderByPositionAscWaitlistPositionAsc(Long tournamentId);
+
+    // Слот пары остаётся занятым, даже если активна только строка оставшегося игрока.
+    String OCCUPIED_PAIR_KEY = "COALESCE(main_player_id, LEAST(player_id, COALESCE(partner_id, player_id)))";
+    String OCCUPIED_PAIR_FILTER = " AND status IN ('CONFIRMED', 'PAIR_REGISTERED', 'PARTNER_INVITED')" +
+            " AND is_double_registration = true AND is_active = true";
+
+    @Query(nativeQuery = true, value =
+            "SELECT COUNT(DISTINCT " + OCCUPIED_PAIR_KEY + ") FROM tournament_registrations_db" +
+            " WHERE tournament_id = :tournamentId" + OCCUPIED_PAIR_FILTER)
+    long countConfirmedPairs(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считает уникальные пары в листе ожидания.
+     * Аналогично countConfirmedPairs — группируем по mainPlayerId.
+     */
+    @Query("SELECT COUNT(DISTINCT tr.mainPlayerId) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status = 'WAITLIST' " +
+            "AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true " +
+            "AND tr.mainPlayerId IS NOT NULL")
+    long countUniquePairsInWaitlist(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.player.id = :playerId AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true AND tr.status IN ('CONFIRMED', 'PENDING_PARTNER', 'PAIR_REGISTERED')")
+    List<TournamentRegistration> findActiveDoubleRegistrationsByPlayerId(@Param("playerId") Long playerId);
+
+    Optional<TournamentRegistration> findByPartnerRegistrationToken(String token);
+
+    @Query("SELECT r.tournament.id FROM TournamentRegistration r WHERE r.partnerRegistrationToken = :token")
+    Optional<Long> findTournamentIdByPartnerRegistrationToken(@Param("token") String token);
+
+    @Query("SELECT COUNT(DISTINCT r.mainPlayerId) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.isDoubleRegistration = true " +
+            "AND r.status IN ('CONFIRMED', 'PARTNER_INVITED', 'PENDING_PARTNER', 'PAIR_REGISTERED')")
+    long countActivePairsByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT COUNT(r) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId AND r.isActive = true")
+    long countByTournamentIdAndIsActiveTrue(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Подсчет количества активных одиночных регистраций в турнире (не парных)
+     * Используется для правильного подсчета занятых мест в парных турнирах
+     *
+     * @param tournamentId ID турнира
+     * @return количество активных одиночных регистраций
+     */
+    @Query("SELECT COUNT(r) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.isDoubleRegistration = false")
+    long countByTournamentIdAndIsDoubleRegistrationFalseAndIsActiveTrue(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считаем занятые места в турнире
+     * Простая логика:
+     * - Если запись имеет partner (ссылку на игрока) или partnerFirstName - это парная регистрация
+     * - Каждая такая запись занимает 2 места, но мы считаем их как 1 пару
+     */
+    @Query("SELECT COUNT(DISTINCT CASE " +
+            "WHEN r.mainPlayerId IS NOT NULL THEN r.mainPlayerId " +
+            "ELSE r.player.id END) * 2 " +
+            "FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND (r.partner IS NOT NULL OR r.partnerFirstName IS NOT NULL)")
+    long countSpotsOccupiedByPairs(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Считаем занятые места одиночными регистрациями
+     */
+    @Query("SELECT COUNT(r) FROM TournamentRegistration r " +
+            "WHERE r.tournament.id = :tournamentId " +
+            "AND r.isActive = true " +
+            "AND r.partner IS NULL " +
+            "AND r.partnerFirstName IS NULL")
+    long countSpotsOccupiedBySingles(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Подсчет всех активных регистраций (для индивидуальных турниров)
+     */
+    @Query("SELECT COUNT(t) FROM TournamentRegistration t " +
+            "WHERE t.tournament.id = :tournamentId " +
+            "AND t.isActive = true")
+    long countActiveRegistrations(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Подсчет подтвержденных регистраций (для индивидуальных турниров)
+     */
+    @Query("SELECT COUNT(t) FROM TournamentRegistration t " +
+            "WHERE t.tournament.id = :tournamentId " +
+            "AND t.isActive = true " +
+            "AND t.status = 'CONFIRMED'")
+    long countConfirmedRegistrations(@Param("tournamentId") Long tournamentId);
+
+    /**
+     * Проверить, есть ли у игрока активная регистрация
+     */
+    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM TournamentRegistration t " +
+            "WHERE t.player.id = :playerId AND t.tournament.id = :tournamentId AND t.isActive = true")
+    boolean existsActiveRegistration(@Param("playerId") Long playerId, @Param("tournamentId") Long tournamentId);
+
+    /**
+     * Найти все регистрации для партнера (где он является партнером)
+     */
+    @Query("SELECT t FROM TournamentRegistration t " +
+            "WHERE t.partner.id = :partnerId OR " +
+            "(t.mainPlayerId = :partnerId AND t.player.id != :partnerId)")
+    List<TournamentRegistration> findPartnerRegistrations(@Param("partnerId") Long partnerId);
+
+    /**
+     * Подсчет уникальных пар (группировка по mainPlayerId) для парных турниров
+     * Учитываем только CONFIRMED и PARTNER_INVITED (где приглашение действительно)
+     */
+    @Query("SELECT COUNT(DISTINCT t.mainPlayerId) FROM TournamentRegistration t " +
+            "WHERE t.tournament.id = :tournamentId " +
+            "AND t.isActive = true " +
+            "AND t.status IN ('CONFIRMED', 'PARTNER_INVITED')")
+    long countUniquePairs(@Param("tournamentId") Long tournamentId);
+
+    List<TournamentRegistration> findByTournamentIdAndStatusOrderByPositionAsc(
+            Long tournamentId, RegistrationStatus status);
+
+    // В TournamentRegistrationRepository
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT tr FROM TournamentRegistration tr WHERE tr.tournament.id = :tournamentId AND tr.player.id = :playerId")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerIdWithLock(
+            @Param("tournamentId") Long tournamentId,
+            @Param("playerId") Long playerId
+    );
+
+    // TournamentRegistrationRepository.java
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.player.id = :playerId " +
+            "AND tr.isActive = true")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerIdAndIsActiveTrue(
+            @Param("tournamentId") Long tournamentId,
+            @Param("playerId") Long playerId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.player.id = :playerId " +
+            "AND tr.isActive = false")
+    Optional<TournamentRegistration> findByTournamentIdAndPlayerIdAndIsActiveFalse(
+            @Param("tournamentId") Long tournamentId,
+            @Param("playerId") Long playerId);
+
+    // ── Batch queries for home page (N+1 fix) ────────────────────────────────
+
+    @Query("SELECT tr.tournament.id, tr.status, COUNT(tr) " +
+            "FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id IN :ids " +
+            "AND tr.status IN :statuses " +
+            "AND tr.isActive = true " +
+            "GROUP BY tr.tournament.id, tr.status")
+    List<Object[]> countStatusesByTournamentIds(
+            @Param("ids") List<Long> ids,
+            @Param("statuses") List<RegistrationStatus> statuses);
+
+    @Query(nativeQuery = true, value =
+            "SELECT tournament_id, COUNT(DISTINCT " + OCCUPIED_PAIR_KEY + ") FROM tournament_registrations_db" +
+            " WHERE tournament_id IN :ids" + OCCUPIED_PAIR_FILTER + " GROUP BY tournament_id")
+    List<Object[]> countConfirmedPairsByTournamentIds(@Param("ids") List<Long> ids);
+
+    @Query("SELECT tr.tournament.id, COUNT(DISTINCT tr.mainPlayerId) " +
+            "FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id IN :ids " +
+            "AND tr.status = 'WAITLIST' " +
+            "AND tr.isDoubleRegistration = true " +
+            "AND tr.isActive = true " +
+            "AND tr.mainPlayerId IS NOT NULL " +
+            "GROUP BY tr.tournament.id")
+    List<Object[]> countWaitlistPairsByTournamentIds(@Param("ids") List<Long> ids);
+
+    // ── Соло-регистрации на парный турнир ────────────────────────────────────
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND (tr.status = 'SOLO_SEARCH' OR (tr.status = 'CONFIRMED' " +
+            "AND tr.isDoubleRegistration = true AND tr.partner IS NULL AND tr.mainPlayerId IS NOT NULL " +
+            "AND tr.replacementSearch = true)) AND tr.isActive = true")
+    List<TournamentRegistration> findLookingForPartnerByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT COUNT(tr) FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status IN ('SOLO_ADD_LATER', 'SOLO_SEARCH') " +
+            "AND tr.isActive = true")
+    long countActiveSoloRegistrations(@Param("tournamentId") Long tournamentId);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "JOIN FETCH tr.tournament t " +
+            "JOIN FETCH tr.player p " +
+            "WHERE tr.status = 'SOLO_ADD_LATER' " +
+            "AND tr.isActive = true " +
+            "AND tr.soloReminderSent = false " +
+            "AND t.fechaInicio >= :from " +
+            "AND t.fechaInicio < :to")
+    List<TournamentRegistration> findSoloAddLaterForReminder(
+            @Param("from") java.time.LocalDate from,
+            @Param("to") java.time.LocalDate to);
+
+    // Резервные заявки без партнёра («ожидает партнёра») — кандидаты на
+    // напоминание за 3ч; точное окно до старта проверяется в сервисе.
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "JOIN FETCH tr.tournament t " +
+            "JOIN FETCH tr.player p " +
+            "WHERE tr.status IN ('WAITLIST', 'SOLO_ADD_LATER', 'SOLO_SEARCH') " +
+            "AND tr.partner IS NULL " +
+            "AND tr.isActive = true " +
+            "AND tr.finalReminderSent = false")
+    List<TournamentRegistration> findReserveWithoutPartnerPendingFinalReminder();
+
+    // Self-service действия из email (подтвердить/отменить) по непредсказуемому токену
+    Optional<TournamentRegistration> findByPartnerActionToken(String partnerActionToken);
+
+    @Query("SELECT r.tournament.id FROM TournamentRegistration r WHERE r.partnerActionToken = :token")
+    Optional<Long> findTournamentIdByPartnerActionToken(@Param("token") String token);
+
+    // Та же выборка, что findByTournamentIdAndStatusOrderByWaitlistPositionAsc, но
+    // только полностью сформированные пары — используется при авто-подтверждении из резерва для
+    // DOBLES-турниров, чтобы не подтвердить случайно заявку без партнёра («ожидает партнёра»).
+    List<TournamentRegistration> findByTournamentIdAndStatusAndPartnerIsNotNullOrderByWaitlistPositionAsc(
+            Long tournamentId, RegistrationStatus status);
+
+    @Query("SELECT tr FROM TournamentRegistration tr " +
+            "WHERE tr.tournament.id = :tournamentId " +
+            "AND tr.status IN ('SOLO_ADD_LATER', 'SOLO_SEARCH') " +
+            "AND tr.isActive = true")
+    List<TournamentRegistration> findActiveSoloByTournamentId(@Param("tournamentId") Long tournamentId);
+
+    // Проверка перед удалением игрока: учитываются ВСЕ регистрации
+    // (включая неактивные/отменённые), а не только текущие активные
+    @Query("SELECT CASE WHEN COUNT(tr) > 0 THEN true ELSE false END FROM TournamentRegistration tr " +
+            "WHERE tr.player.id = :playerId")
+    boolean existsByPlayerId(@Param("playerId") Long playerId);
+
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr")
+    List<Long> findDistinctPlayerIds();
+
+    // Id игроков, чья собственная запись TournamentRegistration создана как
+    // партнёрская сторона приглашения (DoubleTournamentRegistrationService.confirmPartnerRegistration) —
+    // mainPlayerId указывает на инициатора пары, а не на самого игрока.
+    @Query("SELECT DISTINCT tr.player.id FROM TournamentRegistration tr " +
+            "WHERE tr.isDoubleRegistration = true " +
+            "AND tr.mainPlayerId IS NOT NULL " +
+            "AND tr.mainPlayerId <> tr.player.id")
+    List<Long> findPartnerInviteCreatedPlayerIds();
+}

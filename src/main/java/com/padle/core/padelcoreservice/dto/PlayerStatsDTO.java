@@ -2,7 +2,7 @@ package com.padle.core.padelcoreservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +18,7 @@ public class PlayerStatsDTO {
     private String playerName;
     // Уровень игрока из профиля — для опционального отображения
     // в публичном списке участников (Tournament.mostrarNivel), null если не указан.
-    private com.padle.core.padelcoreservice.model.enums.Nivel playerNivel;
+    private com.padle.core.application.tournament.Nivel playerNivel;
     private Long totalPoints;
     private Integer bonusPoints;
     private Integer gamesPlayed;

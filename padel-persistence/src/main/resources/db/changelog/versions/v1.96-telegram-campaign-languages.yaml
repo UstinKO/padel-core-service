@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: v1.96-telegram-campaign-languages
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE telegram_campaigns ADD COLUMN text_es text NOT NULL DEFAULT '';
+              ALTER TABLE telegram_campaigns ADD COLUMN text_ru text NOT NULL DEFAULT '';
+              ALTER TABLE telegram_campaigns ADD COLUMN text_en text NOT NULL DEFAULT '';
+              ALTER TABLE telegram_campaign_recipients ADD COLUMN message_locale varchar(5);
+              ALTER TABLE telegram_campaign_recipients ADD COLUMN message_text text;
+              ALTER TABLE telegram_campaigns ADD CONSTRAINT telegram_campaign_text_lengths
+                CHECK (length(text_es) <= 4096 AND length(text_ru) <= 4096 AND length(text_en) <= 4096);
+              ALTER TABLE telegram_campaign_recipients ADD CONSTRAINT telegram_campaign_recipient_language
+                CHECK (message_locale IS NULL OR message_locale IN ('es','ru','en'));
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE telegram_campaign_recipients DROP CONSTRAINT telegram_campaign_recipient_language;
+              ALTER TABLE telegram_campaigns DROP CONSTRAINT telegram_campaign_text_lengths;
+              ALTER TABLE telegram_campaign_recipients DROP COLUMN message_text, DROP COLUMN message_locale;
+              ALTER TABLE telegram_campaigns DROP COLUMN text_en, DROP COLUMN text_ru, DROP COLUMN text_es;

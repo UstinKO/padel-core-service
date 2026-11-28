@@ -11,7 +11,7 @@ import com.padle.core.padelcoreservice.mapper.PublicEventMapper;
 import com.padle.core.padelcoreservice.mapper.PublicParticipantsMapper;
 import com.padle.core.padelcoreservice.mapper.PublicTournamentMapper;
 import lombok.RequiredArgsConstructor;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

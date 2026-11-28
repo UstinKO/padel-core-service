@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.controller.api;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.PlayingSide;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.RecaptchaService;
 import java.util.regex.Pattern;
@@ -16,8 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,7 +36,7 @@ class PlayingSideUiIntegrationTest {
         var p = players.save(PlayerPadel.builder().nombre("Fixture").apellido("Player").email(UUID.randomUUID()+"@example.test")
                 .passwordHash("unused").nivelJugador(Nivel.SIN_ESPECIFICAR).playingSide(PlayingSide.RIGHT)
                 .preferredLocale(language).activo(true).emailConfirmado(true).build());
-        var response = mvc.perform(get("/perfil").param("lang",language).with(user(p)))
+        var response = mvc.perform(get("/perfil").param("lang",language).with(playerUser(p)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         var options = select(response,"playingSide");
         assertThat(Pattern.compile("<option(?=[^>]*value=\"RIGHT\")(?=[^>]*selected)[^>]*>\\s*"+Pattern.quote(side)+"\\s*</option>").matcher(options).find()).isTrue();

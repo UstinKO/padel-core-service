@@ -4,7 +4,8 @@ import com.padle.core.padelcoreservice.dto.SpaSessionResponse;
 import com.padle.core.padelcoreservice.exception.UnsupportedSpaPrincipalException;
 import com.padle.core.padelcoreservice.mapper.SpaSessionMapper;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
+import com.padle.core.application.identity.PlayerProfiles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -14,16 +15,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
-
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class SpaSessionController {
 
     private final SpaSessionMapper sessionMapper;
-    private final PlayerRepository players;
+    private final PlayerProfiles players;
 
     @GetMapping("/session")
     public ResponseEntity<SpaSessionResponse> session(Authentication authentication) {
@@ -42,11 +40,10 @@ public class SpaSessionController {
                 .sorted()
                 .toList();
         var principal = authentication.getPrincipal();
-        if (principal instanceof CustomOAuth2User oauth) {
-            principal = oauth.getPlayer();
-        }
-        if (principal instanceof PlayerPadel player) {
-            return sessionMapper.fromPlayer(players.findById(player.getId()).orElse(player), roles);
+        if (principal instanceof PlayerPrincipal player) {
+            return players.findById(player.getId())
+                    .map(profile -> sessionMapper.fromPlayer(profile, roles))
+                    .orElseGet(() -> sessionMapper.fromPrincipal(player, roles));
         }
         if (principal instanceof Owner owner) {
             return sessionMapper.fromOwner(owner, roles);

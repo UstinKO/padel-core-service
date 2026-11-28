@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.controller.test;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.service.TournamentService;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.security.RequestIdFilter;
 import org.slf4j.MDC;
 import org.springframework.context.MessageSource;

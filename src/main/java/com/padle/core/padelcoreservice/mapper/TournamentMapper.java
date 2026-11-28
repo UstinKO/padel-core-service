@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.Tournament;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.application.tournament.Nivel;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.MappingTarget;

@@ -1,9 +1,18 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

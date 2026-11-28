@@ -6,7 +6,7 @@ import com.padle.core.padelcoreservice.dto.americano.*;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
@@ -57,10 +57,8 @@ public class AmericanoViewController {
         model.addAttribute("ascending", ascending);
 
         model.addAttribute("isAuthenticated", authentication != null);
-        com.padle.core.padelcoreservice.model.PlayerPadel currentPlayer = null;
-        if (authentication != null && authentication.getPrincipal() instanceof com.padle.core.padelcoreservice.model.PlayerPadel) {
-            currentPlayer = (com.padle.core.padelcoreservice.model.PlayerPadel) authentication.getPrincipal();
-        }
+        PlayerPrincipal currentPlayer = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
         model.addAttribute("player", currentPlayer);
         model.addAttribute("currentPlayerId", currentPlayer != null ? currentPlayer.getId() : null);
 
@@ -158,7 +156,7 @@ public class AmericanoViewController {
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
-        if (tournament.getTipo() != com.padle.core.padelcoreservice.model.enums.TournamentType.AMERICANO) {
+        if (tournament.getTipo() != com.padle.core.application.tournament.TournamentType.AMERICANO) {
             redirectAttributes.addFlashAttribute("error", "Este torneo no es de tipo Americano");
             return "redirect:/tournaments/" + tournamentId;
         }
@@ -337,8 +335,8 @@ public class AmericanoViewController {
 
         AmericanoRankingDto ranking = americanoService.getRankingWithDetails(tournamentId, criteria);
 
-        PlayerPadel currentPlayer =
-                SecurityUtils.extractPlayer(authentication != null ? authentication.getPrincipal() : null);
+        PlayerPrincipal currentPlayer = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
 
         model.addAttribute("tournament", tournament);
         model.addAttribute("ranking", ranking);
@@ -437,7 +435,7 @@ public class AmericanoViewController {
         TournamentDto tournament = tournamentService.getActiveTournamentById(tournamentId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
-        if (tournament.getTipo() != com.padle.core.padelcoreservice.model.enums.TournamentType.AMERICANO) {
+        if (tournament.getTipo() != com.padle.core.application.tournament.TournamentType.AMERICANO) {
             redirectAttributes.addFlashAttribute("errorMessage", "Este torneo no es de tipo Americano");
             return "redirect:/admin/tournaments/" + tournamentId;
         }
@@ -491,7 +489,7 @@ public class AmericanoViewController {
                 log.info("Closing registration for tournament {} before initialization (current status: {})",
                         tournamentId, tournament.getEstado());
                 tournamentService.updateTournamentStatus(tournamentId,
-                        com.padle.core.padelcoreservice.model.enums.TournamentStatus.CERRADO,
+                        com.padle.core.application.tournament.TournamentStatus.CERRADO,
                         null);
             }
             // ──────────────────────────────────────────────────────────────────
@@ -602,7 +600,7 @@ public class AmericanoViewController {
                 log.info("Closing registration for tournament {} (current status: {})",
                         tournamentId, tournament.getEstado());
                 tournamentService.updateTournamentStatus(tournamentId,
-                        com.padle.core.padelcoreservice.model.enums.TournamentStatus.CERRADO,
+                        com.padle.core.application.tournament.TournamentStatus.CERRADO,
                         null);
             }
 

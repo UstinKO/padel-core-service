@@ -1,0 +1,301 @@
+package com.padle.core.persistence.tournament;
+
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Entity
+@EntityListeners(MarketingEntityListener.class)
+@Table(name = "tournament_registrations_db")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class TournamentRegistration {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "tournament_id", nullable = false)
+    private Tournament tournament;
+
+    @ManyToOne
+    @JoinColumn(name = "player_id", nullable = false)
+    private PlayerPadel player;
+
+    @Column(name = "registration_date", nullable = false)
+    @CreationTimestamp
+    private LocalDateTime registrationDate;
+
+    @Column(name = "queued_at")
+    private LocalDateTime queuedAt;
+
+    public LocalDateTime queueTime() {
+        return queuedAt == null ? registrationDate : queuedAt;
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private RegistrationStatus status;
+
+    @Column(name = "position")
+    private Integer position;
+
+    @ManyToOne
+    @JoinColumn(name = "partner_id")
+    private PlayerPadel partner;
+
+    @Column(name = "cancellation_version", nullable = false)
+    @Builder.Default
+    private Long cancellationVersion = 0L;
+
+    @Column(name = "cancellation_date")
+    private LocalDateTime cancellationDate;
+
+    @Column(name = "cancellation_reason", length = 255)
+    private String cancellationReason;
+
+    @Column(name = "waitlist_position")
+    private Integer waitlistPosition;
+
+    @Column(name = "notified_about_vacancy")
+    private Boolean notifiedAboutVacancy;
+
+    @Column(name = "invitation_expires_at")
+    private LocalDateTime invitationExpiresAt;
+
+    @Column(name = "invitation_attempts", nullable = false)
+    @Builder.Default
+    private Integer invitationAttempts = 0;
+
+    // Одноразовый непредсказуемый токен для /waitlist/confirm — вместо угадываемого ID
+    @Column(name = "waitlist_confirmation_token", length = 64)
+    private String waitlistConfirmationToken;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "attended", nullable = false)
+    @Builder.Default
+    private Boolean attended = false;
+
+    @Column(name = "partner_attended", nullable = false)
+    @Builder.Default
+    private Boolean partnerAttended = false;
+
+    @Column(name = "participation_confirmed", nullable = false)
+    @Builder.Default
+    private Boolean participationConfirmed = false;
+
+    @OneToMany(mappedBy = "registration", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Payment> payments = new ArrayList<>();
+
+    @Column(name = "is_double_registration")
+    @Builder.Default
+    private Boolean isDoubleRegistration = false;
+
+    @Column(name = "main_player_id")
+    private Long mainPlayerId;  // ID главного игрока (кто создал регистрацию)
+
+    @Column(name = "pair_booking_id")
+    private UUID pairBookingId;
+
+    @Column(name = "pair_booked_by")
+    private Long pairBookedBy;
+
+    // Снимок условий одинаков у обоих участников заявки и указывает аккаунт, который их принял.
+    @Column(name = "pair_terms_version")
+    private Integer pairTermsVersion;
+
+    @Column(name = "pair_terms_accepted_at")
+    private LocalDateTime pairTermsAcceptedAt;
+
+    @Column(name = "pair_terms_accepted_by")
+    private Long pairTermsAcceptedBy;
+
+    @Column(name = "pair_terms_price_per_player", precision = 10, scale = 2)
+    private BigDecimal pairTermsPricePerPlayer;
+
+    @Column(name = "pair_terms_currency", length = 10)
+    private String pairTermsCurrency;
+
+    @Column(name = "pair_terms_free_until")
+    private LocalDateTime pairTermsFreeUntil;
+
+    @Column(name = "pair_terms_late_fraction", precision = 5, scale = 4)
+    private BigDecimal pairTermsLateFraction;
+
+    // Поля для хранения данных партнера (незарегистрированного)
+    @Column(name = "partner_first_name")
+    private String partnerFirstName;
+
+    @Column(name = "partner_last_name")
+    private String partnerLastName;
+
+    @Column(name = "partner_phone")
+    private String partnerPhone;
+
+    @Column(name = "partner_email")
+    private String partnerEmail;
+
+    // Контакт партнёра без email — телефон/Telegram вместо email
+    @Column(name = "partner_telegram")
+    private String partnerTelegram;
+
+    @Column(name = "partner_registration_token")
+    private String partnerRegistrationToken;
+
+    @Column(name = "partner_token_expiry")
+    private LocalDateTime partnerTokenExpiry;
+
+    // Поля для соло-регистрации на парный турнир
+    @Column(name = "share_contacts", nullable = false)
+    @Builder.Default
+    private Boolean shareContacts = false;
+
+    @Column(name = "solo_reminder_sent", nullable = false)
+    @Builder.Default
+    private Boolean soloReminderSent = false;
+
+    // ID регистрации игрока, предложившего пару (для SOLO_SEARCH flow)
+    @Column(name = "pair_proposer_reg_id")
+    private Long pairProposerRegId;
+
+    // Игрок опоздал к началу индивидуального турнира (AMERICANO/KING_OF_COURT) —
+    // раньше применялся штраф −10 к его текущему результату в этом турнире.
+    @Column(name = "late_arrival", nullable = false)
+    @Builder.Default
+    private Boolean lateArrival = false;
+
+    // Резервная заявка без партнёра (SOLO_ADD_LATER, переведённая в WAITLIST по дедлайну) —
+    // защита от повторной отправки напоминания за 3ч до старта турнира.
+    @Column(name = "final_reminder_sent", nullable = false)
+    @Builder.Default
+    private Boolean finalReminderSent = false;
+
+    // Токен self-service действий из email (подтвердить актуальность / отменить участие)
+    // для резервной заявки без партнёра — без логина, по аналогии с waitlistConfirmationToken.
+    @Column(name = "partner_action_token", length = 64)
+    private String partnerActionToken;
+
+    // Хелпер-метод для получения последнего платежа
+    public Optional<Payment> getLatestPayment() {
+        return payments.stream()
+                .filter(p -> p.getStatus() == PaymentStatus.PAID)
+                .max(Comparator.comparing(Payment::getPaymentDate));
+    }
+
+    // Проверка, оплачено ли
+    public boolean isPaid() {
+        return payments.stream()
+                .anyMatch(p -> p.getStatus() == PaymentStatus.PAID);
+    }
+
+    // Вспомогательные методы
+    public boolean isConfirmed() {
+        return status == RegistrationStatus.CONFIRMED;
+    }
+
+    public boolean isInWaitlist() {
+        return status == RegistrationStatus.WAITLIST;
+    }
+
+    public boolean isCancelled() {
+        return status == RegistrationStatus.CANCELLED;
+    }
+
+    public void confirm() {
+        this.status = RegistrationStatus.CONFIRMED;
+        this.waitlistPosition = null;
+        this.invitationExpiresAt = null;
+        this.notifiedAboutVacancy = null;
+        this.waitlistConfirmationToken = null;   // токен одноразовый — использован
+    }
+
+    public void moveToWaitlist(int waitlistPosition) {
+        this.status = RegistrationStatus.WAITLIST;
+        this.waitlistPosition = waitlistPosition;
+        this.position = null;
+        this.invitationExpiresAt = null;
+        this.notifiedAboutVacancy = false;
+        this.waitlistConfirmationToken = null;   // приглашение истекло/отменено — токен больше не действует
+    }
+
+    public void invalidateActionTokens() {
+        this.partnerActionToken = null;
+        this.waitlistConfirmationToken = null;
+        this.partnerRegistrationToken = null;
+        this.partnerTokenExpiry = null;
+        this.pairProposerRegId = null;
+        this.invitationExpiresAt = null;
+    }
+
+    public void cancel(String reason) {
+        this.status = RegistrationStatus.CANCELLED;
+        this.cancellationDate = LocalDateTime.now();
+        this.cancellationReason = reason;
+        this.isActive = false;
+    }
+
+    public boolean isPartnerInvited() {
+        return status == RegistrationStatus.PARTNER_INVITED;
+    }
+
+    public boolean isPairableSolo() {
+        return Boolean.TRUE.equals(isActive) && !Boolean.TRUE.equals(isDoubleRegistration) && partner == null
+                && (status == RegistrationStatus.SOLO_SEARCH || status == RegistrationStatus.SOLO_ADD_LATER
+                    || status == RegistrationStatus.WAITLIST);
+    }
+
+    @Column(name = "replacement_search", nullable = false)
+    @Builder.Default
+    private boolean replacementSearch = false;
+
+    public boolean needsReplacementInMain() {
+        return isConfirmed() && Boolean.TRUE.equals(isActive) && Boolean.TRUE.equals(isDoubleRegistration)
+                && partner == null && mainPlayerId != null;
+    }
+
+    public boolean canFormPairThroughSearch() {
+        return isPairableSolo() || (needsReplacementInMain() && replacementSearch);
+    }
+
+    public boolean isPairComplete() {
+        return status == RegistrationStatus.PAIR_REGISTERED ||
+                (status == RegistrationStatus.CONFIRMED && partner != null);
+    }
+
+    // Новые вспомогательные методы
+    public void setPartnerInvited(String token, LocalDateTime expiry) {
+        this.status = RegistrationStatus.PARTNER_INVITED;
+        this.partnerRegistrationToken = token;
+        this.partnerTokenExpiry = expiry;
+    }
+
+    public void setPairConfirmed() {
+        this.status = RegistrationStatus.PAIR_REGISTERED;
+        this.partnerRegistrationToken = null;
+        this.partnerTokenExpiry = null;
+    }
+}

@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.dto.calendar;
 
 import com.padle.core.padelcoreservice.model.enums.EventFormat;
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;

@@ -1,9 +1,9 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.service.calendar;
 
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import java.util.Arrays;
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.rating;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +30,8 @@ public class EloPilotAccess {
                 .filter(Authentication::isAuthenticated)
                 .filter(auth -> auth.getAuthorities().stream().anyMatch(role -> "ROLE_PLAYER".equals(role.getAuthority())))
                 .map(Authentication::getPrincipal)
-                .map(SecurityUtils::extractPlayer)
-                .map(PlayerPadel::getId)
+                .flatMap(SecurityUtils::playerPrincipal)
+                .map(PlayerPrincipal::getId)
                 .map(id -> aliases.getOrDefault(id, id))
                 .filter(id -> allPlayers || properties.playerIds().contains(id))
                 .isPresent();

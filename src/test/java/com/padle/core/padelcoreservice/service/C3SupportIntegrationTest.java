@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
@@ -7,9 +11,16 @@ import com.padle.core.padelcoreservice.exception.PairRegistrationException;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -28,6 +39,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -85,13 +97,13 @@ class C3SupportIntegrationTest {
     @ValueSource(strings = {"C3", "С3", "с3"})
     void profileJsonIsCanonicalAfterSaveAndFreshAuthentication(String input) throws Exception {
         var player = player(Nivel.C7);
-        mvc.perform(patch("/api/players/me/level").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/level").with(playerUser(player)).with(csrf())
                         .contentType("application/json").content("{\"nivelJugador\":\""+input+"\"}"))
                 .andExpect(status().isNoContent());
         entities.clear();
         var fresh = players.findById(player.getId()).orElseThrow();
         assertThat(fresh.getNivelJugador()).isEqualTo(Nivel.C3);
-        mvc.perform(get("/api/players/me").with(user(fresh)))
+        mvc.perform(get("/api/players/me").with(playerUser(fresh)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.nivelJugador").value("C3"));
     }
 

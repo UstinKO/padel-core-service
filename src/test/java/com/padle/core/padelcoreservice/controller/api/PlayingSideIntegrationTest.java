@@ -1,18 +1,28 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.identity.GuestProfileClaims.Verification;
+import com.padle.core.application.identity.PlayingSide;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.mapper.TournamentRegistrationMapper;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import com.padle.core.padelcoreservice.service.*;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.dto.GuestProfileClaimDtos.*;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.mapper.PublicLiveMapper;
@@ -39,6 +49,9 @@ import java.util.concurrent.TimeUnit;
 import java.time.temporal.ChronoUnit;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.annotation.Propagation;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerAuthentication;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.oauthPrincipal;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
@@ -68,45 +81,45 @@ class PlayingSideIntegrationTest {
 
     @Test void visitIsAccountWideAndLaterUsesTwentyFourHours() throws Exception {
         var p = player(false, null);
-        mvc.perform(post(URL+"/visit").with(user(p)).with(csrf())).andExpect(status().isOk())
+        mvc.perform(post(URL+"/visit").with(playerUser(p)).with(csrf())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.ask").value(true)).andExpect(jsonPath("$.levelMissing").value(true))
                 .andExpect(jsonPath("$.playingSide").doesNotExist());
         em.flush(); em.clear();
-        mvc.perform(post(URL+"/visit").with(user(p)).with(csrf())).andExpect(jsonPath("$.ask").value(false));
-        mvc.perform(post(URL+"/defer").with(user(p)).with(csrf())).andExpect(status().isNoContent());
+        mvc.perform(post(URL+"/visit").with(playerUser(p)).with(csrf())).andExpect(jsonPath("$.ask").value(false));
+        mvc.perform(post(URL+"/defer").with(playerUser(p)).with(csrf())).andExpect(status().isNoContent());
         assertThat(players.findById(p.getId()).orElseThrow().getPlayingSidePromptAfter())
                 .isAfter(Instant.now().plus(Duration.ofHours(23)));
         players.findById(p.getId()).orElseThrow().setPlayingSidePromptAfter(Instant.now().minusSeconds(1));
         em.flush(); em.clear();
-        mvc.perform(post(URL+"/visit").with(user(p)).with(csrf())).andExpect(jsonPath("$.ask").value(true));
+        mvc.perform(post(URL+"/visit").with(playerUser(p)).with(csrf())).andExpect(jsonPath("$.ask").value(true));
     }
 
     @Test void answerPersistsAndChangingLevelDoesNotClearIt() throws Exception {
         var p = player(false, null);
-        mvc.perform(patch(URL).with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(patch(URL).with(playerUser(p)).with(csrf()).contentType("application/json")
                         .content("{\"playingSide\":\"LEFT\",\"nivelJugador\":\"C7\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.playingSide").value("LEFT"))
                 .andExpect(jsonPath("$.nivelJugador").value("C7"));
         em.flush(); em.clear();
-        mvc.perform(patch("/api/players/me/level").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(patch("/api/players/me/level").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"nivelJugador\":\"D7\"}")).andExpect(status().isNoContent());
         em.clear();
-        mvc.perform(get("/api/players/me").with(user(p))).andExpect(jsonPath("$.playingSide").value("LEFT"));
-        mvc.perform(patch(URL).with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(get("/api/players/me").with(playerUser(p))).andExpect(jsonPath("$.playingSide").value("LEFT"));
+        mvc.perform(patch(URL).with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"playingSide\":\"EITHER\"}")).andExpect(jsonPath("$.nivelJugador").value("D7"));
-        mvc.perform(post(URL+"/visit").with(user(p)).with(csrf())).andExpect(jsonPath("$.ask").value(false));
+        mvc.perform(post(URL+"/visit").with(playerUser(p)).with(csrf())).andExpect(jsonPath("$.ask").value(false));
         verifyNoInteractions(email);
     }
 
     @Test void invalidAnswerAndCsrfCannotModifyOwnOrAnotherPlayer() throws Exception {
         var p = player(false, null); var other = player(false, PlayingSide.RIGHT);
-        mvc.perform(patch(URL).with(user(p)).contentType("application/json").content("{\"playingSide\":\"LEFT\"}"))
+        mvc.perform(patch(URL).with(playerUser(p)).contentType("application/json").content("{\"playingSide\":\"LEFT\"}"))
                 .andExpect(status().isForbidden());
         for (String input : new String[]{"{}", "{\"playingSide\":\"BOGUS\"}", "{\"playingSide\":\"LEFT\",\"nivelJugador\":\"TODOS\"}"}) {
-            mvc.perform(patch(URL).with(user(p)).with(csrf()).contentType("application/json").content(input))
+            mvc.perform(patch(URL).with(playerUser(p)).with(csrf()).contentType("application/json").content(input))
                     .andExpect(status().isUnprocessableEntity());
         }
-        mvc.perform(patch(URL).with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(patch(URL).with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"playingSide\":\"LEFT\",\"playerId\":"+other.getId()+"}"))
                 .andExpect(status().isOk());
         assertThat(other.getPlayingSide()).isEqualTo(PlayingSide.RIGHT);
@@ -124,7 +137,7 @@ class PlayingSideIntegrationTest {
 
     @Test void googlePrincipalCanAnswerWithoutChangingLevel() throws Exception {
         var p = player(false, null);
-        var oauth = new CustomOAuth2User(mock(OAuth2User.class), p);
+        var oauth = oauthPrincipal(mock(OAuth2User.class), p);
         var auth = UsernamePasswordAuthenticationToken.authenticated(oauth,"",oauth.getAuthorities());
         mvc.perform(patch(URL).with(authentication(auth)).with(csrf()).contentType("application/json")
                 .content("{\"playingSide\":\"RIGHT\"}")).andExpect(status().isOk())
@@ -189,7 +202,7 @@ class PlayingSideIntegrationTest {
     @Transactional(propagation=Propagation.NOT_SUPPORTED)
     void simultaneousVisitsOnlyShowOnePrompt() throws Exception {
         var p = player(false,null);
-        var auth = UsernamePasswordAuthenticationToken.authenticated(p,"",p.getAuthorities());
+        var auth = playerAuthentication(p);
         var service = context.getBean(PlayingSideService.class);
         var start = new CountDownLatch(1);
         var pool = Executors.newFixedThreadPool(2);
@@ -228,7 +241,7 @@ class PlayingSideIntegrationTest {
                 .andExpect(jsonPath("$[0].email").doesNotExist()).andExpect(jsonPath("$[0].telefono").doesNotExist());
         var other = Owner.builder().id(988L).email("other@example.test").role(OwnerRole.CLUB_ADMIN).build();
         mvc.perform(get(url).with(user(other))).andExpect(status().isForbidden());
-        mvc.perform(get(url).with(user(p))).andExpect(status().isForbidden());
+        mvc.perform(get(url).with(playerUser(p))).andExpect(status().isForbidden());
         var root = Owner.builder().id(999L).email("root@example.test").role(OwnerRole.SUPER_ADMIN).build();
         mvc.perform(get(url).with(user(root))).andExpect(status().isOk());
     }

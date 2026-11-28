@@ -426,7 +426,7 @@ class KingOfCourt {
                                 data-court-number="${court.courtNumber}"
                                 style="flex: 1;">
                             <i class="fas fa-edit"></i> Editar
-                        </button>
+                        </button>${this.actionHelp('koc-edit')}
                     </div>
                 `;
             }
@@ -447,12 +447,12 @@ class KingOfCourt {
 
             if (this.isAdmin && !this.isFinished) {
                 content += `
-                    <button class="btn btn-primary btn-sm enter-result-btn" 
+                    <div class="action-help-court-control"><button class="btn btn-primary btn-sm enter-result-btn"
                             data-court-id="${court.id}"
                             data-court-number="${court.courtNumber}"
                             style="margin-top: 1rem; width: 100%;">
                         <i class="fas fa-edit"></i> ${t('koc.admin.btn.enter_result')}
-                    </button>
+                    </button>${this.actionHelp('koc-score')}</div>
                 `;
             }
         } else {
@@ -508,6 +508,10 @@ class KingOfCourt {
         });
     }
 
+    actionHelp(topic) {
+        return document.querySelector(`[data-individual-help-copy="${topic}"]`)?.innerHTML || '';
+    }
+
     checkAdminButtons(allResultsIn) {
         const nextRoundBtn    = document.getElementById('nextRoundBtn');
         const resetBtn        = document.getElementById('resetRoundBtn');
@@ -524,17 +528,23 @@ class KingOfCourt {
         if (nextRoundBtn) {
             nextRoundBtn.style.display =
                 (this.isAdmin && !this.isFinished && allResultsIn) ? 'block' : 'none';
+            const help = document.querySelector('[data-help-for="nextRoundBtn"]');
+            if (help) help.hidden = nextRoundBtn.style.display === 'none';
         }
 
         if (resetBtn) {
             const canReset = this.isAdmin && !this.isFinished && this.currentCourts?.some(court => court.hasResult);
             resetBtn.style.display = canReset ? '' : 'none';
+            const help = document.querySelector('[data-help-for="resetRoundBtn"]');
+            if (help) help.hidden = resetBtn.style.display === 'none';
         }
 
         // "Завершить турнир" — только когда все результаты введены
         if (endTournamentBtn) {
             endTournamentBtn.style.display =
                 (this.isAdmin && !this.isFinished && allResultsIn) ? 'block' : 'none';
+            const help = document.querySelector('[data-help-for="endTournamentBtn"]');
+            if (help) help.hidden = endTournamentBtn.style.display === 'none';
         }
     }
 

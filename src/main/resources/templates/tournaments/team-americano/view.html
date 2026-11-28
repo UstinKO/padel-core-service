@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title th:text="${tournament.nombre} + ' · ' + #{rr.results}">Resultados</title>
+<title th:text="${@eventLevelText.eventName(tournament.nombre, #locale)} + ' · ' + #{rr.results}">Resultados</title>
 <link rel="stylesheet" th:href="@{/css/style.css}"><link rel="stylesheet" th:href="@{/css/round-robin.css}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head><body>
@@ -46,7 +46,7 @@
 </header>
 <main class="admin-main"><div class="container">
 <p><a class="btn btn-outline" th:href="@{'/torneo/' + ${tournament.id}}" th:text="#{team_americano.btn.back}">Назад</a></p>
-<h1 th:text="${tournament.nombre}">Турнир</h1>
+<h1 th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}">Турнир</h1>
 <p th:text="#{rr.results}">Результаты турнира</p>
 <div th:if="${isInitialized}" th:replace="~{fragments/round-robin :: content(false)}"></div>
 <p th:unless="${isInitialized}" th:text="#{rr.no_results}">Результаты ещё не сохранены.</p>

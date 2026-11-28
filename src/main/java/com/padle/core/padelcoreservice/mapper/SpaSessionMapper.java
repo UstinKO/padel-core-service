@@ -1,9 +1,10 @@
 package com.padle.core.padelcoreservice.mapper;
 
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.dto.SpaSessionResponse;
 import com.padle.core.padelcoreservice.dto.SpaSessionUserType;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.application.identity.PlayerProfiles.Profile;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -25,7 +26,18 @@ public interface SpaSessionMapper {
     @Mapping(target = "clubId", ignore = true)
     @Mapping(target = "hasValidContact", expression = "java(player.hasValidContact())")
     @Mapping(target = "preferredLocale", source = "player.preferredLocale", qualifiedByName = "supportedLocale")
-    SpaSessionResponse fromPlayer(PlayerPadel player, List<String> roles);
+    SpaSessionResponse fromPlayer(Profile player, List<String> roles);
+
+    @Mapping(target = "authenticated", constant = "true")
+    @Mapping(target = "userType", expression = "java(SpaSessionUserType.PLAYER)")
+    @Mapping(target = "id", source = "player.id")
+    @Mapping(target = "fullName", source = "player.nombreCompleto")
+    @Mapping(target = "email", source = "player.email")
+    @Mapping(target = "roles", source = "roles")
+    @Mapping(target = "clubId", ignore = true)
+    @Mapping(target = "hasValidContact", source = "player.validContact")
+    @Mapping(target = "preferredLocale", source = "player.preferredLocale", qualifiedByName = "supportedLocale")
+    SpaSessionResponse fromPrincipal(PlayerPrincipal player, List<String> roles);
 
     @Mapping(target = "authenticated", constant = "true")
     @Mapping(target = "userType", expression = "java(SpaSessionUserType.OWNER)")
