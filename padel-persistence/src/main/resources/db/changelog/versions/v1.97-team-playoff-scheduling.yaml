@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: team-playoff-scheduling
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE americano_matches_db ADD COLUMN pairing_confirmed BOOLEAN NOT NULL DEFAULT FALSE;
+              ALTER TABLE americano_matches_db ADD COLUMN pairing_override_reason VARCHAR(500);
+              UPDATE americano_matches_db SET pairing_confirmed = TRUE
+                WHERE status IN ('QUEUED', 'COMPLETED') OR playoff_play_started = TRUE OR started_at IS NOT NULL;
+              CREATE TABLE team_playoff_first_completion (
+                match_id BIGINT PRIMARY KEY,
+                tournament_id BIGINT NOT NULL REFERENCES tournaments_db(id) ON DELETE CASCADE,
+                completed_at TIMESTAMP NOT NULL
+              );
+              INSERT INTO team_playoff_first_completion SELECT id, tournament_id, completed_at
+                FROM americano_matches_db WHERE completed_at IS NOT NULL;
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE FUNCTION preserve_team_playoff_first_completion() RETURNS TRIGGER AS $$
+              DECLARE first_completion TIMESTAMP;
+              BEGIN
+                NEW.pairing_confirmed := COALESCE(NEW.pairing_confirmed,
+                  NEW.status IN ('QUEUED', 'COMPLETED') OR NEW.started_at IS NOT NULL OR NEW.playoff_play_started = TRUE, FALSE);
+                IF NEW.completed_at IS NOT NULL THEN
+                  INSERT INTO team_playoff_first_completion(match_id, tournament_id, completed_at)
+                    VALUES (NEW.id, NEW.tournament_id, NEW.completed_at) ON CONFLICT (match_id) DO NOTHING;
+                END IF;
+                SELECT completed_at INTO first_completion FROM team_playoff_first_completion WHERE match_id = NEW.id;
+                IF FOUND THEN NEW.completed_at := first_completion; END IF;
+                RETURN NEW;
+              END;
+              $$ LANGUAGE plpgsql;
+              CREATE TRIGGER preserve_team_playoff_first_completion BEFORE INSERT OR UPDATE ON americano_matches_db
+                FOR EACH ROW EXECUTE FUNCTION preserve_team_playoff_first_completion();
+      rollback:
+        - sql:
+            sql: |
+              DROP TRIGGER preserve_team_playoff_first_completion ON americano_matches_db;
+              DROP FUNCTION preserve_team_playoff_first_completion();
+              DROP TABLE team_playoff_first_completion;
+              ALTER TABLE americano_matches_db DROP COLUMN pairing_override_reason;
+              ALTER TABLE americano_matches_db DROP COLUMN pairing_confirmed;

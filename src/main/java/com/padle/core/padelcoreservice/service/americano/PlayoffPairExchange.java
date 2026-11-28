@@ -46,10 +46,14 @@ public class PlayoffPairExchange {
     public record Encounter(String stage, Integer round, Pair pair) {}
     public record Option(Long matchId, int slot, Team team, Pair current, String block,
                          Pair firstAfter, Pair secondAfter, List<Encounter> encounters, boolean confirmNotStarted,
-                         boolean firstScoreRequired, boolean secondScoreRequired) {}
+                         boolean firstScoreRequired, boolean secondScoreRequired, TeamPlayoffService.PairSafety safety) {}
     public record Options(Pair current, String block, List<Option> candidates, List<Pair> dependentMatches) {}
     public record Request(int slot, Long otherMatchId, int otherSlot,
-                          boolean confirmNotStarted, boolean confirmRematch) {}
+                          boolean confirmNotStarted, boolean confirmRematch, String overrideReason) {
+        public Request(int slot, Long otherMatchId, int otherSlot, boolean confirmNotStarted, boolean confirmRematch) {
+            this(slot, otherMatchId, otherSlot, confirmNotStarted, confirmRematch, null);
+        }
+    }
     public record Score(Integer firstGames, Integer secondGames) {}
     public record Correction(Request exchange, boolean confirmCorrection, Score firstScore, Score secondScore) {}
     public record Outcome(Pair firstBefore, Pair secondBefore, Pair firstAfter, Pair secondAfter,
@@ -94,6 +98,10 @@ public class PlayoffPairExchange {
         if (option.block() != null) throw new InvalidStateException(option.block());
         if (option.confirmNotStarted() && !request.confirmNotStarted()) throw invalid("confirm_not_started");
         if (!option.encounters().isEmpty() && !request.confirmRematch()) throw invalid("confirm_rematch");
+        if (!option.safety().safe() && (!request.confirmRematch() || request.overrideReason() == null
+                || request.overrideReason().isBlank() || request.overrideReason().length() > 500)) {
+            throw new InvalidStateException("team_playoff.schedule.playoff_remainder");
+        }
         if (correction != null) {
             validateScore(option.firstScoreRequired(), correction.firstScore());
             validateScore(option.secondScoreRequired(), correction.secondScore());
@@ -104,6 +112,12 @@ public class PlayoffPairExchange {
         List<AmericanoMatch> links = moveLinks(state, request.slot(), other, request.otherSlot());
         updatePair(state, state.source(), option.firstAfter());
         updatePair(state, other, option.secondAfter());
+        state.source().setPairingConfirmed(true);
+        other.setPairingConfirmed(true);
+        if (!option.safety().safe()) {
+            state.source().setPairingOverrideReason(request.overrideReason());
+            other.setPairingOverrideReason(request.overrideReason());
+        }
         if (correction != null) {
             recordScore(state.source(), correction.firstScore());
             recordScore(other, correction.secondScore());
@@ -148,6 +162,9 @@ public class PlayoffPairExchange {
                         || includes(other, match.getTeam1Id()) || includes(other, match.getTeam2Id()))) {
             throw invalid("court_conflict");
         }
+        playoff.validatePlayoffStart(match);
+        match.setPairingConfirmed(true);
+        match.start();
         match.setPlayoffPlayStarted(true);
         matches.save(match);
         notifyUpdated(match);
@@ -173,7 +190,7 @@ public class PlayoffPairExchange {
         Pair secondAfter = replace(current, otherSlot, state.team(idAt(state.source(), slot)));
         String blocked = rejection(state, other, firstAfter, secondAfter, correction);
         if (blocked != null) {
-            return new Option(other.getId(), otherSlot, team, current, blocked, null, null, List.of(), false, false, false);
+            return new Option(other.getId(), otherSlot, team, current, blocked, null, null, List.of(), false, false, false, new TeamPlayoffService.PairSafety(false, List.of()));
         }
         var encounters = state.all().stream()
                 .filter(AmericanoMatch::isCompleted)
@@ -183,7 +200,9 @@ public class PlayoffPairExchange {
                 .toList();
         return new Option(other.getId(), otherSlot, team, current, null, firstAfter, secondAfter, encounters,
                 needsLegacyConfirmation(state.source()) || needsLegacyConfirmation(other),
-                correction && scoredOrStarted(state.source()), correction && scoredOrStarted(other));
+                correction && scoredOrStarted(state.source()), correction && scoredOrStarted(other),
+                playoff.playoffPairSafety(state.source().getTournament().getId(), state.source().getPlayoffStage(),
+                        Set.of(state.source().getId(), other.getId()), List.of(firstAfter, secondAfter)));
     }
 
     private String rejection(State state, AmericanoMatch other, Pair first, Pair second, boolean correction) {

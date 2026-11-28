@@ -61,7 +61,11 @@ public class TeamPlayoffCourts {
             source.setCourtNumber(null);
             source.setStatus(AmericanoRoundStatus.QUEUED);
             source.setStartedAt(null);
+            source.setPairingConfirmed(true);
         } else {
+            if (!source.isCompleted() && source.getPlayoffStage() != null) {
+                playoff.validatePlayoffStart(source);
+            }
             if (!source.isCompleted() && (source.getTeam1Id() == null || source.getTeam2Id() == null)) {
                 throw invalid("unavailable");
             }
@@ -84,6 +88,7 @@ public class TeamPlayoffCourts {
                 swap(source, change, occupants);
             }
         }
+        source.setPairingConfirmed(true);
         source.setCourtNumber(change.courtNumber());
         if (source.isQueued()) {
             source.setStatus(AmericanoRoundStatus.IN_PROGRESS);

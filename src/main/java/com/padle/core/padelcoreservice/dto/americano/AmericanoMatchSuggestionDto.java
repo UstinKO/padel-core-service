@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AmericanoMatchSuggestionDto {
+    private boolean mixed;
+
     private AmericanoTeamDto team1;
     private AmericanoTeamDto team2;
 

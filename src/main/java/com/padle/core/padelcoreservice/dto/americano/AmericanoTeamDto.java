@@ -14,6 +14,11 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AmericanoTeamDto {
+    private Long waitingSeconds;
+    private long maximumWaitingSeconds;
+    private long totalWaitingSeconds;
+    private java.time.LocalDateTime waitingSince;
+
 
     private Long id;
     private Long tournamentId;

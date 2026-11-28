@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AmericanoMatchDto {
+    private Long team1WaitingSeconds;
+    private Long team2WaitingSeconds;
+    private boolean pairingConfirmed;
+
     private Long id;
     private Long roundId;
     private Long tournamentId;

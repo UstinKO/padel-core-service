@@ -1,4 +1,5 @@
 org.springframework.boot.EnvironmentPostProcessor=com.padle.core.padelcoreservice.preview.PreviewEnvironmentGuard
 
 org.springframework.context.ApplicationContextInitializer=\
-com.padle.core.padelcoreservice.config.GuestClaimMessages
+com.padle.core.padelcoreservice.config.GuestClaimMessages,\
+com.padle.core.padelcoreservice.config.TeamPlayoffMessages

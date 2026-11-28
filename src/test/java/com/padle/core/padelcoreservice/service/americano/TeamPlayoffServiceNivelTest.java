@@ -39,7 +39,9 @@ class TeamPlayoffServiceNivelTest {
             mock(TournamentRegistrationRepository.class),
             mock(WebSocketService.class),
             mock(PlayoffMatchingEngine.class),
-            mock(SoloRosterTeams.class)
+            mock(SoloRosterTeams.class),
+            mock(TeamQualificationScheduling.class),
+            mock(TeamPlayoffQuarterFinals.class)
     );
 
     @Test
