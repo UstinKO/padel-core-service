@@ -139,7 +139,7 @@ try {
     const restoredExtra = await read(base);
     assert.deepEqual(restoredExtra.finalRanking, withExtra.finalRanking);
     assert.deepEqual(restoredExtra.ranking, beforeExtra);
-    await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.locator('.rr-finish button').click()]);
+    await Promise.all([page.waitForNavigation({ waitUntil: 'domcontentloaded' }), page.locator('.rr-finish button[type=submit]').click()]);
     await expect(page.locator('.rr-places li')).toHaveCount(4);
     const finished = await read(base);
     assert.deepEqual(finished.ranking, beforeExtra);
