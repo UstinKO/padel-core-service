@@ -1,3 +1,5 @@
+Локализованные кампании: TelegramCampaignTranslationService / TelegramCampaignTranslator готовят переводы OpenAI без отправки; CampaignModels.Texts и снимок языка/текста адресата, v1.96. [Контракт](../docs/endpoints/player-telegram.md).
+
 Telegram в кабинете: fragments/player-telegram :: invitation и player-telegram.js учитывают серверный invitationDismissed, WhatsApp и связь; возврат предложения в профиле. telegram-connections.html / JS / CSS показывают общий агрегат только SUPER_ADMIN. [Интерфейс и проверки](../docs/player-telegram-interface.md).
 
 Статистика Telegram: PlayerTelegramStore.connectionStatistics → GET /api/admin/telegram/connections (SUPER_ADMIN). Отдельный invitationDismissed сохраняется PUT своего профиля; без отправок и смены канала. [Контракт](../docs/endpoints/player-telegram.md).
@@ -514,7 +516,7 @@ repository/
 
 ### Database Migrations
 
-Все изменения схемы — YAML-файлы в `padel-persistence/src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия v1.95. `ddl-auto = none` оставляет управление схемой Liquibase. Новые файлы добавлять со следующим номером и регистрировать в `changelog-master.yaml`.
+Все изменения схемы — YAML-файлы в `padel-persistence/src/main/resources/db/changelog/versions/`, подключены через `changelog-master.yaml`. Текущая версия v1.96. `ddl-auto = none` оставляет управление схемой Liquibase. Новые файлы добавлять со следующим номером и регистрировать в `changelog-master.yaml`.
 
 ### Email Templates
 

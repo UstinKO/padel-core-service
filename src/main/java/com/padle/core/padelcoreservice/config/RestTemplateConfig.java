@@ -13,6 +13,14 @@ public class RestTemplateConfig {
         return new RestTemplate();
     }
 
+    @Bean("telegramTranslationRestTemplate")
+    public RestTemplate telegramTranslationRestTemplate() {
+        var factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(45_000);
+        return new RestTemplate(factory);
+    }
+
     /** Отдельный RestTemplate для Telegram с жёсткими таймаутами. */
     @Bean("telegramRestTemplate")
     public RestTemplate telegramRestTemplate() {

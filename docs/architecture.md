@@ -268,7 +268,7 @@ hikari:
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы миграций находятся в `padel-persistence/src/main/resources/db/changelog/versions/`.
 - Мастер-файл расположен в `padel-persistence/src/main/resources/db/changelog/changelog-master.yaml`. Порядок include определяет порядок выполнения.
-- Текущая версия: **v1.95**
+- Текущая версия: **v1.96**
 
 **Добавление новой миграции:**
 ```

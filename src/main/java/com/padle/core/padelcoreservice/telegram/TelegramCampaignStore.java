@@ -37,21 +37,22 @@ public class TelegramCampaignStore {
         return new Header(rs.getObject("id", UUID.class), rs.getLong("owner_id"), rs.getObject("tournament_id", Long.class),
                 rs.getString("author"), rs.getString("message_text"), rs.getString("kind"), rs.getString("state"),
                 rs.getString("fingerprint"), rs.getObject("created_at", OffsetDateTime.class),
-                rs.getObject("expires_at", OffsetDateTime.class));
+                rs.getObject("expires_at", OffsetDateTime.class),
+                new Texts(rs.getString("text_es"), rs.getString("text_ru"), rs.getString("text_en")));
     }
-    public Creation create(long ownerId, String author, Long event, UUID request, String hash, String text, String kind, UUID source) {
+    public Creation create(long ownerId, String author, Long event, UUID request, String hash, String text, String kind, UUID source, Texts texts) {
         UUID id = UUID.randomUUID();
         int inserted = jdbc.update("""
-                INSERT INTO telegram_campaigns(id,owner_id,author,tournament_id,request_id,fingerprint,message_text,kind,state,source_id)
-                VALUES(?,?,?,?,?,?,?,?, 'DRAFT', ?) ON CONFLICT(owner_id,request_id) DO NOTHING
-                """, id, ownerId, author, event, request, hash, text, kind, source);
+                INSERT INTO telegram_campaigns(id,owner_id,author,tournament_id,request_id,fingerprint,message_text,kind,state,source_id,text_es,text_ru,text_en)
+                VALUES(?,?,?,?,?,?,?,?, 'DRAFT', ?,?,?,?) ON CONFLICT(owner_id,request_id) DO NOTHING
+                """, id, ownerId, author, event, request, hash, text, kind, source, texts.es(), texts.ru(), texts.en());
         return new Creation(byRequest(ownerId, request).orElseThrow(),inserted == 1);
     }
-    public void add(UUID campaign, Candidate candidate, Optional<Link> link) {
+    public void add(UUID campaign, Candidate candidate, Optional<Link> link, String text, boolean localized) {
         jdbc.update(connection -> {
             var statement = connection.prepareStatement("""
                     INSERT INTO telegram_campaign_recipients(campaign_id,player_id,player_name,category,groups_text,
-                      chat_id,connection_at,state,reason) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING
+                      chat_id,connection_at,state,reason,message_locale,message_text) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING
                     """);
             statement.setObject(1,campaign); statement.setLong(2,candidate.playerId());
             statement.setString(3,candidate.name()); statement.setString(4,candidate.category().name());
@@ -63,6 +64,12 @@ public class TelegramCampaignStore {
             }
             statement.setString(8,candidate.availability()==Availability.AVAILABLE && link.isPresent() ? "PENDING" : "SKIPPED");
             statement.setString(9,candidate.availability()==Availability.AVAILABLE && link.isEmpty() ? "CONNECTION_CHANGED" : candidate.availability().name());
+            if (localized) {
+                statement.setString(10, candidate.language());
+            } else {
+                statement.setNull(10, Types.VARCHAR);
+            }
+            statement.setString(11, text);
             return statement;
         });
     }
@@ -81,7 +88,9 @@ public class TelegramCampaignStore {
                 """, (rs,n) ->
                 new StoredRecipient(rs.getLong("player_id"), rs.getString("player_name"), rs.getString("category"),
                         rs.getString("groups_text"), rs.getObject("chat_id",Long.class), rs.getObject("connection_at",OffsetDateTime.class),
-                        rs.getString("visible_state"),rs.getString("reason"),rs.getInt("attempt")), id);
+                        rs.getString("visible_state"),rs.getString("reason"),rs.getInt("attempt"),
+                        Objects.requireNonNullElse(rs.getString("message_locale"), ""),
+                        Objects.requireNonNullElse(rs.getString("message_text"), "")), id);
     }
     public List<Header> history(Long event, int page) {
         return jdbc.query("SELECT * FROM telegram_campaigns " + (event == null ? "" : "WHERE tournament_id=? ")

@@ -66,6 +66,7 @@ class TelegramCampaignIntegrationTest {
     @Autowired ReceiptIntake receiptIntake;
     @MockitoBean ReceiptProperties receiptFlags;
     @Autowired TelegramCampaignService campaigns;
+    @Autowired TelegramCampaignTranslationService translationService;
     @Autowired TelegramCampaignStore store;
     @Autowired TelegramCampaignWorker worker;
     @Autowired PlayerTelegramStore connections;
@@ -80,6 +81,7 @@ class TelegramCampaignIntegrationTest {
     @MockitoBean PlayerTelegramProperties properties;
     @MockitoBean TelegramCampaignProperties flags;
     @MockitoBean PlayerTelegramApi api;
+    @MockitoBean TelegramCampaignTranslator translator;
 
     private final List<Long> fixtureOwners=new ArrayList<>();
 
@@ -292,6 +294,106 @@ class TelegramCampaignIntegrationTest {
                 allowed.getId(), allowed.getCancellationVersion(), file);
         assertThat(receipt.state()).isEqualTo(ReceiptModels.State.PENDING);
         assertThat(payments.findByRegistrationId(allowed.getId())).isEmpty();
+    }
+
+    @Test void localizedDraftFreezesEachProfileLanguageAndExactText() {
+        var admin = owner(OwnerRole.SUPER_ADMIN);
+        var es = localizedPlayer("es"); var ru = localizedPlayer("ru");
+        var en = localizedPlayer("en"); var fallback = localizedPlayer("de");
+        var texts = new Texts("Hola 👋 18:30 https://1-padel.com", "Привет 👋 18:30 https://1-padel.com", "Hello 👋 18:30 https://1-padel.com");
+        var selection = new Selection(null, Set.of(), Set.of(), Set.of(es.getId(), ru.getId(), en.getId(), fallback.getId()), Set.of(), "Hola");
+        var request = new Prepare(UUID.randomUUID(), selection, texts);
+        var draft = campaigns.prepare(admin, request);
+        assertThat(draft.texts()).isEqualTo(texts);
+        assertThat(draft.recipients()).extracting(Candidate::language).containsExactlyInAnyOrder("es", "ru", "en", "es");
+        assertThatThrownBy(() -> campaigns.prepare(admin, new Prepare(request.requestId(), selection,
+                new Texts(texts.es(), texts.ru(), "Changed")))).isInstanceOf(AccountException.class);
+        en.setPreferredLocale("ru"); players.saveAndFlush(en);
+        campaigns.confirm(admin, draft.campaignId()); worker.tick();
+        verify(api).send(chat(es), texts.es(), List.of());
+        verify(api).send(chat(ru), texts.ru(), List.of());
+        verify(api).send(chat(en), texts.en(), List.of());
+        verify(api).send(chat(fallback), texts.es(), List.of());
+        assertThat(campaigns.get(admin, draft.campaignId()).recipients()).filteredOn(r -> r.playerId() == en.getId())
+                .singleElement().satisfies(r -> { assertThat(r.language()).isEqualTo("en"); assertThat(r.text()).isEqualTo(texts.en()); });
+    }
+
+    @Test void missingTranslationCannotCreateDraftAndOversizedVersionsFailValidation() throws Exception {
+        var admin = owner(OwnerRole.SUPER_ADMIN); var target = localizedPlayer("en");
+        var selection = prepare(null, Set.of(), Set.of(target.getId())).selection();
+        var id = UUID.randomUUID();
+        assertThatThrownBy(() -> campaigns.prepare(admin, new Prepare(id, selection, new Texts("Hola", "Привет", ""))))
+                .isInstanceOf(AccountException.class).hasMessage("TELEGRAM_TRANSLATION_REQUIRED");
+        assertThat(store.byRequest(admin.getId(), id)).isEmpty();
+        assertThatThrownBy(() -> campaigns.prepare(admin, new Prepare(id, selection, Texts.empty())))
+                .isInstanceOf(AccountException.class).hasMessage("TELEGRAM_TRANSLATION_REQUIRED");
+        mvc.perform(post("/api/admin/telegram/messages/campaigns").with(user(admin)).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(new Prepare(id, selection,
+                        new Texts("Hola", "Привет", "x".repeat(4097)))))).andExpect(status().isUnprocessableEntity());
+        verify(api, never()).send(anyLong(), anyString(), anyList());
+    }
+
+    @Test void localizedTestAndFailedRetryUseTheSavedVersion() {
+        var admin = owner(OwnerRole.SUPER_ADMIN); var self = localizedPlayer("es"); var target = localizedPlayer("en");
+        when(properties.organizerOwnerId()).thenReturn(admin.getId()); when(properties.organizerChatId()).thenReturn(chat(self));
+        var texts = new Texts("Español", "Русский", "English");
+        var draft = campaigns.prepare(admin, new Prepare(UUID.randomUUID(), prepare(null, Set.of(), Set.of(target.getId())).selection(), texts));
+        campaigns.test(admin, draft.campaignId(), new Action(UUID.randomUUID(), true)); worker.tick();
+        verify(api).send(chat(self), "Español", List.of());
+        when(api.send(eq(chat(target)), anyString(), anyList())).thenReturn(new Result("FAILED", null), new Result("SENT", 123L));
+        campaigns.confirm(admin, draft.campaignId()); worker.tick();
+        target.setPreferredLocale("ru"); players.saveAndFlush(target);
+        campaigns.retry(admin, draft.campaignId(), new Action(UUID.randomUUID(), true)); worker.tick();
+        verify(api, times(2)).send(chat(target), "English", List.of());
+        var legacy = campaigns.prepare(admin, prepare(null, Set.of(), Set.of(target.getId())));
+        jdbc.update("UPDATE telegram_campaign_recipients SET message_locale=NULL,message_text=NULL WHERE campaign_id=?", legacy.campaignId());
+        campaigns.confirm(admin, legacy.campaignId()); worker.tick();
+        verify(api).send(chat(target), "Тестовое сообщение", List.of());
+        assertThat(campaigns.get(admin, legacy.campaignId()).recipients()).singleElement()
+                .satisfies(r -> { assertThat(r.language()).isEmpty(); assertThat(r.text()).isEqualTo("Тестовое сообщение"); });
+    }
+
+    @Test void translationEndpointChecksRightsCsrfAndDoesNotCreateCampaignOrSend() throws Exception {
+        var admin = owner(OwnerRole.SUPER_ADMIN); var target = localizedPlayer("es");
+        var selection = prepare(null, Set.of(), Set.of(target.getId())).selection();
+        when(translator.translate(selection.text())).thenReturn(new TelegramCampaignTranslator.Translation("ru", "Hola", selection.text(), "Hello"));
+        var none = translationService.translate(admin, prepare(null, Set.of(), Set.of()).selection());
+        assertThat(none.texts().localized()).isFalse();
+        assertThat(none.languages()).isEmpty();
+        String path = "/api/admin/telegram/messages/translations";
+        mvc.perform(post(path).with(user(admin)).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(selection)))
+                .andExpect(status().isForbidden());
+        mvc.perform(post(path).with(user(admin)).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(selection)))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.texts.es").value("Hola")).andExpect(jsonPath("$.languages[0].language").value("es"));
+        var foreign = owner(OwnerRole.ORGANIZER);
+        mvc.perform(post(path).with(user(foreign)).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(selection)))
+                .andExpect(status().isForbidden());
+        verify(translator, times(1)).translate(selection.text());
+        assertThat(store.history(null, 0)).noneMatch(c -> c.ownerId() == admin.getId());
+        verify(api, never()).send(anyLong(), anyString(), anyList());
+    }
+
+    @Test void translationLimitAndMissingSnapshotFailClosed() {
+        var admin = owner(OwnerRole.SUPER_ADMIN); var target = localizedPlayer("en");
+        var selection = prepare(null, Set.of(), Set.of(target.getId())).selection();
+        when(translator.translate(selection.text())).thenReturn(new TelegramCampaignTranslator.Translation("ru", "Hola", selection.text(), "Hello"));
+        for (int index = 0; index < 6; index++) { translationService.translate(admin, selection); }
+        assertThatThrownBy(() -> translationService.translate(admin, selection)).isInstanceOf(AccountException.class)
+                .hasMessage("TELEGRAM_TRANSLATION_LIMIT");
+        verify(translator, times(6)).translate(selection.text());
+        var draft = campaigns.prepare(admin, new Prepare(UUID.randomUUID(), selection, new Texts("Hola", "Привет", "Hello")));
+        campaigns.confirm(admin, draft.campaignId());
+        jdbc.update("UPDATE telegram_campaign_recipients SET message_text=NULL WHERE campaign_id=?", draft.campaignId());
+        worker.tick();
+        assertThat(campaigns.get(admin, draft.campaignId()).recipients()).singleElement()
+                .satisfies(r -> { assertThat(r.state()).isEqualTo("SKIPPED"); assertThat(r.reason()).isEqualTo("TRANSLATION_MISSING"); });
+        verify(api, never()).send(anyLong(), anyString(), anyList());
+    }
+
+    private PlayerPadel localizedPlayer(String language) {
+        var player = player(); link(player); player.setPreferredLocale(language);
+        return players.saveAndFlush(player);
     }
 
     private Prepare prepare(Long event,Set<Group> groups,Set<Long> ids) {

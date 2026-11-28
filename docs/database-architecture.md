@@ -1,7 +1,9 @@
 # Архитектура базы данных — padel-core-service
 
 > **СУБД:** PostgreSQL 15  
-> **Версия схемы:** v1.95
+> **Версия схемы:** v1.96
+
+Локализованные кампании: v1.96 добавляет `text_es/text_ru/text_en` (TEXT NOT NULL, пустое значение у прежних кампаний) и `message_locale/message_text` в `telegram_campaign_recipients`. Подготовка фиксирует язык профиля и полный текст каждого адресата; очередь, восстановление и retry используют снимок. Старые строки без снимка используют прежний общий текст. Новая схема не переписывает данные существующих кампаний.
 
 Общий вход Telegram: v1.93 добавляет `player_telegram_onboarding`: UUID, уникальный user_id, равный ему chat_id, уникальный SHA-256 token_hash, expires_at, nullable player_id FK, locale и completed. Один запрос на Telegram, срок 10 минут; истёкшие удаляются при выдаче нового. Кандидат фиксируется POST сайта, связь — только callback исходного Telegram. Прежняя транзакционная блокировка связей сериализует завершение, персональные ссылки, /stop и WhatsApp.
 > **Миграции:** Liquibase (YAML), файлы в `padel-persistence/src/main/resources/db/changelog/versions/`
@@ -1093,6 +1095,6 @@ player_telegram_connections хранит проверенную связь playe
 
 `telegram_campaign_actions`: campaign_id UUID FK и request_id UUID образуют PK, created_at TIMESTAMPTZ. Защита повторного запуска FAILED. Исторические owner_id/tournament_id/player_id без FK сохраняют аудит после удаления исходных записей; текущие права и существование проверяются перед отправкой. Клиент не получает chat_id/connection_at/fingerprint.
 
-Приглашение Telegram: v1.95-telegram-invitation-dismissal добавляет telegram_invitation_dismissed BOOLEAN NOT NULL DEFAULT false в player_contact_preferences. Поле независимо от preference; отказ не отключает связь и не назначает канал.
+Приглашение Telegram: v1.94-telegram-invitation-dismissal добавляет telegram_invitation_dismissed BOOLEAN NOT NULL DEFAULT false в player_contact_preferences. Поле независимо от preference; отказ не отключает связь и не назначает канал.
 
 Журнал `tournament_result_exports` хранит факт формирования универсального отчёта: субъект, время UTC, турнир, формат, контактный режим и число строк. Телефонов, результатов и содержимого файла в журнале нет. Таблица сохраняет аудит независимо от удаления мероприятия. См. [контракт экспорта](endpoints/tournament-results-export.md).
