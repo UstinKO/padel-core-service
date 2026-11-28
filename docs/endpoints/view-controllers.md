@@ -57,6 +57,10 @@
 
 ---
 
+### `HomeController` → `GET /partners`, `GET /partners/`
+
+Публичный переход на `/partners/index.html` с испанской версией презентации. Английская и русская версии доступны из меню страницы без входа в аккаунт.
+
 ### `HomeController` → `GET /login`
 **Шаблон:** `login.html`
 

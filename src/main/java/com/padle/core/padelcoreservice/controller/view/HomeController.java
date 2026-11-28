@@ -90,6 +90,11 @@ public class HomeController {
         return "index";
     }
 
+    @GetMapping({"/partners", "/partners/"})
+    public String partnersPage() {
+        return "redirect:/partners/index.html";
+    }
+
     @GetMapping("/login")
     public String loginPage(
             @RequestParam(value = "error", required = false) String error,

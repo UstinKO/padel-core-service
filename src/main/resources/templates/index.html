@@ -68,6 +68,9 @@
 <!--                    </li>-->
 <!--                </ul>-->
 
+                <a href="/partners" th:href="@{/partners}" class="btn btn-outline-sm"
+                   th:text="#{nav.partners}">Para marcas</a>
+
                 <!-- БЛОК ДЛЯ НЕАУТЕНТИФИЦИРОВАННЫХ -->
                 <div class="navbar-auth" th:if="${!isAuthenticated}">
                     <a href="/login" class="btn btn-outline-sm">
