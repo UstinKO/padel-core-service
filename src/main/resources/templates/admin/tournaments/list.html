@@ -26,8 +26,9 @@
     <link rel="stylesheet" th:href="@{/css/admin-tournament-list.css}">
     <link rel="stylesheet" th:href="@{/css/admin-event-calendar.css}">
     <link rel="stylesheet" th:href="@{/css/admin-publication-link.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-action-help.css}">
 </head>
-<body>
+<body class="admin-section-help-page">
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.list.title})}"></header>
 
 <main class="admin-main">
@@ -64,6 +65,7 @@
                th:text="#{admin.calendar.list}"></a>
             <a id="eventCalendarSwitch" class="btn btn-outline" th:href="@{/admin/tournaments(view='calendar')}"
                th:text="#{admin.calendar.calendar}"></a>
+            <button th:replace="~{fragments/action-help :: help('ac-view')}"></button>
         </nav>
 
         <form method="get" th:action="@{/admin/tournaments}" class="tournament-list-filters"
@@ -139,6 +141,7 @@
             <div class="tournament-list-filters__buttons">
                 <button type="submit" class="btn btn-primary"
                         th:text="#{admin.tournaments.list.filter.club.apply}">Aplicar</button>
+                <button th:replace="~{fragments/action-help :: help('ac-filters')}"></button>
                 <a th:href="@{/admin/tournaments(lang=${#locale.language})}" class="btn btn-outline"
                    th:text="#{admin.tournaments.list.filter.reset}">Restablecer</a>
             </div>
@@ -369,8 +372,11 @@
                     <label for="organizationName"><span th:text="#{admin.calendar.organizationName}"></span>
                         <input id="organizationName" type="text" maxlength="120" disabled>
                     </label>
-                    <button id="organizationSave" type="submit" class="btn btn-outline" disabled
-                            th:text="#{admin.common.btn.save}"></button>
+                    <div class="admin-help-action">
+                        <button id="organizationSave" type="submit" class="btn btn-outline" disabled
+                                th:text="#{admin.common.btn.save}"></button>
+                        <button th:replace="~{fragments/action-help :: help('ac-organization')}"></button>
+                    </div>
                     <p id="organizationMessage" role="status" aria-live="polite"></p>
                 </form>
             </details>
@@ -382,6 +388,7 @@
                         th:aria-label="#{admin.calendar.next}">›</button>
                 <button type="button" id="calendarToday" class="btn btn-outline"
                         th:text="#{admin.calendar.today}"></button>
+                <button th:replace="~{fragments/action-help :: help('ac-month')}"></button>
             </div>
             <p id="calendarMessage" role="status" aria-live="polite"></p>
             <div id="calendarError" role="alert" hidden>
@@ -392,7 +399,7 @@
             <div id="calendarWeekdays" class="event-calendar__weekdays" aria-hidden="true"></div>
             <div id="calendarGrid" class="event-calendar__grid"></div>
             <section id="calendarDay" class="event-calendar__day" aria-labelledby="calendarDayTitle">
-                <h3 id="calendarDayTitle" tabindex="-1"></h3>
+                <div class="action-help-heading"><h3 id="calendarDayTitle" tabindex="-1"></h3><button th:replace="~{fragments/action-help :: help('ac-day')}"></button></div>
                 <div id="calendarDayEvents"></div>
             </section>
         </section>

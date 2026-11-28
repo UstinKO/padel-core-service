@@ -63,6 +63,7 @@
                 </div>
                 <button class="btn btn-primary" type="submit" th:text="#{guest.claim.workflow.find}"></button>
             </form>
+            <button th:replace="~{fragments/action-help :: help('ap-claim-queue')}"></button>
             <p data-claim-status role="status"></p>
             <div class="claim-list" data-claim-queue-list></div>
             <div class="claim-actions">
@@ -93,6 +94,7 @@
             </div>
             <button class="btn btn-primary" type="button" data-claim-manual-review disabled
                     th:text="#{guest.claim.workflow.reviewProfiles}"></button>
+            <button th:replace="~{fragments/action-help :: help('ap-claim-review')}"></button>
             <p data-claim-status role="status"></p>
             <div th:replace="~{:: comparison('manual')}"></div>
         </div>
@@ -125,6 +127,7 @@
         <p data-claim-contact-outcome></p>
     </div>
     <form data-claim-merge hidden class="claim-merge">
+        <button th:replace="~{fragments/action-help :: help('ap-claim-contact')}"></button>
         <fieldset data-claim-resolution-fields>
         <div class="form-group" data-claim-contact-choice hidden>
             <label th:for="${'claim-contact-' + kind}" th:text="#{guest.claim.workflow.contactChoice}"></label>
@@ -161,12 +164,14 @@
         </fieldset>
         <p data-claim-next-step role="status"></p>
         <button class="btn btn-primary" type="submit" th:text="#{guest.claim.workflow.merge}"></button>
+        <button th:replace="~{fragments/action-help :: help('ap-claim-merge')}"></button>
     </form>
     <div class="claim-actions" data-claim-decisions hidden>
         <button type="button" class="btn btn-outline" data-decision="NEEDS_DETAILS"
                 th:text="#{guest.claim.workflow.NEEDS_DETAILS}"></button>
         <button type="button" class="btn btn-outline" data-decision="REJECTED"
                 th:text="#{guest.claim.workflow.reject}"></button>
+        <button th:replace="~{fragments/action-help :: help('ap-claim-decision')}"></button>
     </div>
     <p data-claim-result role="status"></p>
 </section>
@@ -198,6 +203,7 @@
                        maxlength="150" required>
             </div>
             <button type="submit" class="btn btn-primary" th:text="#{guest.claim.admin.activate}">Activar perfil de invitado</button>
+            <button th:replace="~{fragments/action-help :: help('ap-activate')}"></button>
             <p data-claim-status role="status"></p>
         </form>
     </div>
