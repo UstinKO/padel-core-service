@@ -53,7 +53,7 @@ public class ResultExportFixtures {
                 .role(role).isActive(true).build());
     }
     public Sample sample(String kind,Owner owner) {
-        var club=clubs.saveAndFlush(Club.builder().nombre("Black Padel QA").isActive(true).build());
+        var club=clubs.findByNombre("Black Padel QA").orElseGet(()->clubs.saveAndFlush(Club.builder().nombre("Black Padel QA").isActive(true).build()));
         var type=switch(kind){case "KING"->TournamentType.KING_OF_COURT;case "POINTS","SETS","PLAYOFF"->TournamentType.AMERICANO_TEAMS;
             case "CLINIC"->TournamentType.PADEL_CLINIC;case "OPEN"->TournamentType.CANCHA_ABIERTA;default->TournamentType.AMERICANO;};
         var event=tournaments.saveAndFlush(Tournament.builder().nombre("1-Padel · Exportación QA · "+kind).clubId(club.getId()).ownerId(owner.getId())
@@ -62,10 +62,10 @@ public class ResultExportFixtures {
                 .contactoOrganizador("+5491155500999").categoriaNivel(Nivel.C7).generoFormato(GenderFormat.MIXTO).cupoMax(16).precio(BigDecimal.ZERO).moneda("ARS")
                 .estado(TournamentStatus.FINALIZADO).americanoFinalOrder(AmericanoFinalOrder.WINS_ASC).isActive(true).build());
         var roster=IntStream.range(0,6).mapToObj(index->{
-            var player=players.saveAndFlush(PlayerPadel.builder().nombre("Jugador "+(index+1)).apellido("Ejemplo")
+            var player=players.findByTelefono("+549115550000"+index).orElseGet(()->players.saveAndFlush(PlayerPadel.builder().nombre("Jugador "+(index+1)).apellido("Ejemplo")
                     .email("result-"+UUID.randomUUID()+"@example.test").telefono("+549115550000"+index).telegramUsername("private_qa_"+index)
                     .passwordHash("private-test-hash").nivelJugador(Nivel.C7).playingSide(PlayingSide.EITHER)
-                    .activo(true).emailConfirmado(true).preferredLocale("es").build());
+                    .activo(true).emailConfirmado(true).preferredLocale("es").build()));
             registrations.saveAndFlush(TournamentRegistration.builder().tournament(event).player(player).status(RegistrationStatus.CONFIRMED).isActive(true).build());
             return player;
         }).toList();
