@@ -149,6 +149,7 @@ docker compose up -d
 | `GET /admin/players/{id}` | `admin/players/details.html` | Детали игрока |
 | `GET /admin/tournaments/king-of-court/{kingId}` | `admin/tournaments/king-of-court.html` | Управление King of Court |
 | `GET /admin/tournaments/{tournamentId}/payments` | `admin/tournaments/payments.html` | Управление платежами турнира; компактный раскрываемый блок участия и Telegram с сохранением выбора для аккаунта и турнира |
+| `GET /admin/tournaments/{id}/results-export/preview`, `POST /admin/tournaments/{id}/results-export` | — (XLSX / CSV ZIP) | ResultExportController, только SUPER_ADMIN; [контракт](../docs/endpoints/tournament-results-export.md) |
 | `GET /admin/export` | — (Excel file) | Экспорт всех данных в Excel |
 
 ### Americano Admin Pages
