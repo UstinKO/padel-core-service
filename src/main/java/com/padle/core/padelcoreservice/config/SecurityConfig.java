@@ -125,6 +125,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/index",
+                                "/partners", "/partners/",
+                                "/partners/index.html", "/partners/en/index.html", "/partners/ru/index.html",
+                                "/partners/styles.css", "/partners/media/*.webp",
                                 "/torneos",
                                 "/torneo/**",
                                 "/clubs",
