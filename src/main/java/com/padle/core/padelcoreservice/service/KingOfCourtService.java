@@ -1,15 +1,20 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.annotation.Timed;
 import com.padle.core.padelcoreservice.dto.*;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.mapper.KingOfCourtMapper;
 import com.padle.core.padelcoreservice.model.*;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore;
 import com.padle.core.padelcoreservice.service.conduct.AdditionalPointsStore.ScoreSheet;
 import com.padle.core.padelcoreservice.service.conduct.ConductChange;

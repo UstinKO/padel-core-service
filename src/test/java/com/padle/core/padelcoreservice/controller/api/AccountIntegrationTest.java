@@ -1,31 +1,43 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.model.*;
 import com.padle.core.persistence.identity.PasswordResetToken;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.identity.PlayingSide;
 import com.padle.core.padelcoreservice.repository.*;
 import com.padle.core.persistence.identity.PasswordResetTokenRepository;
 import com.padle.core.padelcoreservice.service.*;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import com.padle.core.padelcoreservice.dto.RegistroRequestDto;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.oauthPrincipal;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -93,6 +105,75 @@ class AccountIntegrationTest {
         assertThat(players.existsByEmail(emailAddress)).isTrue();
     }
 
+    @ParameterizedTest
+    @CsvSource({"011 15-6100-8899,AR,+5491161008899,LEFT", "8 (912) 555-11-99,RU,+79125551199,RIGHT", "+79125551201,AR,+79125551201,EITHER"})
+    void webSignupReturnsToTournamentAndNormalizesPhone(String phone, String country, String normalized, PlayingSide side) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", "C7").param("telefono", phone).param("phoneCountry", country)
+                        .param("playingSide", side.name())
+                        .param("tournamentId", "48").param("destination", "https://example.org/")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/torneo/48#tournament-registration"));
+        var saved = players.findByEmail(address).orElseThrow();
+        assertThat(saved.getTelefono()).isEqualTo(normalized);
+        assertThat(saved.getNivelJugador()).isEqualTo(Nivel.C7);
+        assertThat(saved.getPlayingSide()).isEqualTo(side);
+        assertThat(saved.getTelegramUsername()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "SIN_ESPECIFICAR"})
+    void webSignupStillRequiresChosenLevel(String level) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", level).param("telefono", "+79125551200").param("tournamentId", "48")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "nivelJugador", "registro.web.level.required"))
+                .andExpect(model().attribute("tournamentId", 48L));
+        assertThat(players.existsByEmail(address)).isFalse();
+    }
+
+    @Test
+    void webSignupErrorRetainsCountryAndTournamentButClearsSecrets() throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        var address = UUID.randomUUID() + "@gmail.com";
+        var result = mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", address)
+                        .param("nivelJugador", "C7").param("telefono", "123").param("phoneCountry", "RU")
+                        .param("playingSide", "LEFT")
+                        .param("tournamentId", "48")
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(view().name("registro"))
+                .andExpect(model().attributeHasFieldErrorCode("registroRequest", "telefono", "contact.validation.PHONE_TOO_SHORT"))
+                .andExpect(model().attribute("tournamentId", 48L)).andReturn();
+        var input = (RegistroRequestDto) result.getModelAndView().getModel().get("registroRequest");
+        assertThat(input.getPhoneCountry()).isEqualTo("RU");
+        assertThat(input.getTelefono()).isEqualTo("123");
+        assertThat(input.getPlayingSide()).isEqualTo(PlayingSide.LEFT);
+        assertThat(input.getPassword()).isNull();
+        assertThat(input.getConfirmPassword()).isNull();
+        assertThat(players.existsByEmail(address)).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "0", "https://example.org", "99999999999999999999"})
+    void signupIgnoresInvalidTournamentTargets(String target) throws Exception {
+        when(captcha.verify(null)).thenReturn(true);
+        mvc.perform(get("/players/registro").param("tournamentId", target))
+                .andExpect(model().attributeDoesNotExist("tournamentId"));
+        mvc.perform(post("/players/registro").with(csrf())
+                        .param("nombre", "Maria").param("apellido", "Garcia").param("email", UUID.randomUUID() + "@gmail.com")
+                        .param("nivelJugador", "C7").param("telefono", "+79125551200").param("tournamentId", target)
+                        .param("password", "Fixture-Password1!").param("confirmPassword", "Fixture-Password1!"))
+                .andExpect(redirectedUrl("/?welcome=true"));
+    }
+
     @Test void realLoginSessionRotationProfileRefreshAndLogout() throws Exception {
         var p=player(); var before=new MockHttpSession(); String old=before.getId();
         var login=mvc.perform(post("/login").session(before).with(req -> { req.setRequestedSessionId(old); req.setRequestedSessionIdValid(true); return req; }).with(csrf()).accept("application/json")
@@ -135,6 +216,50 @@ class AccountIntegrationTest {
                 .andExpect(jsonPath("$.session.id").value(player.getId()));
     }
 
+    @Test
+    void upgradesExistingPlayerSessionAndRetainsAuthorities() throws Exception {
+        var player = player();
+        var legacy = BeanUtils.instantiateClass(com.padle.core.padelcoreservice.model.PlayerPadel.class);
+        ReflectionTestUtils.setField(legacy, "id", player.getId());
+        ReflectionTestUtils.setField(legacy, "email", player.getEmail());
+        var previous = UsernamePasswordAuthenticationToken.authenticated(legacy, null, List.of(
+                new SimpleGrantedAuthority("ROLE_PLAYER"), new SimpleGrantedAuthority("FACTOR_PASSWORD")));
+        var session = new MockHttpSession();
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                new SecurityContextImpl(previous));
+
+        mvc.perform(get("/api/auth/session").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(player.getId()))
+                .andExpect(jsonPath("$.userType").value("PLAYER"));
+
+        var security = (SecurityContext) session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        assertThat(security.getAuthentication().getPrincipal()).isInstanceOf(PlayerPrincipal.class);
+        assertThat(security.getAuthentication().getAuthorities()).extracting(GrantedAuthority::getAuthority)
+                .containsExactlyInAnyOrder("ROLE_PLAYER", "FACTOR_PASSWORD");
+    }
+
+    @Test
+    void updatingGuestEmailInLegacyProfileKeepsCurrentSession() throws Exception {
+        var guest = player();
+        guest.setEmail(UUID.randomUUID() + "@1padel.guest");
+        players.saveAndFlush(guest);
+        var login = mvc.perform(post("/login").with(csrf()).accept("application/json")
+                        .param("username", guest.getEmail()).param("password", "secret-password"))
+                .andExpect(status().isOk()).andReturn();
+        var session = (MockHttpSession) login.getRequest().getSession(false);
+        String email = UUID.randomUUID() + "@example.com";
+
+        mvc.perform(post("/perfil/actualizar").session(session).with(csrf())
+                        .param("email", email).param("nivelJugador", "C7"))
+                .andExpect(redirectedUrl("/perfil"))
+                .andExpect(flash().attributeExists("successMessage"));
+        mvc.perform(get("/api/auth/session").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(guest.getId()))
+                .andExpect(jsonPath("$.email").value(email));
+    }
+
     @Test void failedLoginAndCsrfAreJsonAndLocalized() throws Exception {
         mvc.perform(post("/login").with(csrf()).accept("application/json").param("lang","ru")
                 .param("username","missing@gmail.com").param("password","wrong"))
@@ -150,21 +275,23 @@ class AccountIntegrationTest {
         mvc.perform(get("/api/players/me").with(user(owner))).andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("PLAYER_REQUIRED"));
     }
     @Test void googlePrincipalCanReadOwnProfileWithoutKnownPassword() throws Exception {
-        var p=player(); var oauth=new CustomOAuth2User(mock(OAuth2User.class),p);
+        var p=player(); var oauth=oauthPrincipal(mock(OAuth2User.class),p);
         var auth=new UsernamePasswordAuthenticationToken(oauth,null,oauth.getAuthorities());
         mvc.perform(get("/api/players/me").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(p.getId()));
         mvc.perform(get("/api/auth/session").with(authentication(auth))).andExpect(status().isOk()).andExpect(jsonPath("$.authenticated").value(true));
+        mvc.perform(get("/api/auth/me").with(authentication(auth))).andExpect(status().isUnauthorized());
     }
-    @Test
-    void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"C6", "С6"})
+    void savesPlayingLevelForGooglePlayerWithoutChangingOtherProfileFields(String level) throws Exception {
         var player = player();
         player.setNivelJugador(Nivel.SIN_ESPECIFICAR);
         players.saveAndFlush(player);
-        var oauth = new CustomOAuth2User(mock(OAuth2User.class), player);
+        var oauth = oauthPrincipal(mock(OAuth2User.class), player);
         var auth = new UsernamePasswordAuthenticationToken(oauth, null, oauth.getAuthorities());
 
         mvc.perform(patch("/api/players/me/level").with(authentication(auth)).with(csrf())
-                        .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
+                        .contentType("application/json").content("{\"nivelJugador\":\"" + level + "\"}"))
                 .andExpect(status().isNoContent());
 
         assertThat(players.findNivelById(player.getId())).contains(Nivel.C6);
@@ -175,10 +302,10 @@ class AccountIntegrationTest {
     void rejectsMissingCsrfAndNonPlayerLevelsWithoutChangingProfile() throws Exception {
         var player = player();
 
-        mvc.perform(patch("/api/players/me/level").with(user(player))
+        mvc.perform(patch("/api/players/me/level").with(playerUser(player))
                         .contentType("application/json").content("{\"nivelJugador\":\"C6\"}"))
                 .andExpect(status().isForbidden());
-        mvc.perform(patch("/api/players/me/level").with(user(player)).with(csrf())
+        mvc.perform(patch("/api/players/me/level").with(playerUser(player)).with(csrf())
                         .contentType("application/json").content("{\"nivelJugador\":\"SIN_ESPECIFICAR\"}"))
                 .andExpect(status().isUnprocessableEntity());
 
@@ -187,20 +314,20 @@ class AccountIntegrationTest {
 
     @Test void invalidProfileAndPasswordDoNotPartiallyMutatePlayer() throws Exception {
         var p=player();
-        mvc.perform(put("/api/players/me").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(put("/api/players/me").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content(update(p).replace(p.getTelegramUsername(),"")))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.fieldErrors[0].code").value("CONTACT_REQUIRED"));
         assertThat(players.findById(p.getId()).orElseThrow().getNombre()).isEqualTo("Maria");
-        mvc.perform(post("/api/players/me/password").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(post("/api/players/me/password").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"currentPassword\":\"wrong\",\"newPassword\":\"another-secret\",\"confirmPassword\":\"another-secret\"}"))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.fieldErrors[0].code").value("CURRENT_PASSWORD_INVALID"));
     }
     @Test void validPasswordChangeUsesCurrentPassword() throws Exception {
         var p=player();
-        mvc.perform(post("/api/players/me/password").with(user(p)).with(csrf()).contentType("application/json")
+        mvc.perform(post("/api/players/me/password").with(playerUser(p)).with(csrf()).contentType("application/json")
                 .content("{\"currentPassword\":\"secret-password\",\"newPassword\":\"another-secret\",\"confirmPassword\":\"another-secret\"}"))
                 .andExpect(status().isOk());
-        assertThat(encoder.matches("another-secret",players.findById(p.getId()).orElseThrow().getPassword())).isTrue();
+        assertThat(encoder.matches("another-secret",players.findById(p.getId()).orElseThrow().getPasswordHash())).isTrue();
     }
     private String registration(String email) {
         return "{\"nombre\":\"Maria\",\"apellido\":\"Garcia\",\"email\":\""+email+"\",\"telegramUsername\":\"@player_"+UUID.randomUUID().toString().substring(0,8)+"\",\"password\":\"secret-password\",\"confirmPassword\":\"secret-password\",\"nivelJugador\":\"C7\"}";

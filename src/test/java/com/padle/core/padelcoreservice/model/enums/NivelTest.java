@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.model.enums;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -55,7 +57,7 @@ class NivelTest {
         assertThat(Nivel.SIN_ESPECIFICAR.getGeneroAplicable()).isNull();
 
         assertThat(Nivel.PRINCIPIANTES.isLegacyTournamentLevel()).isTrue();
-        assertThat(Nivel.TODOS.isLegacyTournamentLevel()).isTrue();
+        assertThat(Nivel.TODOS.isLegacyTournamentLevel()).isFalse();
         assertThat(Nivel.SIN_ESPECIFICAR.isLegacyTournamentLevel()).isTrue();
     }
 
@@ -63,8 +65,8 @@ class NivelTest {
     void forTournamentForm_sinValorActual_excluyeValoresLegacy() {
         List<Nivel> niveles = Nivel.forTournamentForm(null);
 
-        assertThat(niveles).doesNotContain(Nivel.PRINCIPIANTES, Nivel.TODOS, Nivel.SIN_ESPECIFICAR);
-        assertThat(niveles).contains(Nivel.C9, Nivel.D4, Nivel.SUMA_10);
+        assertThat(niveles).doesNotContain(Nivel.PRINCIPIANTES, Nivel.SIN_ESPECIFICAR);
+        assertThat(niveles).contains(Nivel.TODOS, Nivel.C9, Nivel.D4, Nivel.SUMA_10);
     }
 
     @Test
@@ -72,7 +74,7 @@ class NivelTest {
         List<Nivel> niveles = Nivel.forTournamentForm(Nivel.PRINCIPIANTES);
 
         assertThat(niveles).contains(Nivel.PRINCIPIANTES);
-        assertThat(niveles).doesNotContain(Nivel.TODOS, Nivel.SIN_ESPECIFICAR);
+        assertThat(niveles).doesNotContain(Nivel.SIN_ESPECIFICAR);
     }
 
     @Test

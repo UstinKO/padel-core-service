@@ -1,12 +1,25 @@
 package com.padle.core.padelcoreservice.telegram;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.config.*;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.PaymentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.telegram.CampaignModels.*;
 import com.padle.core.padelcoreservice.telegram.TelegramAudienceModels.*;
@@ -32,6 +45,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.assertj.core.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -248,7 +262,7 @@ class TelegramCampaignIntegrationTest {
         verify(api).send(chat(allowed), "Тестовое сообщение", List.of());
         verify(api).send(chat(outsideReceiptPilot), "Тестовое сообщение", List.of());
         assertReceiptPilotStillClosed(allowedRow, otherRow);
-        mvc.perform(delete("/api/players/me/telegram").with(user(outsideReceiptPilot)).with(csrf()))
+        mvc.perform(delete("/api/players/me/telegram").with(playerUser(outsideReceiptPilot)).with(csrf()))
                 .andExpect(status().isNoContent());
         var afterStop = campaigns.prepare(owner, prepare(event.getId(), Set.of(Group.ALL), Set.of()));
         assertThat(afterStop.recipients()).extracting(Candidate::playerId).containsExactly(allowed.getId());
@@ -258,12 +272,12 @@ class TelegramCampaignIntegrationTest {
     }
 
     private void connectThroughPersonalLink(PlayerPadel player) throws Exception {
-        var response = mvc.perform(post("/api/players/me/telegram/link").with(user(player)).with(csrf()))
+        var response = mvc.perform(post("/api/players/me/telegram/link").with(playerUser(player)).with(csrf()))
                 .andExpect(status().isOk()).andReturn().getResponse();
         var link = json.readValue(response.getContentAsString(), TelegramModels.Link.class);
         String token = link.url().substring(link.url().indexOf("?start=") + 7);
         assertThat(personalLinks.bind(token, chat(player), chat(player))).contains(player.getId());
-        mvc.perform(get("/api/players/me/telegram").with(user(player)))
+        mvc.perform(get("/api/players/me/telegram").with(playerUser(player)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.connected").value(true));
     }
 

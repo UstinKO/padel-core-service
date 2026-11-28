@@ -1,0 +1,89 @@
+package com.padle.core.persistence.tournament;
+
+import com.padle.core.application.clubs.ClubTournamentUsage;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface TournamentRepository extends JpaRepository<Tournament, Long>, JpaSpecificationExecutor<Tournament>,
+        ClubTournamentUsage {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Tournament t WHERE t.id = :id")
+    Optional<Tournament> lockById(@Param("id") Long id);
+
+    List<Tournament> findByClubId(Long clubId);
+
+    @Override
+    boolean existsByClubId(Long clubId);
+
+    List<Tournament> findByEstado(TournamentStatus estado);
+
+    List<Tournament> findByIsActiveTrue();
+
+    @Query("SELECT t FROM Tournament t WHERE " +
+            "(:clubId IS NULL OR t.clubId = :clubId) AND " +
+            "(:genero IS NULL OR t.generoFormato = :genero) AND " +
+            "(:nivel IS NULL OR t.categoriaNivel = :nivel) AND " +
+            "(:tipo IS NULL OR t.tipo = :tipo) AND " +
+            "(:estado IS NULL OR t.estado = :estado) AND " +
+            "t.isActive = true " +
+            "ORDER BY t.fechaInicio ASC")
+    List<Tournament> searchTournaments(@Param("clubId") Long clubId,
+                                       @Param("genero") GenderFormat genero,
+                                       @Param("nivel") String nivel,
+                                       @Param("tipo") TournamentType tipo,
+                                       @Param("estado") TournamentStatus estado);
+
+    // ========== НОВЫЕ МЕТОДЫ ==========
+
+    long countByIsActiveTrue();
+
+    long countByOwnerIdAndIsActiveTrue(Long ownerId);
+
+    List<Tournament> findTop5ByOwnerIdOrderByCreatedAtDesc(Long ownerId);
+
+    @Query("SELECT t FROM Tournament t ORDER BY t.createdAt DESC LIMIT :limit")
+    List<Tournament> findTopByOrderByCreatedAtDesc(@Param("limit") int limit);
+
+    // Клубная статистика главной админ-панели — CLUB_ADMIN видит только свой клуб.
+    long countByClubIdAndIsActiveTrue(Long clubId);
+
+    @Query("SELECT t FROM Tournament t WHERE t.clubId = :clubId ORDER BY t.createdAt DESC LIMIT :limit")
+    List<Tournament> findTopByClubIdOrderByCreatedAtDesc(@Param("clubId") Long clubId, @Param("limit") int limit);
+
+    // Только активные предстоящие турниры
+    @Query("SELECT t FROM Tournament t WHERE t.estado = :estado AND t.fechaInicio >= CURRENT_DATE AND t.isActive = true ORDER BY t.fechaInicio ASC")
+    List<Tournament> findUpcomingActiveTournaments(@Param("estado") TournamentStatus estado);
+
+    @Query("SELECT t FROM Tournament t WHERE t.isActive = true AND " +
+            "(t.estado = 'REGISTRO_ABIERTO' OR t.estado = 'PUBLICADO') " +
+            "AND t.fechaInicio >= CURRENT_DATE " +
+            "ORDER BY t.fechaInicio ASC")
+    List<Tournament> findActiveForHome();
+
+    @Query("SELECT t FROM Tournament t WHERE t.estado IN :estados AND t.isActive = true")
+    List<Tournament> findByEstadoInAndIsActiveTrue(@Param("estados") List<TournamentStatus> estados);
+
+    List<Tournament> findByOwnerId(Long ownerId);
+
+    @Query("SELECT t FROM Tournament t WHERE t.fechaInicio = :date AND t.isActive = true " +
+            "AND t.estado NOT IN ('CANCELADO', 'FINALIZADO')")
+    List<Tournament> findByFechaInicioAndActive(@Param("date") LocalDate date);
+
+    @Query("SELECT t FROM Tournament t WHERE t.fechaInicio IN :dates AND t.isActive = true " +
+            "AND t.estado NOT IN ('CANCELADO', 'FINALIZADO')")
+    List<Tournament> findByFechaInicioInAndActive(@Param("dates") java.util.Collection<LocalDate> dates);
+}

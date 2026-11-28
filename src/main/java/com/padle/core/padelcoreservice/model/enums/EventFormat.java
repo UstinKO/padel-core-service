@@ -1,5 +1,7 @@
 package com.padle.core.padelcoreservice.model.enums;
 
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentType;
 public enum EventFormat {
     KING_OF_COURT,
     AMERICANO_INDIVIDUAL,

@@ -1,24 +1,25 @@
 <!DOCTYPE html>
-<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org"
+      th:with="localizedEventName=${@eventLevelText.eventName(tournament.nombre, #locale)}">
 <head>
     <meta name="app-profile" th:content="${@environment.getActiveProfiles().length > 0
         ? @environment.getActiveProfiles()[0]
         : 'default'}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <meta name="description" th:content="'1-Padel - ' + ${tournament.nombre} + '. Información del torneo, inscripción y detalles.'">
+    <meta name="description" th:content="'1-Padel - ' + ${localizedEventName} + '. Información del torneo, inscripción y detalles.'">
     <meta name="keywords" content="pádel, torneo, inscripción, detalles, 1-padel">
     <meta name="author" content="1-Padel">
     <meta name="theme-color" content="#FF6B35">
 
     <!-- Open Graph / Social Media -->
-    <meta property="og:title" th:content="${tournament.nombre} + ' | 1-Padel'">
-    <meta property="og:description" th:content="'Inscríbete en ' + ${tournament.nombre} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel}">
+    <meta property="og:title" th:content="${localizedEventName} + ' | 1-Padel'">
+    <meta property="og:description" th:content="'Inscríbete en ' + ${localizedEventName} + ' - ' + ${tournament.generoFormato} + ', nivel ' + ${tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : tournament.categoriaNivel}">
     <meta property="og:image" content="/images/og-image.jpg">
     <meta property="og:url" th:content="@{'/torneo/' + ${tournament.id}}">
     <meta name="twitter:card" content="summary_large_image">
 
-    <title th:text="${tournament.nombre} + ' | 1-Padel'">Torneo | 1-Padel</title>
+    <title th:text="${localizedEventName} + ' | 1-Padel'">Torneo | 1-Padel</title>
 
     <!-- Favicon con nuevo logo -->
     <link rel="icon" type="image/svg+xml" th:href="@{/images/2.svg}">
@@ -40,6 +41,7 @@
     <th:block th:replace="~{fragments/analytics :: ga4}"></th:block>
     <th:block th:replace="~{fragments/analytics :: cookie-consent}"></th:block>
     <th:block th:replace="~{fragments/analytics :: clarity}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/contact-check.css}">
 </head>
 <body data-clarity-mask="true">
 <!-- Header -->
@@ -106,7 +108,7 @@
         <div class="breadcrumb">
             <a href="/" class="breadcrumb-link" th:text="#{breadcrumb.home}">Inicio</a>
             <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
-            <span class="breadcrumb-current" th:text="${tournament.nombre}">Torneo Open</span>
+            <span class="breadcrumb-current" th:text="${localizedEventName}">Torneo Open</span>
         </div>
 
         <!-- Cabecera del torneo -->
@@ -752,7 +754,7 @@
                             <span class="tournament-booking-availability"></span>
                             <button type="button" class="btn-register btn-primary btn-block tournament-booking-action"
                                     th:if="${isAuthenticated}"
-                                    th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre},
+                                    th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${localizedEventName},
                                              data-registration-level-missing=${registrationLevelMissing}"
                                     th:data-registration-intent="${tournament.id}" id="registerButton">
                                 <i class="fas fa-check-circle"></i>
@@ -778,7 +780,7 @@
 
                         <button class="btn-cancel btn-outline btn-block"
                                 th:if="${isRegistered and tournament.modalidad.name() != 'DOBLES'}"
-                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${tournament.nombre}">
+                                th:attr="data-tournament-id=${tournament.id}, data-tournament-name=${localizedEventName}">
                             <i class="fas fa-times-circle"></i>
                             <span th:text="#{tournament.btn.cancel}">Cancelar inscripción</span>
                         </button>
@@ -1228,6 +1230,9 @@
 <script th:src="@{/js/registration-tracking.js}"></script>
 <script th:src="${'/js/i18n/messages-' + #locale.language + '.js'}"></script>
 <script th:src="@{/js/i18n/t.js}"></script>
+<script th:src="@{/js/vendor/libphonenumber/libphonenumber-max.js}"></script>
+<script th:src="@{/js/vendor/libphonenumber/examples.mobile.js}"></script>
+<script th:src="@{/js/contact-fields.js}"></script>
 <script th:src="@{/js/contact-check.js}"></script>
 <script th:src="@{/js/level-check.js}"></script>
 <script th:inline="javascript">
@@ -1254,7 +1259,7 @@
 <script>
     (function() {
         const url  = window.location.href;
-        const name = (tournament && tournament.nombre) ? tournament.nombre : 'Torneo 1-Padel';
+        const name = document.querySelector('.breadcrumb-current')?.textContent?.trim() || 'Torneo 1-Padel';
         const text = `🎾 ¡Te invito a este torneo de pádel!\n*${name}*\n${url}`;
 
         const wa = document.getElementById('shareWhatsapp');

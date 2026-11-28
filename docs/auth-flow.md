@@ -27,7 +27,7 @@
 
 | Тип пользователя | Таблица | Роль | Способ входа |
 |-----------------|---------|------|--------------|
-| **Игрок** (`PlayerPadel`) | `player_padel_db` | `ROLE_PLAYER` | Form Login, JWT API, Google OAuth2 |
+| **Игрок** (`PlayerPrincipal` в Spring Security) | `player_padel_db` | `ROLE_PLAYER` | Form Login, JWT API, Google OAuth2 |
 | **Администратор** (`Owner` в Spring Security) | `owners_db` | `ROLE_SUPER_ADMIN` / `ROLE_ORGANIZER` / `ROLE_ADMIN` / `ROLE_CLUB_ADMIN` | Form Login, JWT API |
 
 После успешного Form Login:
@@ -107,9 +107,9 @@ loadUserByUsername(email)
        NO
         │
         ▼
-  PlayerUserDetailsService.loadUserByUsername(email)
+  PlayerUserService.loadUserByUsername(email)
         │
-   найден? ──YES──► вернуть PlayerPadel (роль ROLE_PLAYER)
+   найден? ──YES──► вернуть PlayerPrincipal (роль ROLE_PLAYER)
         │
        NO
         │
@@ -120,6 +120,11 @@ loadUserByUsername(email)
 При одинаковом email активный владелец имеет приоритет. Если владелец выключен, поиск продолжается среди игроков. После выбора активного владельца Spring Security проверяет его пароль. Ошибка этой проверки завершает вход.
 
 `OwnerUserService` читает учётные записи через `OwnerAccounts`. JPA-модель `OwnerEntity` и назначения площадок находятся в `padel-persistence`. В форме входа, JWT и MVC используется отдельный `Owner`. Его полное имя класса и идентификатор сериализации сохранены для открытых сессий. Для клубного админа область доступа при проверке назначения берётся из актуальных данных аккаунта.
+
+
+`PlayerUserService` формирует `PlayerPrincipal`, который содержит `PlayerIdentity` с ID и email. Вход через Google создаёт `OAuth2PlayerPrincipal` с той же идентичностью и атрибутами провайдера. MVC и API используют ID principal. Вход читает запись через `PlayerProfiles`, а профиль и контакты загружаются через прикладные сценарии. JPA-сущность и запросы размещены в `padel-persistence`. При восстановлении ранее записанной сессии формат `PlayerPadel` преобразуется в `PlayerPrincipal` с теми же полномочиями. Старый OAuth2 principal преобразуется при десериализации сессии.
+
+Ключи, состав claims JWT и подпись remember-me сохраняются. При откате на предыдущую сборку продолжают работать JWT и remember-me. Сессия, впервые сохранённая в новом формате, восстанавливается на предыдущей сборке через remember-me. Без этой cookie потребуется вход.
 
 ---
 
@@ -141,7 +146,7 @@ loadUserByUsername(email)
    │                                  │
    │                    CompositeUserDetailsService.loadUserByUsername(email)
    │                    OwnerUserService → (не найден)
-   │                    PlayerUserDetailsService → PlayerPadel
+   │                    PlayerUserService → PlayerPrincipal
    │                                  │
    │                    DaoAuthenticationProvider.additionalAuthenticationChecks()
    │                    BCrypt.matches(password, passwordHash)
@@ -249,7 +254,7 @@ Client                          /api/auth/login
   │      "password": "..." }           │
   │                                    │
   │                    AuthenticationManager.authenticate()
-  │                    CompositeUserDetailsService → PlayerPadel
+  │                    CompositeUserDetailsService → PlayerPrincipal
   │                    BCrypt проверка пароля
   │                    проверка emailConfirmado и activo
   │                                    │
@@ -362,9 +367,8 @@ Client                          /api/auth/refresh
   │               └─────────────────────────────────────────────┘
   │                               │
   │                    OAuth2AuthenticationSuccessHandler.onAuthenticationSuccess()
-  │                    JwtService.generateToken() → accessToken
   │                    SecurityContext.setAuthentication()
-  │                    response.setHeader("Authorization", "Bearer " + token)
+  │                    выдаёт remember-me cookie
   │                               │
   │◄─── 302 redirect /players/dashboard ──────────────┤
 ```
@@ -373,7 +377,7 @@ Client                          /api/auth/refresh
 
 - OAuth2-пользователь **не может** войти через форму паролем — у него `passwordHash` сгенерирован случайно, пользователь его не знает.
 - Email считается подтверждённым автоматически (`emailConfirmado = true`).
-- JWT выдаётся сразу в хедере ответа (`Authorization: Bearer ...`). Браузер его видит, но в cookie не сохраняется — в текущей реализации сессионный cookie тоже устанавливается Spring Security. Фактически после OAuth2 работает **и сессия, и токен**.
+- Веб-вход через Google сохраняет сессию и выдаёт remember-me cookie. Для входа из мобильного приложения JWT возвращаются во фрагменте URL; параметры перехода к турниру и Telegram обрабатываются прежними правилами.
 - При ошибке OAuth2 → редирект на `/login?error=oauth2`.
 
 ### Вход из клиента 1Padel.App (`?client=app`, LFPT-0637)
@@ -457,7 +461,7 @@ Client                          /api/auth/refresh
 Регистрация новых игроков защищена несколькими слоями, которые срабатывают **последовательно**:
 
 
-В веб-форме создания аккаунта телефон обязателен, Telegram необязателен. При ошибке форма возвращается с прежними непарольными данными и локализованной подсказкой для обязательного телефона. Проверка применяется только к POST веб-формы.
+В веб-форме создания аккаунта телефон и выбор уровня обязательны, Telegram необязателен. Перед валидацией DTO номер разбирается общей нормализацией контактов по phoneCountry (AR по умолчанию), сохраняется E.164. Sentinel SIN_ESPECIFICAR веб-формой не принимается. При ошибке сохраняются непарольные данные, страна и положительный tournamentId, пароль и CAPTCHA очищаются. Успешное создание аккаунта сохраняет автоматический вход и возвращает /torneo/ID#tournament-registration, если ID передан. Без корректного ID остаётся /?welcome=true. Внешний URL из формы не используется. Открытие формы на карточке — клиентское продолжение записи. Проверка применяется только к POST веб-формы.
 
 ```
 POST /players/registro
@@ -564,7 +568,7 @@ HTTP `429 Too Many Requests` + `Retry-After: 60`:
 
 | Роль | Тип пользователя | Права |
 |------|-----------------|-------|
-| `ROLE_PLAYER` | `PlayerPadel` | Дашборд, профиль, регистрация на турниры |
+| `ROLE_PLAYER` | `PlayerPrincipal` | Дашборд, профиль, регистрация на турниры |
 | `ROLE_ORGANIZER` | `Owner` | Управление своими турнирами, клубами, игроками |
 | `ROLE_OWNER` | `Owner` | То же, что ORGANIZER (legacy, оба проверяются) |
 | `ROLE_SUPER_ADMIN` | `Owner` | Полный доступ ко всему |
@@ -681,7 +685,7 @@ CSRF **включён** для cookie-сессии по double-submit схеме
 ### Web-сессия React и preview
 
 `GET /api/auth/session` читает текущий `SecurityContext`/remember-me и всегда возвращает одну
-типизированную схему для anonymous, `PlayerPadel` и `Owner`. Ответ `Cache-Control: no-store`,
+типизированную схему для anonymous, `PlayerPrincipal` и `Owner`. Ответ `Cache-Control: no-store`,
 JWT не выпускается, CSRF token остаётся только в cookie. Неизвестный authenticated principal
 получает безопасный `application/problem+json` со стабильным `code`.
 

@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.PlayingSide;
+import com.padle.core.application.identity.PlayingSide;
 
-import com.padle.core.padelcoreservice.model.enums.Nivel;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.validation.ValidDomain;
 import com.padle.core.padelcoreservice.validation.NoBotPattern;
 import com.padle.core.padelcoreservice.validation.RequiresPhoneOrTelegram;
@@ -47,6 +47,9 @@ public class RegistroRequestDto {
     @Size(max = 20, message = "El teléfono no puede tener más de 20 caracteres")
     @Pattern(regexp = "^$|^[+]?[0-9\\s-]{8,20}$", message = "Formato de teléfono inválido")
     private String telefono;
+
+    @Size(max = 2)
+    private String phoneCountry = "AR";
 
     @Size(max = 33, message = "El usuario de Telegram no puede tener más de 33 caracteres")
     @Pattern(regexp = "^$|^@?[A-Za-z][A-Za-z0-9_]{4,31}$", message = "Formato de usuario de Telegram inválido")

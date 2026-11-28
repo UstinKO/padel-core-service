@@ -52,7 +52,7 @@
     function dialog(title, lines, action, regulation, choices = []) {
         return new Promise(resolve => {
             const modal = document.createElement('dialog');
-            modal.style.cssText = 'max-width:min(34rem,90vw);padding:1.5rem;border:0;border-radius:12px;';
+            modal.style.cssText = 'max-width:min(34rem,90vw);max-height:90vh;max-height:90dvh;overflow:auto;box-sizing:border-box;padding:1.5rem;border:0;border-radius:12px;';
             const heading = document.createElement('h2');
             heading.textContent = title;
             modal.setAttribute('aria-label', title);

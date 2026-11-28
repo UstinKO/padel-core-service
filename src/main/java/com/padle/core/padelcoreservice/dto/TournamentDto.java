@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.GenderFormat;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.model.enums.TournamentVisibility;
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.application.tournament.TournamentVisibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.padle.core.padelcoreservice.validation.ValidOrganizerContact;
 import com.padle.core.padelcoreservice.service.contact.OrganizerContacts;

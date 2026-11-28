@@ -1,11 +1,17 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
 import com.padle.core.padelcoreservice.config.TelegramProperties;
 import com.padle.core.padelcoreservice.model.*;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
+import com.padle.core.application.registration.RegistrationStatus;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramAccess;
 import com.padle.core.padelcoreservice.telegram.PlayerTelegramPoller;
 import org.junit.jupiter.api.Test;

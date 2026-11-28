@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;

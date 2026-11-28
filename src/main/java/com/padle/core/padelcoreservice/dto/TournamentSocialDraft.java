@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.dto;
 
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

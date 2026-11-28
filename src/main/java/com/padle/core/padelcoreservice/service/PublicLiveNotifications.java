@@ -1,10 +1,10 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.live.PublicLiveDtos.Invalidation;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.MessagingException;

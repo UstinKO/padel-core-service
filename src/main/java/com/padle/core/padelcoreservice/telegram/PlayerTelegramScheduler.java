@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.config.PlayerTelegramProperties;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;

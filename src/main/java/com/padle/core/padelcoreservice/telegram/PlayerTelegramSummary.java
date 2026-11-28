@@ -8,7 +8,7 @@ import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.exception.AccountException;
 import org.springframework.http.HttpStatus;
 import java.util.Locale;
-import com.padle.core.padelcoreservice.repository.TournamentRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;

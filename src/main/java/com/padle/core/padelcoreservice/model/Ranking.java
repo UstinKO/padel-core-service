@@ -1,5 +1,6 @@
 package com.padle.core.padelcoreservice.model;
 
+import com.padle.core.persistence.identity.PlayerPadel;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

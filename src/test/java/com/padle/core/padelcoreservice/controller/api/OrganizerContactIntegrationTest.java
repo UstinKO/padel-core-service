@@ -1,14 +1,20 @@
 package com.padle.core.padelcoreservice.controller.api;
 
+import com.padle.core.application.tournament.GenderFormat;
 import com.padle.core.padelcoreservice.support.OwnerFixtures;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.OrganizerContactException;
 import com.padle.core.padelcoreservice.mapper.TournamentMapper;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.application.tournament.TournamentVisibility;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import jakarta.persistence.EntityManager;

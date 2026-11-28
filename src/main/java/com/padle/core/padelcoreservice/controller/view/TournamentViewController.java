@@ -1,25 +1,25 @@
 package com.padle.core.padelcoreservice.controller.view;
 
+import com.padle.core.padelcoreservice.util.SecurityUtils;
 import com.padle.core.padelcoreservice.dto.KingOfCourtStateDTO;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentRegistrationDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoPlayerDto;
 import com.padle.core.padelcoreservice.dto.americano.AmericanoRoundDto;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
-import com.padle.core.padelcoreservice.model.enums.Nivel;
-import com.padle.core.padelcoreservice.model.enums.RegistrationStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.TournamentLevelPolicy;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
+import com.padle.core.application.tournament.Modalidad;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
-import com.padle.core.padelcoreservice.util.SecurityUtils;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -62,8 +62,7 @@ public class TournamentViewController {
         log.info("Viewing tournament details for id: {}", id);
 
         try {
-            PlayerPadel player = SecurityUtils.extractPlayer(principal);
-
+            PlayerPrincipal player = SecurityUtils.playerPrincipal(principal).orElse(null);
             Optional<TournamentDto> tournamentOpt = tournamentService.getActiveTournamentById(id);
 
             if (tournamentOpt.isEmpty()) {
@@ -202,7 +201,7 @@ public class TournamentViewController {
                     isRegistered = true;
                     userRegistration = registration.get();
                     isInWaitlist = userRegistration.getStatus() ==
-                            com.padle.core.padelcoreservice.model.enums.RegistrationStatus.WAITLIST;
+                            com.padle.core.application.registration.RegistrationStatus.WAITLIST;
                     log.info("User registration found: status={}", userRegistration.getStatus());
                 } else {
                     log.info("No active registration found for user {} on tournament {}",
@@ -217,16 +216,16 @@ public class TournamentViewController {
             String tournamentJson = mapper.writeValueAsString(tournament);
 
             boolean currentUserIsSolo = userRegistration != null
-                    && (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_SEARCH
-                    || userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.SOLO_ADD_LATER
-                    || (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.WAITLIST
+                    && (userRegistration.getStatus() == com.padle.core.application.registration.RegistrationStatus.SOLO_SEARCH
+                    || userRegistration.getStatus() == com.padle.core.application.registration.RegistrationStatus.SOLO_ADD_LATER
+                    || (userRegistration.getStatus() == com.padle.core.application.registration.RegistrationStatus.WAITLIST
                         && userRegistration.getPartnerId() == null
                         && !Boolean.TRUE.equals(userRegistration.getIsDoubleRegistration()))
-                    || (userRegistration.getStatus() == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.CONFIRMED
+                    || (userRegistration.getStatus() == com.padle.core.application.registration.RegistrationStatus.CONFIRMED
                         && userRegistration.getPartnerId() == null
                         && Boolean.TRUE.equals(userRegistration.getIsDoubleRegistration())));
             boolean needsPartnerReplacement = currentUserIsSolo && userRegistration.getStatus()
-                    == com.padle.core.padelcoreservice.model.enums.RegistrationStatus.CONFIRMED;
+                    == com.padle.core.application.registration.RegistrationStatus.CONFIRMED;
 
             model.addAttribute("tournament", tournament);
             model.addAttribute("tournamentJson", tournamentJson);

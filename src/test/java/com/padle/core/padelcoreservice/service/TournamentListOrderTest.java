@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.service;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;

@@ -1,7 +1,8 @@
 package com.padle.core.padelcoreservice.rating;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.security.oauth2.CustomOAuth2User;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
+import com.padle.core.padelcoreservice.security.oauth2.OAuth2PlayerPrincipal;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerAuthentication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,7 +22,7 @@ class EloPilotAccessTest {
     static UsernamePasswordAuthenticationToken player(long id) {
         var player = new PlayerPadel();
         player.setId(id);
-        return new UsernamePasswordAuthenticationToken(player, null, player.getAuthorities());
+        return playerAuthentication(player);
     }
 
     @Test
@@ -44,8 +46,8 @@ class EloPilotAccessTest {
     void allowsGoogleLoginUsingVerifiedPlayerIdentityRatherThanGoogleAttributes() {
         var google = new DefaultOAuth2User(List.of(new SimpleGrantedAuthority("ROLE_PLAYER")),
                 Map.of("sub", "google", "playerId", 1L), "sub");
-        var selected = new CustomOAuth2User(google, (PlayerPadel) player(1).getPrincipal());
-        var other = new CustomOAuth2User(google, (PlayerPadel) player(2).getPrincipal());
+        var selected = new OAuth2PlayerPrincipal(google, (PlayerPrincipal) player(1).getPrincipal());
+        var other = new OAuth2PlayerPrincipal(google, (PlayerPrincipal) player(2).getPrincipal());
         assertThat(access.allows(new UsernamePasswordAuthenticationToken(selected, null, selected.getAuthorities()), Map.of())).isTrue();
         assertThat(access.allows(new UsernamePasswordAuthenticationToken(other, null, other.getAuthorities()), Map.of())).isFalse();
     }
@@ -59,8 +61,7 @@ class EloPilotAccessTest {
         assertThat(access.allows(new UsernamePasswordAuthenticationToken("1", null,
                 List.of(new SimpleGrantedAuthority("ROLE_PLAYER"))), Map.of())).isFalse();
         var transientPlayer = new PlayerPadel();
-        assertThat(access.allows(new UsernamePasswordAuthenticationToken(transientPlayer, null,
-                transientPlayer.getAuthorities()), Map.of())).isFalse();
+        assertThat(access.allows(playerAuthentication(transientPlayer), Map.of())).isFalse();
     }
 
     @Test

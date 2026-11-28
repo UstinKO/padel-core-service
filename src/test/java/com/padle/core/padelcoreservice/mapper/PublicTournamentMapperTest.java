@@ -2,8 +2,8 @@ package com.padle.core.padelcoreservice.mapper;
 
 import com.padle.core.padelcoreservice.dto.PublicTournamentDto;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

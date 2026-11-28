@@ -26,8 +26,9 @@
     <link rel="stylesheet" th:href="@{/css/admin-tournament-list.css}">
     <link rel="stylesheet" th:href="@{/css/admin-event-calendar.css}">
     <link rel="stylesheet" th:href="@{/css/admin-publication-link.css}">
+    <link rel="stylesheet" th:href="@{/css/admin-action-help.css}">
 </head>
-<body>
+<body class="admin-section-help-page">
 <header th:replace="~{fragments/admin-header :: header(#{admin.tournaments.list.title})}"></header>
 
 <main class="admin-main">
@@ -64,6 +65,7 @@
                th:text="#{admin.calendar.list}"></a>
             <a id="eventCalendarSwitch" class="btn btn-outline" th:href="@{/admin/tournaments(view='calendar')}"
                th:text="#{admin.calendar.calendar}"></a>
+            <button th:replace="~{fragments/action-help :: help('ac-view')}"></button>
         </nav>
 
         <form method="get" th:action="@{/admin/tournaments}" class="tournament-list-filters"
@@ -125,7 +127,7 @@
                 <select id="eventLevel" name="level">
                     <option value="" th:text="#{admin.tournaments.list.filter.level.all}"></option>
                     <option th:each="value : ${eventLevels}" th:value="${value.name()}"
-                            th:selected="${selectedLevel == value}" th:text="${value.name() == 'PRINCIPIANTES'} ? #{calendar.level.PRINCIPIANTES} : ${#strings.replace(value.name(), '_', #strings.startsWith(value.name(), 'SUMA_') ? ' ' : '–')}"></option>
+                            th:selected="${selectedLevel == value}" th:text="${value.name() == 'TODOS' ? #messages.msg('calendar.level.TODOS') : value.name() == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(value.name(), '_', #strings.startsWith(value.name(), 'SUMA_') ? ' ' : '–')}"></option>
                 </select>
             </label>
             <label for="eventStatus">
@@ -139,6 +141,7 @@
             <div class="tournament-list-filters__buttons">
                 <button type="submit" class="btn btn-primary"
                         th:text="#{admin.tournaments.list.filter.club.apply}">Aplicar</button>
+                <button th:replace="~{fragments/action-help :: help('ac-filters')}"></button>
                 <a th:href="@{/admin/tournaments(lang=${#locale.language})}" class="btn btn-outline"
                    th:text="#{admin.tournaments.list.filter.reset}">Restablecer</a>
             </div>
@@ -157,7 +160,7 @@
 
         <!-- Карточки турниров для мобильных -->
         <div th:if="${resultCount > 0}" class="tournaments-cards" id="tournamentsMobileView">
-            <div th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}" class="tournament-card">
+            <div th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}" class="tournament-card">
                 <div class="tournament-card-header">
                     <div class="tournament-card-title">
                         <i class="fas fa-trophy"></i>
@@ -215,7 +218,7 @@
                        style="color: #6366f1; border-color: #6366f1;"
                        title="Copiar torneo">
                         <i class="fas fa-copy"></i> <span th:text="#{admin.tournaments.list.btn.copy}">Copiar</span>
-                    </a>
+                    </a><th:block th:if="${item.canCopy and (item.tournament.tipo.name() == 'AMERICANO_TEAMS' or item.tournament.tipo.name() == 'KING_OF_COURT' or item.tournament.tipo.name() == 'AMERICANO')}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block>
 
                     <!-- Кнопка Ver — для ADMIN (canView без isOwner) -->
                     <a th:if="${item.canView and !item.isOwner}"
@@ -272,7 +275,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}">
+                <tr th:each="item : ${tournaments}" th:with="levelLabel=${item.tournament.categoriaNivel == 'TODOS' ? #messages.msg('calendar.level.TODOS') : item.tournament.categoriaNivel == 'PRINCIPIANTES' ? #messages.msg('calendar.level.PRINCIPIANTES') : #strings.replace(item.tournament.categoriaNivel, '_', #strings.startsWith(item.tournament.categoriaNivel, 'SUMA_') ? ' ' : '–')}">
                     <td th:text="${item.tournament.id}">1</td>
                     <td>
                         <strong class="tournament-list-event-name"><span th:text="#{__${'admin.tournaments.list.format.' + item.format.name()}__}">Americano</span><span th:unless="${#strings.isEmpty(levelLabel)}" th:text="' · ' + ${levelLabel}"> · C7</span></strong>
@@ -311,7 +314,7 @@
                                class="btn-icon" title="Copiar torneo"
                                style="background: #6366f1; color: white;">
                                 <i class="fas fa-copy"></i>
-                            </a>
+                            </a><th:block th:if="${item.canCopy and (item.tournament.tipo.name() == 'AMERICANO_TEAMS' or item.tournament.tipo.name() == 'KING_OF_COURT' or item.tournament.tipo.name() == 'AMERICANO')}"><button th:replace="~{fragments/action-help :: help('copy')}"></button></th:block>
 
                             <!-- Ver — для ADMIN (canView без isOwner) -->
                             <a th:if="${item.canView and !item.isOwner}"
@@ -369,8 +372,11 @@
                     <label for="organizationName"><span th:text="#{admin.calendar.organizationName}"></span>
                         <input id="organizationName" type="text" maxlength="120" disabled>
                     </label>
-                    <button id="organizationSave" type="submit" class="btn btn-outline" disabled
-                            th:text="#{admin.common.btn.save}"></button>
+                    <div class="admin-help-action">
+                        <button id="organizationSave" type="submit" class="btn btn-outline" disabled
+                                th:text="#{admin.common.btn.save}"></button>
+                        <button th:replace="~{fragments/action-help :: help('ac-organization')}"></button>
+                    </div>
                     <p id="organizationMessage" role="status" aria-live="polite"></p>
                 </form>
             </details>
@@ -382,6 +388,7 @@
                         th:aria-label="#{admin.calendar.next}">›</button>
                 <button type="button" id="calendarToday" class="btn btn-outline"
                         th:text="#{admin.calendar.today}"></button>
+                <button th:replace="~{fragments/action-help :: help('ac-month')}"></button>
             </div>
             <p id="calendarMessage" role="status" aria-live="polite"></p>
             <div id="calendarError" role="alert" hidden>
@@ -392,7 +399,7 @@
             <div id="calendarWeekdays" class="event-calendar__weekdays" aria-hidden="true"></div>
             <div id="calendarGrid" class="event-calendar__grid"></div>
             <section id="calendarDay" class="event-calendar__day" aria-labelledby="calendarDayTitle">
-                <h3 id="calendarDayTitle" tabindex="-1"></h3>
+                <div class="action-help-heading"><h3 id="calendarDayTitle" tabindex="-1"></h3><button th:replace="~{fragments/action-help :: help('ac-day')}"></button></div>
                 <div id="calendarDayEvents"></div>
             </section>
         </section>

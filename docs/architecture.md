@@ -4,7 +4,7 @@
 исполняемый Telegram-адаптер в `automation/telegram-relay/`. Порядок отдельной активации воркера —
 [codex-migration.md](codex-migration.md); приложение и его схема развёртывания этим не меняются.
 
-План развития: [многомодульный монолит, семь согласованных модулей](modular-monolith/target-architecture.md). Сейчас работают parent/aggregator, api-contract (generated Club), tournament-engines (PlayoffMatchingEngine, KingOfCourtPairingEngine, AmericanoScheduleEngine, AmericanoScheduleValidator, QualificationPairing, PlayoffFormat, EarlyPlayoffSeeding, RoundRobinSetStandingsEngine, RoundRobinPointsStandingsEngine и RoundRobinFinalOrderEngine), application (PublicClubQuery/ClubReadPort, RoundRobinRankingQuery/RoundRobinReadPort и RoundRobinPositionCommand/RoundRobinPositionPort, RoundRobinFinishCommand/RoundRobinFinishPort) и bootstrap с единственным boot jar. [Application-срез](modular-monolith/phase-2/application-club-read.md), [источник API-контракта и сборка](modular-monolith/phase-2/contract-adoption.md). [Перенос расписания Americano](modular-monolith/phase-3/americano-extraction.md) сохраняет статический API и алгоритм. [Правила квалификации Team Playoff](modular-monolith/phase-3/team-playoff-qualification-extraction.md) также принадлежат engines. [Расчёт раннего плей-офф](modular-monolith/phase-3/early-playoff-extraction.md) также выделен с сохранением алгоритма. [Места кругового SETS](modular-monolith/phase-3/round-robin-sets-extraction.md) вычисляет чистый engine, JPA связывает legacy MapStruct-адаптер. Остальной корневой src/ компилирует только bootstrap. Три целевых модуля пока не созданы. Приёмка пилота #1045 принята 20.11 с ограничениями; хранение остаётся отдельной поздней #1051.
+Приложение собирается одним Maven reactor с пятью модулями. В `padel-persistence` уже перенесены клубы, учётные записи, турнир, заявки, оплаты и связанные JDBC-журналы. [Размещение исходников и тестов](../.agents/PROJECT.md#размещение-исходников) · [Текущая фаза хранения](modular-monolith/phase-6/README.md) · [Целевая архитектура из семи модулей](modular-monolith/target-architecture.md)
 
 [Места кругового POINTS](modular-monolith/phase-3/round-robin-points-extraction.md) и компаратор RoundRobinRules.order также вычисляет engines; MapStruct связывает результат с исходными командами по индексу строки.
 
@@ -107,9 +107,11 @@ Expo web-клиентом 1Padel.App. REST API выставлен паралле
 
 ## 2. Слои приложения
 
-Reactor включает `padel-api-contract`, `padel-tournament-engines`, `padel-application` и `padel-bootstrap`; исполняемым остаётся только bootstrap. Первый application-срез — публичное чтение клубов: собственные record/порт/сценарий, service/readOnly-транзакция и явная регистрация из bootstrap. JPA-адаптер и оба MapStruct-маппера остаются в legacy. [Граница, переходные мосты и проверки](modular-monolith/phase-2/application-club-read.md). Catalog/home и MVC клуба сохраняются; два клубных GET используют generated Club из api-contract. [Контракт и сборка](modular-monolith/phase-2/contract-adoption.md).
+Reactor включает `padel-api-contract`, `padel-tournament-engines`, `padel-application`, `padel-persistence` и `padel-bootstrap`. Bootstrap собирает единственный Boot JAR и подключает `PersistenceConfiguration`. Сценарии и порты отделённых областей находятся в application, чистые алгоритмы в engines, выделенный HTTP-контракт клубов в api-contract. Persistence подключает хранилища к общим `DataSource` и `EntityManagerFactory`. [Клубы](modular-monolith/phase-6/club-persistence.md) · [Идентичность](modular-monolith/phase-6/identity-storage.md) · [Регистрации и оплаты](modular-monolith/phase-6/registration-payment-storage.md)
 
 ### Структура пакетов
+
+Это пакеты оставшегося кода из корневого `src/main/java`, который компилирует bootstrap. Выделенные классы находятся в [соответствующих модулях](../.agents/PROJECT.md#размещение-исходников).
 
 ```
 com.padle.core.padelcoreservice
@@ -265,15 +267,15 @@ hikari:
 
 - **Только Liquibase** управляет схемой (`ddl-auto = none`).
 - Файлы миграций находятся в `padel-persistence/src/main/resources/db/changelog/versions/`.
-- Мастер-файл: `changelog-master.yaml` — порядок include определяет порядок выполнения.
-- Текущая версия: **v1.94**
+- Мастер-файл расположен в `padel-persistence/src/main/resources/db/changelog/changelog-master.yaml`. Порядок include определяет порядок выполнения.
+- Текущая версия: **v1.96**
 
 **Добавление новой миграции:**
 ```
 1. Создать файл `padel-persistence/src/main/resources/db/changelog/versions/v1.XX-<описание>.yaml` со следующим номером.
 2. Добавить в конец changelog-master.yaml:
    - include:
-       file: versions/v1.56-<описание>.yaml
+       file: versions/v1.XX-<описание>.yaml
        relativeToChangelogFile: true
 ```
 
@@ -682,7 +684,7 @@ services:
 
 ## Измерение рекламы Meta
 
-Изолированный модуль `marketing/`: JPA callback → JDBC-журнал в общей транзакции → фоновая очередь CAPI. Сеть отделена от сохранения оплаты, включение и токен через конфигурацию. [Контракт и ограничения](endpoints/meta-marketing.md).
+JPA callback записывает JDBC-журнал и outbox в `padel-persistence` в транзакции регистрации или оплаты. Bootstrap получает контекст согласия и выполняет фоновую доставку CAPI. Включение и токен задаются конфигурацией. [Контракт и ограничения](endpoints/meta-marketing.md).
 
 
 ### Серверные метаданные SPA
@@ -706,4 +708,8 @@ Maven Surefire задаёт общий бюджет тестового JVM: Hika
 
 Отдельный профиль `preview` и Compose-проект используют собственные PostgreSQL/Mailpit, синтетический seed и nginx с Basic Auth. Приложение не имеет исходящего маршрута; в профиле не регистрируются scheduled jobs и внешние log appenders. Конфигурация и UUID-маркер БД проверяются до Liquibase; обычные профили сохраняют прежнее поведение. [Запуск и проверка](ui-v2-preview.md), [контракт диагностики](endpoints/ui-preview.md). PR Check проверяет сетевую изоляцию и реальные браузеры, затем останавливает собственный контур.
 
+В задании `browser-marketing` сценарий `RegistrationSourceBrowserTest` использует отдельный сервис `signup-postgres` через `REGISTRATION_BROWSER_QA_DB_URL`. Общие Telegram и административные сценарии сохраняют прежнюю БД. Изоляция не даёт синтетическому каталогу соседних проверок разрастаться на главной странице мобильного WebKit; сам путь через главную, создание аккаунта и реальную запись пары сохраняется.
+
 Кампании Telegram используют отдельную PostgreSQL-очередь и неизменяемый снимок текста/адресатов, существующие transport и ledger; [контракт и ограничения](endpoints/player-telegram.md). Флаг отправки по умолчанию выключен.
+
+Журнал `tournament_result_exports` хранит факт формирования универсального отчёта: субъект, время UTC, турнир, формат, контактный режим и число строк. Телефонов, результатов и содержимого файла в журнале нет. Таблица сохраняет аудит независимо от удаления мероприятия. См. [контракт экспорта](endpoints/tournament-results-export.md).

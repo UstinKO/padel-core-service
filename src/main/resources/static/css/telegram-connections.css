@@ -1,0 +1,13 @@
+.tg-connections { padding: clamp(1rem, 3vw, 1.5rem); margin-bottom: 1.5rem; border: 1px solid #e9ecef; border-radius: 1rem; background: #fff; min-width: 0; }
+.tg-connections h2 { font-size: 1.25rem; margin: 0 0 .5rem; }
+.tg-connections p { margin: .5rem 0 1rem; overflow-wrap: anywhere; }
+.tg-connections-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.tg-connections-grid dt { color: #555; font-size: .9rem; }
+.tg-connections-grid dd { margin: .25rem 0 0; font-size: 1.75rem; font-weight: 700; }
+.tg-connections progress { width: 100%; accent-color: #ff6b35; }
+.tg-connections-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+.tg-connections-actions .btn { max-width: 100%; min-height: 44px; white-space: normal; text-align: center; }
+.tg-connections [hidden] { display: none !important; }
+.tg-connections-note { color: #555; font-size: .875rem; }
+.tg-connections [data-error="true"] { color: #a02525; }
+.tg-connections [data-tg-connections-status]:empty { display: none; }

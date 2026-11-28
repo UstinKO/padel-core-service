@@ -1,5 +1,9 @@
 package com.padle.core.padelcoreservice.service;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.marketing.MarketingReportService;
 import com.padle.core.padelcoreservice.dto.PartnerRegistrationDto;
 import com.padle.core.padelcoreservice.dto.ParticipationDtos.Decision;
@@ -7,13 +11,25 @@ import com.padle.core.padelcoreservice.exception.AccountException;
 import com.padle.core.padelcoreservice.dto.SoloDoubleRegistrationDto;
 import com.padle.core.padelcoreservice.exception.TournamentRegistrationException;
 import com.padle.core.padelcoreservice.service.cancellation.RegistrationCancellationService;
-import com.padle.core.padelcoreservice.dto.CancellationHistory;
+import com.padle.core.application.registration.CancellationHistory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.padle.core.padelcoreservice.model.*;
+import com.padle.core.persistence.tournament.Payment;
+import com.padle.core.persistence.tournament.Tournament;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.persistence.clubs.Club;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.registration.PaymentStatus;
+import com.padle.core.application.registration.RegistrationStatus;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.application.tournament.TournamentVisibility;
 import com.padle.core.padelcoreservice.repository.*;
+import com.padle.core.persistence.tournament.PaymentRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
+import com.padle.core.persistence.tournament.TournamentRepository;
 import com.padle.core.persistence.clubs.ClubRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -43,6 +59,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerUser;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import java.util.UUID;
@@ -106,7 +123,7 @@ class RegistrationCancellationIntegrationTest {
                 .status(PaymentStatus.PENDING).notes("PARTNER_PAYMENT").build());
 
         String base = "/api/players/me/events";
-        mvc.perform(get(base).with(user(row.getPlayer())))
+        mvc.perform(get(base).with(playerUser(row.getPlayer())))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(jsonPath("$.upcoming[0].registrationId").value(row.getId()))
@@ -118,17 +135,17 @@ class RegistrationCancellationIntegrationTest {
 
         String withdraw = base + "/" + row.getId() + "/withdraw";
         String version = "{\"version\":0}";
-        mvc.perform(post(withdraw).with(user(other.getPlayer())).with(csrf())
+        mvc.perform(post(withdraw).with(playerUser(other.getPlayer())).with(csrf())
                         .contentType("application/json").content(version))
                 .andExpect(status().isNotFound());
-        mvc.perform(post(withdraw).with(user(row.getPlayer())).contentType("application/json").content(version))
+        mvc.perform(post(withdraw).with(playerUser(row.getPlayer())).contentType("application/json").content(version))
                 .andExpect(status().isForbidden());
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(post(withdraw).with(user(row.getPlayer())).with(csrf())
+            mvc.perform(post(withdraw).with(playerUser(row.getPlayer())).with(csrf())
                             .contentType("application/json").content(version))
                     .andExpect(status().isNoContent());
         }
-        mvc.perform(get(base).with(user(row.getPlayer())))
+        mvc.perform(get(base).with(playerUser(row.getPlayer())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.upcoming.length()").value(0L))
                 .andExpect(jsonPath("$.history[0].cancellations.length()").value(1L))
@@ -137,11 +154,11 @@ class RegistrationCancellationIntegrationTest {
         row.setIsActive(true);
         row.setStatus(RegistrationStatus.CONFIRMED);
         registrations.saveAndFlush(row);
-        mvc.perform(get(base).with(user(row.getPlayer())))
+        mvc.perform(get(base).with(playerUser(row.getPlayer())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.upcoming[0].version").value(1))
                 .andExpect(jsonPath("$.history[0].cancellations.length()").value(1L));
-        mvc.perform(post(withdraw).with(user(row.getPlayer())).with(csrf())
+        mvc.perform(post(withdraw).with(playerUser(row.getPlayer())).with(csrf())
                         .contentType("application/json").content(version))
                 .andExpect(status().isConflict());
         var clubAdmin = Owner.builder().id(9001L).role(OwnerRole.CLUB_ADMIN).build();
@@ -160,14 +177,14 @@ class RegistrationCancellationIntegrationTest {
 
         String path = "/api/players/me/events/" + row.getId() + "/contact-visibility";
         String show = "{\"version\":0,\"shareContacts\":true}";
-        mvc.perform(put(path).with(user(player())).with(csrf()).contentType("application/json").content(show))
+        mvc.perform(put(path).with(playerUser(player())).with(csrf()).contentType("application/json").content(show))
                 .andExpect(status().isNotFound());
-        mvc.perform(put(path).with(user(row.getPlayer())).with(csrf()).contentType("application/json").content(show))
+        mvc.perform(put(path).with(playerUser(row.getPlayer())).with(csrf()).contentType("application/json").content(show))
                 .andExpect(status().isNoContent());
         assertThat(doubles.getLookingForPartnerPlayers(event.getId()).get(0).getTelefono())
                 .isEqualTo(row.getPlayer().getTelefono());
 
-        mvc.perform(put(path).with(user(row.getPlayer())).with(csrf())
+        mvc.perform(put(path).with(playerUser(row.getPlayer())).with(csrf())
                         .contentType("application/json").content("{\"version\":0,\"shareContacts\":false}"))
                 .andExpect(status().isNoContent());
         assertThat(doubles.getLookingForPartnerPlayers(event.getId()).get(0).getTelefono()).isNull();
@@ -177,15 +194,15 @@ class RegistrationCancellationIntegrationTest {
     void playerHttpVersionIsOptionalButStaleHeaderCannotCancelNewCycleOrSpoofActor() throws Exception {
         var event=tournament(2);var row=registration(event,RegistrationStatus.CONFIRMED);
         String path="/players/tournaments/"+event.getId();
-        mvc.perform(get(path+"/my-registration").with(user(row.getPlayer())))
+        mvc.perform(get(path+"/my-registration").with(playerUser(row.getPlayer())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.cancellationVersion").value(0));
-        mvc.perform(post(path+"/cancel").with(user(row.getPlayer())).with(csrf())
+        mvc.perform(post(path+"/cancel").with(playerUser(row.getPlayer())).with(csrf())
                         .header("If-Registration-Version","0").param("actorKind","OWNER").param("reasonCode","ORGANIZER_REMOVAL"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         assertThat(cancellationHistory.forPlayer(row.getPlayer(),List.of(event.getId())).get(0).initiator())
                 .isEqualTo(CancellationHistory.ActorKind.PLAYER);
         row.setIsActive(true);row.setStatus(RegistrationStatus.CONFIRMED);registrations.saveAndFlush(row);
-        mvc.perform(post(path+"/cancel").with(user(row.getPlayer())).with(csrf()).header("If-Registration-Version","0").locale(Locale.forLanguageTag("ru")))
+        mvc.perform(post(path+"/cancel").with(playerUser(row.getPlayer())).with(csrf()).header("If-Registration-Version","0").locale(Locale.forLanguageTag("ru")))
                 .andExpect(status().isBadRequest()).andExpect(content().string(containsString("Заявка изменилась")));
         assertThat(row.getIsActive()).isTrue();
     }
@@ -420,7 +437,7 @@ class RegistrationCancellationIntegrationTest {
         assertThat(remaining.getMainPlayerId()).isEqualTo(partner.getPlayer().getId());
 
         mvc.perform(get("/players/tournaments/" + tournament.getId() + "/my-registration")
-                        .with(user(remaining.getPlayer())))
+                        .with(playerUser(remaining.getPlayer())))
                 .andExpect(status().isOk())
                 .andExpect(content().json("""
                         {"replacementNeeded":true,"status":"WAITLIST","waitlistPosition":null}
@@ -483,11 +500,11 @@ class RegistrationCancellationIntegrationTest {
 
         var actor = (initiatedByMain ? main : partner).getPlayer();
         var path = "/api/tournaments/double/" + event.getId() + "/pair-cancellation";
-        mvc.perform(get(path).with(user(actor))).andExpect(status().isOk())
+        mvc.perform(get(path).with(playerUser(actor))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.canReplace").value(true));
         var confirmation = "{\"token\":\"%s\"}".formatted(pairTerms.cancellation(event.getId(), actor.getId()).token());
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(post(path).with(user(actor)).with(csrf())
+            mvc.perform(post(path).with(playerUser(actor)).with(csrf())
                             .contentType("application/json").content(confirmation))
                     .andExpect(status().isOk());
         }
@@ -526,7 +543,7 @@ class RegistrationCancellationIntegrationTest {
         registrations.saveAllAndFlush(List.of(main, second, third));
 
         mvc.perform(get("/api/tournaments/double/" + event.getId() + "/pair-cancellation")
-                        .with(user(main.getPlayer())))
+                        .with(playerUser(main.getPlayer())))
                 .andExpect(status().isConflict());
         assertThat(registrations.findByTournamentId(event.getId())).allSatisfy(row ->
                 assertThat(row.getStatus()).isEqualTo(RegistrationStatus.CONFIRMED));
@@ -741,7 +758,7 @@ class RegistrationCancellationIntegrationTest {
                 """.formatted(replacement.getId()) : """
                 {"nombre":"Nuevo","apellido":"Jugador","telefono":"+5491155500088"}
                 """;
-        mvc.perform(post(path).with(user(main.getPlayer())).with(csrf())
+        mvc.perform(post(path).with(playerUser(main.getPlayer())).with(csrf())
                         .contentType("application/json").content(body))
                 .andExpect(status().isNoContent());
         entities.flush();
@@ -780,9 +797,9 @@ class RegistrationCancellationIntegrationTest {
         playerIds.add(replacement.getId());
 
         String registrationPath = "/players/tournaments/" + tournament.getId() + "/my-registration";
-        mvc.perform(get(registrationPath).with(user(booker.getPlayer())))
+        mvc.perform(get(registrationPath).with(playerUser(booker.getPlayer())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.canReplacePartner").value(true));
-        mvc.perform(get(registrationPath).with(user(oldPartner.getPlayer())))
+        mvc.perform(get(registrationPath).with(playerUser(oldPartner.getPlayer())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.canReplacePartner").value(false));
 
         String path = "/api/tournaments/double/" + tournament.getId() + "/replace-partner";
@@ -793,7 +810,7 @@ class RegistrationCancellationIntegrationTest {
                 """.formatted(replacement.getId()) : """
                 {"nombre":"Алекс","apellido":"Тестов","telefono":"+5491155500881"}
                 """);
-        mvc.perform(post(path).with(user(booker.getPlayer())).with(csrf())
+        mvc.perform(post(path).with(playerUser(booker.getPlayer())).with(csrf())
                         .contentType("application/json").content(body))
                 .andExpect(status().isNoContent());
         entities.flush();
@@ -815,27 +832,27 @@ class RegistrationCancellationIntegrationTest {
                 .isEqualTo(RegistrationStatus.CANCELLED);
 
         String notices = "/api/players/me/pair-replacement-notices";
-        mvc.perform(get(notices).with(user(oldPartner.getPlayer())))
+        mvc.perform(get(notices).with(playerUser(oldPartner.getPlayer())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].bookerName").value(booker.getPlayer().getNombreCompleto()))
                 .andExpect(jsonPath("$[0].replacementName").value("Алекс Тестов"));
         Long noticeId = jdbc.queryForObject("SELECT id FROM pair_replacement_notices_db WHERE player_id = ?",
                 Long.class, oldPartner.getPlayer().getId());
-        mvc.perform(get(notices).with(user(booker.getPlayer())))
+        mvc.perform(get(notices).with(playerUser(booker.getPlayer())))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));
-        mvc.perform(post(notices + "/" + noticeId + "/dismiss").with(user(booker.getPlayer())).with(csrf()))
+        mvc.perform(post(notices + "/" + noticeId + "/dismiss").with(playerUser(booker.getPlayer())).with(csrf()))
                 .andExpect(status().isNoContent());
-        mvc.perform(get(notices).with(user(oldPartner.getPlayer())))
+        mvc.perform(get(notices).with(playerUser(oldPartner.getPlayer())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(noticeId.intValue()));
-        mvc.perform(post(notices + "/" + noticeId + "/dismiss").with(user(oldPartner.getPlayer())).with(csrf()))
+        mvc.perform(post(notices + "/" + noticeId + "/dismiss").with(playerUser(oldPartner.getPlayer())).with(csrf()))
                 .andExpect(status().isNoContent());
-        mvc.perform(get(notices).with(user(oldPartner.getPlayer())))
+        mvc.perform(get(notices).with(playerUser(oldPartner.getPlayer())))
                 .andExpect(status().isOk()).andExpect(content().json("[]"));
         verify(notifications).sendPartnerReplacedNotice(
                 argThat(player -> player.getId().equals(oldPartner.getPlayer().getId())), any());
 
         // A retry with the previous partner cannot overwrite the new pair.
-        mvc.perform(post(path).with(user(booker.getPlayer())).with(csrf())
+        mvc.perform(post(path).with(playerUser(booker.getPlayer())).with(csrf())
                         .contentType("application/json").content(body))
                 .andExpect(status().isConflict());
     }
@@ -854,7 +871,7 @@ class RegistrationCancellationIntegrationTest {
 
         for (var member : List.of(first, second)) {
             var dashboard = mvc.perform(get("/players/dashboard")
-                            .param("cancelPair", hidden.getId().toString()).with(user(member.getPlayer())))
+                            .param("cancelPair", hidden.getId().toString()).with(playerUser(member.getPlayer())))
                     .andExpect(status().isOk()).andExpect(view().name("players/dashboard"))
                     .andReturn().getModelAndView();
             assertThat(dashboard.getModel().get("tournamentsJson").toString()).contains(tournamentIdField);
@@ -862,7 +879,7 @@ class RegistrationCancellationIntegrationTest {
         }
 
         var dashboard = mvc.perform(get("/players/dashboard")
-                        .param("cancelPair", hidden.getId().toString()).with(user(outsider.getPlayer())))
+                        .param("cancelPair", hidden.getId().toString()).with(playerUser(outsider.getPlayer())))
                 .andExpect(status().isOk()).andExpect(view().name("players/dashboard"))
                 .andReturn().getModelAndView();
         assertThat(dashboard.getModel().get("tournamentsJson").toString()).doesNotContain(tournamentIdField);
@@ -1073,13 +1090,13 @@ class RegistrationCancellationIntegrationTest {
         assertThat(quote.late()).isTrue();
         assertThat(quote.remainingDue()).isEqualByComparingTo("600");
         String path = "/api/tournaments/double/" + tournament.getId() + "/pair-cancellation";
-        mvc.perform(get(path).with(user(partner.getPlayer())))
+        mvc.perform(get(path).with(playerUser(partner.getPlayer())))
                 .andExpect(status().isOk())
                 .andExpect(content().json("""
                         {"remainingDue":600,"token":"%s","freeUntil":"%s"}
                         """.formatted(quote.token(), quote.freeUntil()
                                 .format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME))));
-        mvc.perform(post(path).with(user(partner.getPlayer())).with(csrf())
+        mvc.perform(post(path).with(playerUser(partner.getPlayer())).with(csrf())
                         .contentType("application/json").content("""
                                 {"token":"%s"}
                                 """.formatted(quote.token())))
@@ -1326,9 +1343,9 @@ class RegistrationCancellationIntegrationTest {
         var guestRequest = requestFor(guest);
         var other = player();
         String link = "/participacion/" + guestRequest.getId();
-        mvc.perform(get(link).with(user(booker.getPlayer())))
+        mvc.perform(get(link).with(playerUser(booker.getPlayer())))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"));
-        mvc.perform(post(link).param("decision", "CONFIRM").with(user(booker.getPlayer())))
+        mvc.perform(post(link).param("decision", "CONFIRM").with(playerUser(booker.getPlayer())))
                 .andExpect(redirectedUrl("/error/403"));
         assertThat(guestRequest.getStatus()).isEqualTo(ParticipationStatus.PENDING);
         assertThat(participation.list(booker.getPlayer())).hasSize(2);
@@ -1551,7 +1568,7 @@ class RegistrationCancellationIntegrationTest {
 
         var route = "/test/tournaments/" + event.getId() + "/register-guest-player";
         var payload = "{\"id\":%d}".formatted(row.getPlayer().getId());
-        mvc.perform(post(route).with(user(row.getPlayer())).with(csrf())
+        mvc.perform(post(route).with(playerUser(row.getPlayer())).with(csrf())
                         .contentType("application/json").content(payload))
                 .andExpect(status().is3xxRedirection());
         assertThat(jdbc.queryForObject("SELECT is_active FROM tournament_registrations_db WHERE id = ?", Boolean.class, row.getId())).isFalse();

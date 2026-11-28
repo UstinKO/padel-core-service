@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.telegram;
 
 import com.padle.core.padelcoreservice.exception.AccountException;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.receipts.ReceiptFiles;
 import com.padle.core.padelcoreservice.receipts.ReceiptIntake;
 import com.padle.core.padelcoreservice.receipts.ReceiptRegistrations;
@@ -10,7 +10,7 @@ import com.padle.core.padelcoreservice.receipts.ReceiptStore;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.Upload;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.Receipt;
 import com.padle.core.padelcoreservice.receipts.ReceiptModels.State;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -72,7 +72,7 @@ public class PlayerTelegramReceipts {
     private void handle(Callback callback, PlayerPadel player, String[] parts) {
         if (parts[0].equals("r") && parts.length == 3) {
             var row = registrations.require(parse(parts[1]), player.getId(), parse(parts[2]));
-            reply("receipt-prompt:" + callback.id(), player, "receipt.prompt", row.getTournament().getNombre());
+            reply("receipt-prompt:" + callback.id(), player, "receipt.prompt", messages.eventName(row.getTournament().getNombre(), player.getLocale()));
         } else if (parts[0].equals("p") && parts.length == 4) {
             var upload = requireUpload(parts[1], player, callback.from().id());
             choices(upload, player, Integer.parseInt(parts[2]), "receipt-page:" + callback.id());
@@ -154,7 +154,7 @@ public class PlayerTelegramReceipts {
             throw ReceiptRegistrations.unavailable();
         }
         var choices = IntStream.range(page * PAGE_SIZE, Math.min(rows.size(), (page + 1) * PAGE_SIZE))
-                .mapToObj(i -> List.of(choice(upload, rows.get(i)))).toList();
+                .mapToObj(i -> List.of(choice(upload, rows.get(i), player.getLocale()))).toList();
         var navigation = IntStream.rangeClosed(Math.max(0, page - 1), Math.min(pages - 1, page + 1))
                 .filter(i -> i != page).mapToObj(i -> Button.action(Integer.toString(i + 1),
                         "p:" + compact(upload.id()) + ":" + i + ":page")).toList();
@@ -162,9 +162,9 @@ public class PlayerTelegramReceipts {
         delivery.sendOnce(key, null, null, upload.chatId(), messages.text("receipt.choose", player.getLocale()), keyboard);
     }
 
-    private Button choice(Upload upload, TournamentRegistration row) {
+    private Button choice(Upload upload, TournamentRegistration row, Locale locale) {
         var tournament = row.getTournament();
-        String label = tournament.getNombre() + " · " + tournament.getFechaHoraInicioCompleta()
+        String label = messages.eventName(tournament.getNombre(), locale) + " · " + tournament.getFechaHoraInicioCompleta()
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
         return Button.action(label, "q:" + compact(upload.id()) + ":" + number(row.getId()) + ":" + number(row.getCancellationVersion()));
     }

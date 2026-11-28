@@ -3,7 +3,7 @@ package com.padle.core.padelcoreservice.service.contact;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;

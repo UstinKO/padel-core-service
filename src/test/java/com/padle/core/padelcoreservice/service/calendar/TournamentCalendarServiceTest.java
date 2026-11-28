@@ -1,8 +1,8 @@
 package com.padle.core.padelcoreservice.service.calendar;
 
 import com.padle.core.padelcoreservice.dto.TournamentDto;
-import com.padle.core.padelcoreservice.model.enums.Modalidad;
-import com.padle.core.padelcoreservice.model.enums.TournamentType;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentType;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

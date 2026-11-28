@@ -23,6 +23,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <th:block th:replace="~{fragments/telegram-connections :: assets}"></th:block>
 </head>
 <body>
 <header th:replace="~{fragments/admin-header :: header(#{admin.panel.title})}"></header>
@@ -36,6 +37,8 @@
             </h1>
             <p class="admin-subtitle" th:text="${isClubAdmin} ? #{club_access.panel_subtitle} : #{admin.panel.subtitle}">Gestión de jugadores y torneos 1-Padel</p>
         </div>
+
+        <section th:replace="~{fragments/telegram-connections :: statistics}"></section>
 
         <!-- Estadísticas -->
         <div class="admin-stats-grid">
@@ -93,7 +96,7 @@
                 <div class="matches-grid">
                     <div th:each="tournament : ${activeKingTournaments}" class="match-mini-card live" style="border-left-color: #fbbf24;">
                         <div class="match-mini-header">
-                            <span class="tournament-name" th:text="${tournament.tournament.nombre}">Torneo</span>
+                            <span class="tournament-name" th:text="${@eventLevelText.eventName(tournament.tournament.nombre, #locale)}">Torneo</span>
                             <span class="live-badge" style="background: #fbbf24;">RONDA <span th:text="${tournament.currentRound}">1</span></span>
                         </div>
                         <div class="match-mini-players">
@@ -174,7 +177,7 @@
                                     <i class="fas fa-trophy"></i>
                                 </div>
                                 <div class="admin-list-content">
-                                    <div class="admin-list-title" th:text="${item.tournament.nombre}">Torneo</div>
+                                    <div class="admin-list-title" th:text="${@eventLevelText.eventName(item.tournament.nombre, #locale)}">Torneo</div>
                                     <div class="admin-list-subtitle" th:text="${item.tournament.clubNombre} + ' - ' + ${#temporals.format(item.tournament.fechaInicio, 'dd/MM/yyyy')}">
                                         Club - Fecha
                                     </div>

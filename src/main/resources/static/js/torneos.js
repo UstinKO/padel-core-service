@@ -291,7 +291,7 @@ class TorneosPage {
                     <span class="torneo-badge torneo-badge-level">${nivelDisplay}</span>
                 </div>
                 <div class="torneo-card-body">
-                    <h3 class="torneo-title">${this.escapeHtml(tournament.nombre || '')}</h3>
+                    <h3 class="torneo-title">${this.escapeHtml(window.PadelLevels.eventName(tournament.nombre))}</h3>
                     <div class="torneo-info">
                         <div class="torneo-info-item">
                             <i class="fas fa-calendar-alt"></i>

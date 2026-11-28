@@ -8,7 +8,7 @@
     </summary>
     <div class="solo-content">
     <header class="solo-header"><div><p th:text="#{solo.ui.description}"></p></div>
-        <button type="button" class="btn btn-primary" data-roster-action="ADD" th:text="#{solo.ui.add}"></button></header>
+        <button type="button" class="btn btn-primary" data-roster-action="ADD" th:text="#{solo.ui.add}"></button><button th:replace="~{fragments/action-help :: help('solo-add')}"></button></header>
     <p id="solo-notice" role="status" aria-live="polite"></p>
     <div id="solo-list" class="solo-list" aria-live="polite"></div>
     <details class="solo-archive"><summary th:text="#{solo.ui.archive}"></summary><div id="solo-cancelled" class="solo-list"></div><ol id="solo-history"></ol></details>
@@ -16,7 +16,7 @@
 </details>
 <dialog id="solo-dialog" class="solo-dialog" aria-labelledby="solo-dialog-title">
     <div class="solo-header"><h2 id="solo-dialog-title"></h2><button type="button" class="solo-close" data-roster-close th:aria-label="#{solo.ui.close}">×</button></div>
-    <p class="solo-event" th:text="${tournament.nombre}"></p>
+    <p class="solo-event" th:text="${@eventLevelText.eventName(tournament.nombre, #locale)}"></p>
     <p id="solo-source"></p>
     <p id="solo-error" class="solo-error" role="alert"></p>
     <form id="solo-form">
@@ -116,5 +116,8 @@ window.soloRosterMessages = {
 };
 </script>
 <script th:src="@{/js/solo-roster.js}" defer></script>
+
+<div hidden id="solo-action-help-copies"><span data-help-copy="solo-partner"><button th:replace="~{fragments/action-help :: help('solo-partner')}"></button></span><span data-help-copy="solo-pair"><button th:replace="~{fragments/action-help :: help('solo-pair')}"></button></span><span data-help-copy="solo-remove"><button th:replace="~{fragments/action-help :: help('solo-remove')}"></button></span></div>
 </th:block>
+
 </body></html>

@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.mapper;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.telegram.TelegramAudienceModels.*;
 import java.util.Set;
 import org.mapstruct.Mapper;

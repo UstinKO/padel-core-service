@@ -1,11 +1,17 @@
 package com.padle.core.padelcoreservice.controller.admin;
 
+import com.padle.core.application.tournament.GenderFormat;
+import com.padle.core.application.tournament.Nivel;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.ClubAccountService;
 import com.padle.core.padelcoreservice.dto.TournamentDto;
 import com.padle.core.padelcoreservice.exception.ResourceNotFoundException;
 import com.padle.core.padelcoreservice.model.Owner;
 import com.padle.core.padelcoreservice.model.enums.*;
+import com.padle.core.application.tournament.Modalidad;
+import com.padle.core.application.tournament.TournamentStatus;
+import com.padle.core.application.tournament.TournamentType;
+import com.padle.core.application.tournament.TournamentVisibility;
 import com.padle.core.padelcoreservice.service.ClubService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import lombok.RequiredArgsConstructor;

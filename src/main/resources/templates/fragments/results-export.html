@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><body>
+<th:block th:fragment="dialog">
+    <link rel="stylesheet" th:href="@{/css/results-export.css}">
+    <script th:src="@{/js/results-export.js}" defer></script>
+    <dialog id="results-export-dialog" class="results-export-dialog" aria-labelledby="results-export-title"
+            aria-describedby="results-export-description"
+            th:attr="data-loading=#{results.export.loading},data-summary=#{results.export.summary},data-ready=#{results.export.ready},data-provisional=#{results.export.provisional},data-error=#{results.export.error},data-session=#{results.export.session},data-denied=#{results.export.denied},data-done=#{results.export.done},data-done-provisional=#{results.export.done_provisional},data-no-matches=#{results.export.no_matches},data-no-standings=#{results.export.no_standings},data-missing-placements=#{results.export.missing_places},data-legacy-guest=#{results.export.legacy_guest},data-missing-lineup=#{results.export.missing_lineup},data-invalid-phone=#{results.export.invalid_phone}">
+        <div class="results-export-heading">
+            <h2 id="results-export-title" th:text="#{results.export.title}">Exportar resultados</h2>
+            <button class="btn btn-outline" type="button" data-results-export-close th:aria-label="#{results.export.close}">×</button>
+        </div>
+        <p id="results-export-description" th:text="#{results.export.description}"></p>
+        <p data-results-export-summary role="status" aria-live="polite"></p>
+        <ul data-results-export-warnings class="results-export-warnings" hidden></ul>
+        <fieldset class="results-export-formats">
+            <legend th:text="#{results.export.format}"></legend>
+            <label><input type="radio" name="resultsExportFormat" value="XLSX" checked>
+                <span><strong>Excel (.xlsx)</strong><small th:text="#{results.export.excel}"></small></span></label>
+            <label><input type="radio" name="resultsExportFormat" value="CSV">
+                <span><strong>CSV (.zip)</strong><small th:text="#{results.export.csv}"></small></span></label>
+        </fieldset>
+        <label class="results-export-choice"><input type="checkbox" data-results-export-contacts>
+            <span th:text="#{results.export.contacts}"></span></label>
+        <div class="results-export-privacy" data-results-export-privacy hidden>
+            <p th:text="#{results.export.privacy}"></p>
+            <label class="results-export-choice"><input type="checkbox" data-results-export-ack>
+                <span th:text="#{results.export.ack}"></span></label>
+        </div>
+        <p data-results-export-message role="status" aria-live="polite"></p>
+        <div class="results-export-actions">
+            <button type="button" class="btn btn-outline" data-results-export-close th:text="#{results.export.close}"></button>
+            <button type="button" class="btn btn-primary" data-results-export-download disabled th:text="#{results.export.download}"></button>
+        </div>
+    </dialog>
+    <p class="results-export-notice" data-results-export-notice role="status" aria-live="polite"></p>
+</th:block>
+</body></html>

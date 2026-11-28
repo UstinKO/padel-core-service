@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: tournament-result-exports
+      author: codex
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE tournament_result_exports (
+                id BIGSERIAL PRIMARY KEY,
+                actor VARCHAR(320) NOT NULL,
+                recorded_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                tournament_id BIGINT NOT NULL,
+                file_format VARCHAR(8) NOT NULL CHECK (file_format IN ('XLSX','CSV')),
+                contacts BOOLEAN NOT NULL,
+                participant_count INTEGER NOT NULL,
+                match_count INTEGER NOT NULL
+              );
+              CREATE INDEX ix_result_exports_tournament_time ON tournament_result_exports(tournament_id,recorded_at);
+      rollback:
+        - dropTable:
+            tableName: tournament_result_exports

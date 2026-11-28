@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.preview;
 
-import com.padle.core.padelcoreservice.model.enums.AmericanoFinalOrder;
+import com.padle.core.application.tournament.AmericanoFinalOrder;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;
 import com.padle.core.padelcoreservice.service.americano.AmericanoService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;

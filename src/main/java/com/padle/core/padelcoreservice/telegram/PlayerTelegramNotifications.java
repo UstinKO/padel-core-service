@@ -3,11 +3,11 @@ package com.padle.core.padelcoreservice.telegram;
 import com.padle.core.application.clubs.ClubDetails;
 import com.padle.core.application.clubs.InternalClubReadPort;
 import com.padle.core.padelcoreservice.model.ParticipationRequest;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
-import com.padle.core.padelcoreservice.model.TournamentRegistration;
+import com.padle.core.persistence.identity.PlayerPadel;
+import com.padle.core.persistence.tournament.TournamentRegistration;
 import com.padle.core.padelcoreservice.model.enums.ParticipationStatus;
-import com.padle.core.padelcoreservice.repository.PlayerRepository;
-import com.padle.core.padelcoreservice.repository.TournamentRegistrationRepository;
+import com.padle.core.persistence.identity.PlayerRepository;
+import com.padle.core.persistence.tournament.TournamentRegistrationRepository;
 import com.padle.core.padelcoreservice.service.TelegramParticipationCoordinator;
 import com.padle.core.padelcoreservice.telegram.TelegramModels.*;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +63,7 @@ public class PlayerTelegramNotifications {
             String address = club.map(ClubDetails::address).orElse("");
             String when = tournament.getFechaHoraInicioCompleta().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String text = messages.text(reminder ? "reminder" : "request", locale,
-                    row.getPlayer().getNombreCompleto(), tournament.getNombre(), when, clubName, address);
+                    row.getPlayer().getNombreCompleto(), messages.eventName(tournament.getNombre(), locale), when, clubName, address);
             if (!receipts.buttons(row, player.getId(), locale).isEmpty()) {
                 text += "\n\n" + messages.text("receipt.instruction", locale);
             }

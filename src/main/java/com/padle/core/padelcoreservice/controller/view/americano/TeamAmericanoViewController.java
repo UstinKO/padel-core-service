@@ -8,10 +8,10 @@ import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoConfigDto;
 import com.padle.core.padelcoreservice.dto.americano.TeamAmericanoRankingDto;
 import com.padle.core.padelcoreservice.exception.InvalidStateException;
 import com.padle.core.padelcoreservice.model.enums.AmericanoRoundStatus;
-import com.padle.core.padelcoreservice.model.enums.TournamentStatus;
+import com.padle.core.application.tournament.TournamentStatus;
 import com.padle.core.padelcoreservice.model.americano.AmericanoMatch;
 import com.padle.core.padelcoreservice.model.Owner;
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.padelcoreservice.security.PlayerPrincipal;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamAmericanoService;
@@ -65,8 +65,8 @@ public class TeamAmericanoViewController {
 
         boolean isInitialized = teamAmericanoService.isInitialized(tournamentId);
 
-        PlayerPadel player = SecurityUtils.extractPlayer(
-                authentication != null ? authentication.getPrincipal() : null);
+        PlayerPrincipal player = SecurityUtils.playerPrincipal(
+                authentication != null ? authentication.getPrincipal() : null).orElse(null);
 
         model.addAttribute("tournament", tournament);
         model.addAttribute("isInitialized", isInitialized);

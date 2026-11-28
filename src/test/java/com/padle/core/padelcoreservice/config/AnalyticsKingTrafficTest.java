@@ -1,7 +1,7 @@
 package com.padle.core.padelcoreservice.config;
 
 import com.padle.core.padelcoreservice.controller.view.KingOfCourtViewController;
-import com.padle.core.padelcoreservice.model.Tournament;
+import com.padle.core.persistence.tournament.Tournament;
 import com.padle.core.padelcoreservice.model.TournamentKingOfCourt;
 import com.padle.core.padelcoreservice.repository.TournamentKingOfCourtRepository;
 import com.padle.core.padelcoreservice.service.KingOfCourtService;

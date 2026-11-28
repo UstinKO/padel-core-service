@@ -60,7 +60,7 @@ email-flow (`POST /confirm`) остаётся только как легаси-�
 
 ### Алгоритм
 
-1. Извлекает ID текущего пользователя из principal (только `PlayerPadel`, не `Owner`).
+1. Берёт ID текущего игрока из `PlayerPrincipal`.
 2. Загружает `TournamentDto` по `tournamentId`.
 3. Вызывает `DoubleTournamentRegistrationService.registerForDoubleTournament(tournamentDto, currentUserId, partnerDto)`:
    - Проверяет, что игрок не регистрирует сам себя.

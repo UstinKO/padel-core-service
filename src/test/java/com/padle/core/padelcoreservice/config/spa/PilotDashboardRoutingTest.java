@@ -1,6 +1,6 @@
 package com.padle.core.padelcoreservice.config.spa;
 
-import com.padle.core.padelcoreservice.model.PlayerPadel;
+import com.padle.core.persistence.identity.PlayerPadel;
 import com.padle.core.padelcoreservice.preview.PilotEloRefresh;
 import com.padle.core.padelcoreservice.preview.PreviewEloRanking;
 import com.padle.core.padelcoreservice.rating.EloPilotAccess;
@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.padle.core.padelcoreservice.support.PlayerFixtures.playerAuthentication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -69,7 +70,7 @@ class PilotDashboardRoutingTest {
         var player = new PlayerPadel();
         player.setId(id);
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(player, null, player.getAuthorities()));
+                playerAuthentication(player));
     }
 
     private MockHttpServletRequest request(String method, String path) {
