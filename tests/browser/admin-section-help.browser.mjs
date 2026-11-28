@@ -54,7 +54,14 @@ async function help(s, topic, scope=s.page) {
     assert.ok(box.y >= 0 && box.y + box.height <= viewport.height + 1, topic+' по высоте');
     if (viewport.width <= 390) {
         const target = await trigger.boundingBox();
-        assert.ok(target.width >= 44 && target.height >= 44, topic+' область нажатия');
+        const sizing = await trigger.evaluate(el => ({width:getComputedStyle(el).width,
+            height:getComputedStyle(el).height, minHeight:getComputedStyle(el).minHeight,
+            parent:el.parentElement.className, player:el.closest('[data-player-id]')?.dataset.playerId}));
+        // Дробные координаты Chromium не меняют номинальный размер CSS-кнопки.
+        assert.ok(parseFloat(sizing.width) >= 44 && parseFloat(sizing.height) >= 44
+            && target.width + .01 >= 44 && target.height + .01 >= 44,
+            topic+' область нажатия '+JSON.stringify({target,sizing}));
+        if (target.width < 44 || target.height < 44) console.log('Дробные координаты кнопки',topic,JSON.stringify({target,sizing}));
     }
     await page.keyboard.press('Escape');
     await panel.waitFor({state:'hidden'});
