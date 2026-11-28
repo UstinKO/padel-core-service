@@ -72,6 +72,8 @@ public class TeamPlayoffService {
     private final WebSocketService webSocketService;
     private final PlayoffMatchingEngine matchingEngine;
     private final SoloRosterTeams soloRosterTeams;
+    private final TeamQualificationScheduling qualificationScheduling;
+    private final TeamPlayoffQuarterFinals quarterFinals;
 
     public HistoricalParticipant historicalParticipant(Long matchId, int side) {
         AmericanoMatch match = getHistoricalMatch(matchId);
@@ -443,6 +445,12 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.CREATE_MATCH)
     public AmericanoMatch createQualificationMatch(Long tournamentId, Long team1Id, Long team2Id, int courtNumber) {
+        return createQualificationMatch(tournamentId, team1Id, team2Id, courtNumber, false, null);
+    }
+
+    @Transactional
+    @ConductChange(ConductChange.Action.CREATE_MATCH)
+    public AmericanoMatch createQualificationMatch(Long tournamentId, Long team1Id, Long team2Id, int courtNumber, boolean approvedOverride, String overrideReason) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
         protectEarlyQualification(tournamentId);
@@ -461,7 +469,11 @@ public class TeamPlayoffService {
         AmericanoRound round = getOrCreateQualificationRound(tournament, null);
         int matchNumber = nextMatchNumber(round.getId());
 
-        AmericanoMatch saved = matchRepository.save(buildQualMatch(t1, t2, round, tournament, matchNumber, courtNumber));
+        qualificationScheduling.validate(tournamentId, team1Id, team2Id, null, approvedOverride, overrideReason);
+        var proposed = buildQualMatch(t1, t2, round, tournament, matchNumber, courtNumber);
+        proposed.setPairingConfirmed(true);
+        proposed.setPairingOverrideReason(approvedOverride ? overrideReason : null);
+        AmericanoMatch saved = matchRepository.save(proposed);
         log.info("Qualification match created: {} vs {} on court {}",
                 t1.getDisplayName(), t2.getDisplayName(), courtNumber);
         webSocketService.notifyTeamPlayoffMatchCreated(tournamentId, toMatchDto(saved));
@@ -477,6 +489,12 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(ConductChange.Action.QUEUE_MATCH)
     public AmericanoMatch queueQualificationMatch(Long tournamentId, Long team1Id, Long team2Id) {
+        return queueQualificationMatch(tournamentId, team1Id, team2Id, false, null);
+    }
+
+    @Transactional
+    @ConductChange(ConductChange.Action.QUEUE_MATCH)
+    public AmericanoMatch queueQualificationMatch(Long tournamentId, Long team1Id, Long team2Id, boolean approvedOverride, String overrideReason) {
         Tournament tournament = getTournament(tournamentId);
         validateTournamentType(tournament);
         protectEarlyQualification(tournamentId);
@@ -494,7 +512,11 @@ public class TeamPlayoffService {
         AmericanoRound round = getOrCreateQualificationRound(tournament, null);
         int matchNumber = nextMatchNumber(round.getId());
 
-        AmericanoMatch saved = matchRepository.save(buildQueuedQualMatch(t1, t2, round, tournament, matchNumber));
+        qualificationScheduling.validate(tournamentId, team1Id, team2Id, null, approvedOverride, overrideReason);
+        var proposed = buildQueuedQualMatch(t1, t2, round, tournament, matchNumber);
+        proposed.setPairingConfirmed(true);
+        proposed.setPairingOverrideReason(approvedOverride ? overrideReason : null);
+        AmericanoMatch saved = matchRepository.save(proposed);
         log.info("Qualification match queued (LFPT-367, no court yet): {} vs {}",
                 t1.getDisplayName(), t2.getDisplayName());
         webSocketService.notifyTeamPlayoffMatchCreated(tournamentId, toMatchDto(saved));
@@ -516,6 +538,8 @@ public class TeamPlayoffService {
         }
         Long tournamentId = match.getTournament().getId();
         if (match.getPlayoffStage() != null) {
+            validateQualificationPriority(tournamentId);
+            quarterFinals.validateConfirmation(match);
             validateConfiguredCourt(tournamentId, courtNumber);
             var first = getActiveTeam(match.getTeam1Id());
             var second = getActiveTeam(match.getTeam2Id());
@@ -525,6 +549,7 @@ public class TeamPlayoffService {
         }
         validateCourtFree(tournamentId, courtNumber);
 
+        match.setPairingConfirmed(true);
         match.setCourtNumber(courtNumber);
         match.setStatus(AmericanoRoundStatus.IN_PROGRESS);
         match.setStartedAt(LocalDateTime.now());
@@ -565,19 +590,24 @@ public class TeamPlayoffService {
      * зависят от порядка всей очереди, а не от самого матча.
      */
     public List<AmericanoMatchDto> getQueue(Long tournamentId) {
-        List<AmericanoMatch> queued = matchRepository
-                .findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
-                .stream()
+        var all = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId);
+        LocalDateTime now = LocalDateTime.now();
+        List<AmericanoMatch> queued = all.stream()
                 .filter(AmericanoMatch::isQueued)
-                .sorted(Comparator.comparing(this::queueEnteredAt))
+                .sorted(Comparator.comparing((AmericanoMatch m) -> m.getPlayoffStage() != null)
+                        .thenComparingLong(m -> -Math.max(
+                                Objects.requireNonNullElse(TeamQualificationScheduling.waiting(m.getTeam1Id(), all, now).currentSeconds(), 0L),
+                                Objects.requireNonNullElse(TeamQualificationScheduling.waiting(m.getTeam2Id(), all, now).currentSeconds(), 0L)))
+                        .thenComparing(this::queueEnteredAt))
                 .toList();
 
         List<AmericanoMatchDto> result = new ArrayList<>();
-        LocalDateTime now = LocalDateTime.now();
         for (int i = 0; i < queued.size(); i++) {
             AmericanoMatch m = queued.get(i);
             AmericanoMatchDto dto = toMatchDto(m);
             dto.setQueuePosition(i + 1);
+            dto.setTeam1WaitingSeconds(TeamQualificationScheduling.waiting(m.getTeam1Id(), all, now).currentSeconds());
+            dto.setTeam2WaitingSeconds(TeamQualificationScheduling.waiting(m.getTeam2Id(), all, now).currentSeconds());
             dto.setWaitingMinutes(Duration.between(queueEnteredAt(m), now).toMinutes());
             result.add(dto);
         }
@@ -622,6 +652,9 @@ public class TeamPlayoffService {
             revertSetStats(match);
         }
 
+        if (!match.isCompleted() && match.getCompletedAt() == null) {
+            match.setCompletedAt(LocalDateTime.now());
+        }
         match.setTeam1Games(team1Games);
         match.setTeam2Games(team2Games);
         match.setTeam1Score(team1Games > team2Games ? 1 : 0);
@@ -644,7 +677,15 @@ public class TeamPlayoffService {
     public record EarlyMatch(EarlyTeam first, EarlyTeam second) {}
     public record EarlyPlayoff(boolean available, int finishedTeams, int remainingMatches, List<Integer> freeCourts,
                                List<EarlyTeam> readyTeams, List<EarlyMatch> matches, List<Integer> pendingMatchNumbers,
-                               String reason, String manualStatus, List<EarlyTeam> projectedByes, boolean semifinal) {}
+                               String reason, String manualStatus, List<EarlyTeam> projectedByes, boolean semifinal,
+                               List<EarlyMatch> consequences) {
+        public EarlyPlayoff(boolean available, int finishedTeams, int remainingMatches, List<Integer> freeCourts,
+                            List<EarlyTeam> readyTeams, List<EarlyMatch> matches, List<Integer> pendingMatchNumbers,
+                            String reason, String manualStatus, List<EarlyTeam> projectedByes, boolean semifinal) {
+            this(available, finishedTeams, remainingMatches, freeCourts, readyTeams, matches, pendingMatchNumbers,
+                    reason, manualStatus, projectedByes, semifinal, List.of());
+        }
+    }
 
     public EarlyPlayoff earlyPlayoff(Long tournamentId, Long firstId, Long secondId) {
         Pair manual = firstId != null && secondId != null ? Pair.of(firstId, secondId) : null;
@@ -718,6 +759,7 @@ public class TeamPlayoffService {
                 : !eligibleManual ? "teams"
                 : result.manualBye() ? "bye"
                 : previousMeeting(fixtures, manual) ? "rematch"
+                : result.manualRemainderUnsafe() ? "remainder"
                 : result.stable().contains(manual) ? "safe"
                 : result.exhaustive() ? "override" : reason;
         var pendingMatchNumbers = scheduled.stream().filter(m -> !m.isCompleted())
@@ -726,7 +768,9 @@ public class TeamPlayoffService {
                 remainingMatches, freeCourts, ready.stream().map(this::earlyTeam).toList(), suggestions,
                 pendingMatchNumbers, reason, status, EarlyPlayoffSeeding.projectedByes(standings(teams)).stream()
                         .map(id -> teams.stream().filter(team -> id.equals(team.getId())).findFirst().orElseThrow())
-                        .map(this::earlyTeam).toList(), false);
+                        .map(this::earlyTeam).toList(), false, result.consequences().stream().map(pair ->
+                                new EarlyMatch(earlyTeam(teams.stream().filter(t -> t.getId() == pair.first()).findFirst().orElseThrow()),
+                                        earlyTeam(teams.stream().filter(t -> t.getId() == pair.second()).findFirst().orElseThrow()))).toList());
     }
 
     private boolean previousMeeting(List<AmericanoMatch> matches, Pair pair) {
@@ -778,6 +822,13 @@ public class TeamPlayoffService {
     @ConductChange(ConductChange.Action.PLAYOFF)
     public AmericanoMatch confirmEarlyPlayoff(Long tournamentId, Long firstId, Long secondId, Integer court,
                                              boolean approvedOverride) {
+        return confirmEarlyPlayoff(tournamentId, firstId, secondId, court, approvedOverride, null);
+    }
+
+    @Transactional
+    @ConductChange(ConductChange.Action.PLAYOFF)
+    public AmericanoMatch confirmEarlyPlayoff(Long tournamentId, Long firstId, Long secondId, Integer court,
+                                             boolean approvedOverride, String overrideReason) {
         if (firstId == null || secondId == null || firstId.equals(secondId)) {
             throw new InvalidStateException("team_playoff.early.manual.teams");
         }
@@ -799,11 +850,13 @@ public class TeamPlayoffService {
 
         EarlyPlayoff state = earlyPlayoff(tournamentId, firstId, secondId);
         if (!state.available() || !("safe".equals(state.manualStatus())
-                || (approvedOverride && "override".equals(state.manualStatus())))) {
+                || (approvedOverride && ("override".equals(state.manualStatus()) || "remainder".equals(state.manualStatus()) || "rematch".equals(state.manualStatus()))
+                    && overrideReason != null && !overrideReason.isBlank() && overrideReason.length() <= 500))) {
             throw new InvalidStateException(state.manualStatus() == null ? "team_playoff.early.fixed"
                     : "team_playoff.early.manual." + state.manualStatus());
         }
         if (court != null) {
+            validateQualificationPriority(tournamentId);
             validateConfiguredCourt(tournamentId, court);
             validateCourtFree(tournamentId, court);
         }
@@ -831,6 +884,8 @@ public class TeamPlayoffService {
                     EarlyPlayoffSeeding.OPEN_ROUND_NOTE));
             match = newRoundOf16Match(bracket, first, second, nextMatchNumber(bracket.getId()));
         }
+        match.setPairingConfirmed(true);
+        match.setPairingOverrideReason(approvedOverride ? overrideReason : null);
         match.setCourtNumber(court);
         if (court == null) {
             queuePlayoffMatch(match);
@@ -1165,6 +1220,7 @@ public class TeamPlayoffService {
             match.setNextMatchSlot(qfSlotNumBySlot.get(seed));
         }
         matchRepository.saveAll(playInMatches);
+        quarterFinals.refresh(tournamentId);
         if (existingRound != null) {
             playInMatches.stream().filter(AmericanoMatch::isCompleted).forEach(this::advanceToLinkedSlot);
         }
@@ -1243,6 +1299,9 @@ public class TeamPlayoffService {
             }
         }
 
+        if (!match.isCompleted() && match.getCompletedAt() == null) {
+            match.setCompletedAt(LocalDateTime.now());
+        }
         match.setTeam1Games(team1Games);
         match.setTeam2Games(team2Games);
         match.setTeam1Score(team1Games > team2Games ? 1 : 0);
@@ -1257,7 +1316,9 @@ public class TeamPlayoffService {
         if (EarlyPlayoffSeeding.OPEN_ROUND_NOTE.equals(match.getRound().getNote())) {
             return match;
         }
-        if (match.getNextMatchId() != null) {
+        if (match.getPlayoffStage() == PlayoffStage.ROUND_OF_16) {
+            quarterFinals.refresh(match.getTournament().getId());
+        } else if (match.getNextMatchId() != null) {
             // Play-in матч: слот в четвертьфинале уже зафиксирован при посеве — не ждём
             // остальные play-in матчи.
             advanceToLinkedSlot(match);
@@ -1276,7 +1337,8 @@ public class TeamPlayoffService {
     }
 
     void advanceAfterPairCorrection(AmericanoMatch match) {
-        tryFormNextPlayoffStage(match);
+        if (match.getPlayoffStage() == PlayoffStage.ROUND_OF_16) quarterFinals.refresh(match.getTournament().getId());
+        else tryFormNextPlayoffStage(match);
         tryAutoCompleteRound(match.getRound().getId());
     }
 
@@ -1297,87 +1359,7 @@ public class TeamPlayoffService {
      * с другой уже укомплектованной парой четвертьфинала.
      */
     private void advanceToLinkedSlot(AmericanoMatch playInMatch) {
-        AmericanoTeam winner = winnerOf(playInMatch);
-        if (winner == null) return;
-
-        Long tournamentId = playInMatch.getTournament().getId();
-        AmericanoMatch nextMatch = matchRepository.findById(playInMatch.getNextMatchId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Match not found: " + playInMatch.getNextMatchId()));
-
-        int winnerSlot = playInMatch.getNextMatchSlot();
-        int waitingSlot = winnerSlot == 1 ? 2 : 1;
-        Long waitingTeamId = waitingSlot == 1 ? nextMatch.getTeam1Id() : nextMatch.getTeam2Id();
-        if (waitingTeamId != null) {
-            trySwapToAvoidRematch(nextMatch, waitingSlot, waitingTeamId, winner);
-        }
-
-        setMatchSlot(nextMatch, winnerSlot, winner);
-        nextMatch.setNote(buildMatchNote(nextMatch, "TBD — Ganador 1/8"));
-
-        if (nextMatch.getTeam1Id() != null && nextMatch.getTeam2Id() != null) {
-            makePlayoffMatchReady(nextMatch);
-            AmericanoRound round = nextMatch.getRound();
-            if (round.getStatus() == AmericanoRoundStatus.PENDING) {
-                round.setStatus(AmericanoRoundStatus.IN_PROGRESS);
-                roundRepository.save(round);
-            }
-        }
-
-        AmericanoMatch saved = matchRepository.save(nextMatch);
-        webSocketService.notifyTeamPlayoffTeamAdvanced(tournamentId, toMatchDto(saved));
-    }
-
-    /**
-     * Если "ожидающая" команда уже играла против только что определившегося победителя play-in,
-     * ищет среди укомплектованных пар четвертьфинала такую, с которой можно поменяться местами
-     * без повторных встреч ("1-е место играет против 7-го, 2-е ожидает победителя 1/8").
-     * Мутирует {@code nextMatch} на месте (слот waitingSlot) и сам сохраняет "соседний" матч —
-     * {@code nextMatch} сохраняет вызывающий код.
-     */
-    private void trySwapToAvoidRematch(AmericanoMatch nextMatch, int waitingSlot, Long waitingTeamId, AmericanoTeam winner) {
-        Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(nextMatch.getTournament().getId());
-        AmericanoTeam waiting = teamRepository.findById(waitingTeamId).orElseThrow();
-        if (!priorOpponents.getOrDefault(waitingTeamId, Set.of()).contains(winner.getId())) {
-            return; // не рематч — вариант 1 остаётся в силе
-        }
-
-        List<AmericanoMatch> siblings = matchRepository.findByTournamentIdAndPlayoffStage(
-                        nextMatch.getTournament().getId(), PlayoffStage.QUARTER_FINAL)
-                .stream()
-                .filter(m -> !m.getId().equals(nextMatch.getId()))
-                .filter(m -> m.getTeam1Id() != null && m.getTeam2Id() != null && !m.isCompleted())
-                .filter(m -> !Boolean.TRUE.equals(m.getPlayoffPlayStarted()))
-                .toList();
-        Map<Long, AmericanoMatch> siblingByPairKey = new HashMap<>();
-        List<long[]> siblingPairs = new ArrayList<>();
-        for (AmericanoMatch sibling : siblings) {
-            siblingPairs.add(new long[]{sibling.getTeam1Id(), sibling.getTeam2Id()});
-            siblingByPairKey.put(sibling.getTeam1Id(), sibling);
-            siblingByPairKey.put(sibling.getTeam2Id(), sibling);
-        }
-
-        Optional<Long> swapCandidateId = PlayoffRematchSwap.findSwap(
-                waitingTeamId, winner.getId(), siblingPairs, priorOpponents);
-        if (swapCandidateId.isEmpty()) {
-            // Исключение неизбежно — ни один обмен не убирает рематч, оставляем как есть.
-            log.warn("Playoff QF seeding (T16, ТЗ §36): {} vs {} es una revancha inevitable con el ganador de 1/8 — no se encontró un intercambio válido",
-                    waiting.getDisplayName(), winner.getDisplayName());
-            return;
-        }
-
-        AmericanoTeam candidate = teamRepository.findById(swapCandidateId.get()).orElseThrow();
-        AmericanoMatch sibling = siblingByPairKey.get(swapCandidateId.get());
-        int candidateSlot = swapCandidateId.get().equals(sibling.getTeam1Id()) ? 1 : 2;
-
-        setMatchSlot(nextMatch, waitingSlot, candidate);
-        setMatchSlot(sibling, candidateSlot, waiting);
-        sibling.setNote(buildMatchNote(sibling, "TBD"));
-        AmericanoMatch savedSibling = matchRepository.save(sibling);
-        webSocketService.notifyTeamPlayoffMatchUpdated(nextMatch.getTournament().getId(), toMatchDto(savedSibling));
-
-        log.info("Playoff QF swap (T16, ТЗ §36): {} <-> {} para evitar revancha con el ganador de 1/8 {}",
-                waiting.getDisplayName(), candidate.getDisplayName(), winner.getDisplayName());
+        quarterFinals.refresh(playInMatch.getTournament().getId());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1399,6 +1381,7 @@ public class TeamPlayoffService {
             applyTournamentStatus(dto, team, matches, queue, byId);
             dto.setCurrentPosition(index + 1);
             applyQualBreakdown(dto, team.getId(), matches);
+            applyWaiting(dto, TeamQualificationScheduling.waiting(team.getId(), allMatches, LocalDateTime.now()));
             return dto;
         }).toList();
         return TeamAmericanoRankingDto.builder().tournamentId(tournament.getId()).tournamentName(tournament.getNombre())
@@ -1549,31 +1532,9 @@ public class TeamPlayoffService {
      * Ничего не создаёт — координатор подтверждает пару или назначает другую вручную.
      */
     public Optional<AmericanoTeamDto> suggestSecondRoundOpponent(Long tournamentId, Long teamId) {
-        List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
-        Map<Long, AmericanoTeam> byId = waiting.stream()
-                .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
-        if (!byId.containsKey(teamId)) {
-            return Optional.empty();
-        }
-
-        if (!wonFirstQualMatch(tournamentId, teamId)) {
-            Optional<AmericanoTeam> extra = extraTeam(tournamentId);
-            if (extra.isPresent()) {
-                return extra.map(this::toDto);
-            }
-        }
-
-        List<Long> winners = waiting.stream()
-                .filter(t -> wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
-        List<Long> losers = waiting.stream()
-                .filter(t -> !wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
-
-        return QualificationPairing.pairSecondRound(winners, losers, buildPriorOpponentsMap(tournamentId)).stream()
-                .filter(p -> p.team1Id().equals(teamId) || p.team2Id().equals(teamId))
-                .findFirst()
-                .map(p -> p.team1Id().equals(teamId) ? p.team2Id() : p.team1Id())
-                .map(byId::get)
-                .map(this::toDto);
+        return suggestSecondRoundPairings(tournamentId).stream()
+                .filter(p -> p.getTeam1().getId().equals(teamId) || p.getTeam2().getId().equals(teamId))
+                .findFirst().map(p -> p.getTeam1().getId().equals(teamId) ? p.getTeam2() : p.getTeam1());
     }
 
     /**
@@ -1588,67 +1549,109 @@ public class TeamPlayoffService {
      * предложения 2-го тура.
      */
     public List<AmericanoMatchSuggestionDto> suggestSecondRoundPairings(Long tournamentId) {
-        List<AmericanoMatchSuggestionDto> suggestions = new ArrayList<>();
+        var state = qualificationScheduling.snapshot(tournamentId, null);
+        var byId = state.teams().stream().collect(Collectors.toMap(AmericanoTeam::getId, Function.identity()));
+        return QualificationSchedule.suggest(state.inputs(), state.meetings()).stream().map(pair -> {
+            var first = toDto(byId.get(pair.first()));
+            var second = toDto(byId.get(pair.second()));
+            applyWaiting(first, state.waiting().get(pair.first()));
+            applyWaiting(second, state.waiting().get(pair.second()));
+            return AmericanoMatchSuggestionDto.builder().team1(first).team2(second)
+                    .firstMatch(pair.firstMatch()).priority(pair.extra()).mixed(pair.mixed()).build();
+        }).toList();
+    }
 
-        List<AmericanoTeam> zeroMatchTeams = teamsWithoutQualMatch(tournamentId);
-        for (int i = 0; i + 1 < zeroMatchTeams.size(); i += 2) {
-            suggestions.add(AmericanoMatchSuggestionDto.builder()
-                    .team1(toDto(zeroMatchTeams.get(i)))
-                    .team2(toDto(zeroMatchTeams.get(i + 1)))
-                    .firstMatch(true)
-                    .build());
-        }
-        Optional<AmericanoTeam> extra = zeroMatchTeams.size() % 2 == 1
-                ? Optional.of(zeroMatchTeams.get(zeroMatchTeams.size() - 1))
-                : Optional.empty();
+    public record TeamWait(long teamId, int number, Long currentSeconds, long maximumSeconds, long totalSeconds,
+                           LocalDateTime since, String reason) {}
+    public record SchedulingState(LocalDateTime serverTime, List<TeamWait> teams) {}
 
-        List<AmericanoTeam> waiting = teamsAwaitingSecondQualMatch(tournamentId);
-        Map<Long, AmericanoTeam> byId = waiting.stream()
-                .collect(Collectors.toMap(AmericanoTeam::getId, t -> t));
-        Set<Long> used = new HashSet<>();
+    public SchedulingState qualificationSchedulingState(long tournamentId) {
+        var state = qualificationScheduling.snapshot(tournamentId, null);
+        var recommendations = QualificationSchedule.suggest(state.inputs(), state.meetings());
+        var selected = recommendations.stream().flatMap(p -> Stream.of(p.first(), p.second())).collect(Collectors.toSet());
+        var waits = state.inputs().stream().map(team -> {
+            var wait = state.waiting().get(team.id());
+            var entity = state.teams().stream().filter(t -> t.getId() == team.id()).findFirst().orElseThrow();
+            String reason = !isAttended(entity) ? "not_arrived" : !team.ready() ? "unavailable"
+                    : selected.contains(team.id()) ? "recommended" : "preserve_remainder";
+            return new TeamWait(team.id(), team.number(), wait.currentSeconds(), wait.maximumSeconds(),
+                    wait.totalSeconds(), wait.since(), reason);
+        }).toList();
+        return new SchedulingState(LocalDateTime.now(), waits);
+    }
 
-        // При нечётном остатке "нетронутых" команд первый же проигравший, ожидающий 2-й матч,
-        // приоритетно встречается с дополнительной командой — вне очереди и максимально быстро,
-        // чтобы не ждать партнёра с тем же результатом. Победитель продолжает искать соперника
-        // по обычному правилу "победитель к победителю".
-        extra.ifPresent(e -> waiting.stream()
-                .filter(t -> !wonFirstQualMatch(tournamentId, t.getId()))
-                .findFirst()
-                .ifPresent(loser -> {
-                    suggestions.add(AmericanoMatchSuggestionDto.builder()
-                            .team1(toDto(loser))
-                            .team2(toDto(e))
-                            .priority(true)
-                            .build());
-                    used.add(loser.getId());
-                }));
+    public record PairSafety(boolean safe, List<Long> affectedTeams) {}
 
-        // Пока есть ≥2 команды без единого матча, они уже полностью покрыли предложения
-        // выше (по парам) — W-W/L-L для остальных команд, ожидающих 2-й матч, придётся подождать.
-        if (zeroMatchTeams.size() > 1) {
-            return suggestions;
-        }
-
-        List<Long> winners = waiting.stream()
-                .filter(t -> !used.contains(t.getId()))
-                .filter(t -> wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
-        List<Long> losers = waiting.stream()
-                .filter(t -> !used.contains(t.getId()))
-                .filter(t -> !wonFirstQualMatch(tournamentId, t.getId())).map(AmericanoTeam::getId).toList();
-
-        Map<Long, Set<Long>> priorOpponents = buildPriorOpponentsMap(tournamentId);
-        for (QualificationPairing.Pairing p : QualificationPairing.pairSecondRound(winners, losers, priorOpponents)) {
-            if (priorOpponents.getOrDefault(p.team1Id(), Set.of()).contains(p.team2Id())) {
-                // Исключения допускаются, только когда распределение невозможно — здесь именно так.
-                log.warn("Qualification round 2 pairing for tournament {}: {} vs {} already played each other — no rematch-free alternative was found",
-                        tournamentId, byId.get(p.team1Id()).getDisplayName(), byId.get(p.team2Id()).getDisplayName());
+    PairSafety playoffPairSafety(long tournamentId, PlayoffStage stage, Set<Long> replaced,
+                                List<PlayoffPairExchange.Pair> proposed) {
+        var pairs = proposed.stream().map(p -> QualificationCompletion.Pair.of(p.first().id(), p.second().id()))
+                .collect(Collectors.toSet());
+        var opponents = buildPriorOpponentsMap(tournamentId);
+        boolean safe = pairs.stream().noneMatch(p -> opponents.getOrDefault(p.first(), Set.of()).contains(p.second()));
+        if (safe && stage == PlayoffStage.QUARTER_FINAL) safe = quarterFinals.safeChanges(tournamentId, replaced, pairs);
+        if (safe && stage == PlayoffStage.ROUND_OF_16) {
+            var fixed = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, stage).stream()
+                    .filter(m -> !replaced.contains(m.getId()) && Boolean.TRUE.equals(m.getPairingConfirmed()))
+                    .map(m -> Pair.of(m.getTeam1Id(), m.getTeam2Id())).collect(Collectors.toSet());
+            pairs.forEach(p -> fixed.add(Pair.of(p.first(), p.second())));
+            var engine = new EarlyPlayoffSeeding(matchingEngine);
+            var teams = activePlayoffRanking(tournamentId);
+            var pending = matchRepository.findByTournamentIdAndPhase(tournamentId, TournamentPhase.QUALIFICATION)
+                    .stream().filter(m -> !m.isCompleted()).map(m -> new Fixture(m.getId(), m.getTeam1Id(), m.getTeam2Id())).toList();
+            if (isQualificationDone(tournamentId)) {
+                safe = engine.roundOf16(standings(teams), opponents, fixed).stream()
+                        .noneMatch(p -> opponents.getOrDefault(p.team1Id(), Set.of()).contains(p.team2Id()));
+            } else {
+                var result = engine.evaluate(standings(teams), pending, opponents, fixed, null, fixed);
+                safe = result.exhaustive() && !result.limited() && !result.manualRemainderUnsafe();
             }
-            suggestions.add(AmericanoMatchSuggestionDto.builder()
-                    .team1(toDto(byId.get(p.team1Id())))
-                    .team2(toDto(byId.get(p.team2Id())))
-                    .build());
         }
-        return suggestions;
+        return new PairSafety(safe, safe ? List.of() : proposed.stream()
+                .flatMap(p -> Stream.of(p.first().number().longValue(), p.second().number().longValue())).distinct().sorted().toList());
+    }
+
+    void validatePlayoffStart(AmericanoMatch match) {
+        validateQualificationPriority(match.getTournament().getId());
+        quarterFinals.validateConfirmation(match);
+    }
+
+    public void validateQualificationPriority(long tournamentId) {
+        if (!isQualificationDone(tournamentId) && (!suggestSecondRoundPairings(tournamentId).isEmpty()
+                || matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId).stream()
+                    .anyMatch(m -> m.getPlayoffStage() == null && m.isQueued()))) {
+            throw new InvalidStateException("team_playoff.schedule.qualification_priority");
+        }
+    }
+
+    @Transactional
+    @ConductChange(value = ConductChange.Action.MATCH_TEAMS, subject = ConductChange.Subject.AMERICANO_MATCH)
+    public AmericanoMatch confirmPlayoffPair(Long matchId, boolean approvedOverride, String reason) {
+        var match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Match not found"));
+        if (match.isCompleted() || Boolean.TRUE.equals(match.getPlayoffPlayStarted()) || match.getPlayoffStage() == null
+                || match.getTeam1Id() == null || match.getTeam2Id() == null) {
+            throw new InvalidStateException("team_playoff.early.fixed");
+        }
+        if (approvedOverride) {
+            if (reason == null || reason.isBlank() || reason.length() > 500) {
+                throw new InvalidStateException("team_playoff.schedule.override_reason");
+            }
+            match.setPairingOverrideReason(reason);
+        }
+        quarterFinals.validateConfirmation(match);
+        match.setPairingConfirmed(true);
+        return matchRepository.save(match);
+    }
+
+    public TeamQualificationScheduling.Preview qualificationPreview(Long tournamentId, Long first, Long second, Long matchId) {
+        return qualificationScheduling.preview(tournamentId, first, second, matchId);
+    }
+
+    private void applyWaiting(AmericanoTeamDto dto, TeamWaiting.Waiting waiting) {
+        dto.setWaitingSeconds(waiting.currentSeconds());
+        dto.setMaximumWaitingSeconds(waiting.maximumSeconds());
+        dto.setTotalWaitingSeconds(waiting.totalSeconds());
+        dto.setWaitingSince(waiting.since());
     }
 
     /**
@@ -1720,6 +1723,13 @@ public class TeamPlayoffService {
     @Transactional
     @ConductChange(value = ConductChange.Action.MATCH_TEAMS, subject = ConductChange.Subject.AMERICANO_MATCH)
     public MatchTeamChangeResult changeMatchTeam(Long matchId, int slot, Long newTeamId) {
+        return changeMatchTeam(matchId, slot, newTeamId, false, null);
+    }
+
+    @Transactional
+    @ConductChange(value = ConductChange.Action.MATCH_TEAMS, subject = ConductChange.Subject.AMERICANO_MATCH)
+    public MatchTeamChangeResult changeMatchTeam(Long matchId, int slot, Long newTeamId,
+                                                boolean approvedOverride, String overrideReason) {
         if (slot != 1 && slot != 2) {
             throw new InvalidStateException("Slot inválido: " + slot);
         }
@@ -1748,6 +1758,10 @@ public class TeamPlayoffService {
             throw new InvalidStateException("El equipo " + newTeam.getDisplayName() + " ya está jugando otro partido");
         }
 
+        if (!isAttended(newTeam)) throw new InvalidStateException("team_playoff.early.manual.teams");
+        qualificationScheduling.validate(tournamentId, newTeamId, otherTeamId, matchId, approvedOverride, overrideReason);
+        match.setPairingConfirmed(true);
+        match.setPairingOverrideReason(approvedOverride ? overrideReason : null);
         String warning = null;
         if (otherTeamId != null && buildPriorOpponentsMap(tournamentId)
                 .getOrDefault(newTeamId, Set.of()).contains(otherTeamId)) {
@@ -2403,7 +2417,7 @@ public class TeamPlayoffService {
         // Для полуфинала (и далее) разведение сильнейших и анти-реванш важнее посева —
         // не тот порядок приоритетов, что при первичном посеве четвертьфинала из квалификации.
         PlayoffMatchingEngine.MatchingResult result = matchingEngine.match(
-                candidates, buildPriorOpponentsMap(tournament.getId()), PlayoffMatchingEngine.PriorityOrder.STRENGTH_FIRST);
+                candidates, buildPriorOpponentsMap(tournament.getId()), PlayoffMatchingEngine.PriorityOrder.REMATCH_FIRST);
         if (!result.allConstraintsSatisfied()) {
             log.warn("Playoff seeding for tournament {} stage {}: {}", tournament.getId(), nextStage, result.warning());
         }
@@ -2862,7 +2876,10 @@ public class TeamPlayoffService {
             dto.setTeam1Id(m.getTeam1Id());
             dto.setTeam2Id(m.getTeam2Id());
         }
+        dto.setTeam1Id(m.getTeam1Id());
+        dto.setTeam2Id(m.getTeam2Id());
         dto.setPriority(Boolean.TRUE.equals(m.getPriority()));
+        dto.setPairingConfirmed(Boolean.TRUE.equals(m.getPairingConfirmed()));
 
         team1.ifPresent(t -> dto.setTeam1Number(t.getTeamNumber()));
         team2.ifPresent(t -> dto.setTeam2Number(t.getTeamNumber()));

@@ -63,6 +63,10 @@ public interface RoundRobinRankingMapper {
     @Mapping(target = "hasPaid", ignore = true)
     @Mapping(target = "attended", ignore = true)
     @Mapping(target = "adminComment", ignore = true)
+    @Mapping(target = "waitingSeconds", ignore = true)
+    @Mapping(target = "maximumWaitingSeconds", ignore = true)
+    @Mapping(target = "totalWaitingSeconds", ignore = true)
+    @Mapping(target = "waitingSince", ignore = true)
     AmericanoTeamDto toTeamDto(RoundRobinRanking.RankedTeam row);
 
     RoundRobinAdditionalMatchDto toAdditionalDto(RoundRobinRanking.AdditionalMatch match);

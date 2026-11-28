@@ -124,6 +124,13 @@ public class AmericanoMatch {
     @Column(name = "round_robin_request_id")
     private java.util.UUID roundRobinRequestId;
 
+    @Column(name = "pairing_confirmed", nullable = false)
+    @Builder.Default
+    private Boolean pairingConfirmed = false;
+
+    @Column(name = "pairing_override_reason", length = 500)
+    private String pairingOverrideReason;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -141,8 +148,8 @@ public class AmericanoMatch {
     public void complete(int team1Score, int team2Score) {
         this.team1Score = team1Score;
         this.team2Score = team2Score;
+        if (!isCompleted() && this.completedAt == null) this.completedAt = LocalDateTime.now();
         this.status = AmericanoRoundStatus.COMPLETED;
-        this.completedAt = LocalDateTime.now();
     }
 
     public boolean isCompleted() {

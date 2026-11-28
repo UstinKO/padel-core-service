@@ -99,7 +99,12 @@ final class EarlyPlayoffSeeding {
                 .toList();
     }
 
-    record Result(Set<Pair> stable, boolean exhaustive, boolean limited, boolean manualBye) {}
+    record Result(Set<Pair> stable, boolean exhaustive, boolean limited, boolean manualBye,
+                  boolean manualRemainderUnsafe, List<Pair> consequences) {
+        Result(Set<Pair> stable, boolean exhaustive, boolean limited, boolean manualBye) {
+            this(stable, exhaustive, limited, manualBye, false, List.of());
+        }
+    }
 
     Result evaluate(List<Standing> standings, List<Fixture> remaining, Map<Long, Set<Long>> opponents,
                     Set<Pair> eligible, Pair manual, Set<Pair> fixed) {
@@ -112,7 +117,8 @@ final class EarlyPlayoffSeeding {
         }
         Search search = new Search(opponents, eligible, manual, fixed);
         boolean exhaustive = search.visit(new ArrayList<>(standings), position, remaining, 0);
-        return new Result(search.limit ? Set.of() : search.stable, exhaustive, search.limit, search.manualBye);
+        return new Result(search.limit ? Set.of() : search.stable, exhaustive, search.limit, search.manualBye,
+                search.manualRemainderUnsafe, search.consequences);
     }
 
     private final class Search {
@@ -121,6 +127,8 @@ final class EarlyPlayoffSeeding {
         private final Pair manual;
         private final Set<Pair> fixed;
         private boolean manualBye;
+        private boolean manualRemainderUnsafe;
+        private List<Pair> consequences = List.of();
         private final Map<List<Candidate>, Set<Pair>> cache = new HashMap<>();
         private int scenarios;
         private boolean limit;
@@ -142,11 +150,32 @@ final class EarlyPlayoffSeeding {
                 if (manual != null && ranked.stream().filter(c -> c.teamId() == manual.first() || c.teamId() == manual.second()).count() < 2) {
                     manualBye = true;
                 }
+                var rankedIds = ranked.stream().map(Candidate::teamId).collect(Collectors.toSet());
+                if (fixed.stream().anyMatch(p -> !rankedIds.contains(p.first()) || !rankedIds.contains(p.second()))) {
+                    manualRemainderUnsafe = true;
+                    consequences = List.copyOf(fixed);
+                    stable.clear();
+                    return false;
+                }
                 Set<Pair> pairs = cache.computeIfAbsent(ranked, candidates -> {
                     Set<Pair> result = new HashSet<>();
                     pairCandidates(candidates, opponents, fixed).forEach(pair -> result.add(Pair.of(pair)));
                     return result;
                 });
+                if (manual != null && !manualBye && !manualRemainderUnsafe) {
+                    var locked = new HashSet<>(fixed);
+                    locked.add(manual);
+                    var forced = pairCandidates(ranked, opponents, locked);
+                    consequences = forced.stream().map(Pair::of).filter(pair ->
+                            opponents.getOrDefault(pair.first(), Set.of()).contains(pair.second())).toList();
+                    manualRemainderUnsafe = !consequences.isEmpty();
+                }
+                var repeats = pairs.stream().filter(pair -> opponents.getOrDefault(pair.first(), Set.of()).contains(pair.second())).toList();
+                if (!repeats.isEmpty()) {
+                    manualRemainderUnsafe = true;
+                    consequences = repeats;
+                    stable.clear();
+                }
                 stable.retainAll(pairs);
                 return !stable.isEmpty() || (manual != null && !manualBye);
             }

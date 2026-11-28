@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -96,6 +97,8 @@ class TeamPlayoffEndToEndTest {
     @Autowired
     private PlayoffPairExchange exchange;
     @Autowired
+    private org.springframework.jdbc.core.simple.JdbcClient jdbc;
+    @Autowired
     private PublicLiveService publicLive;
 
     private ListAppender<ILoggingEvent> logAppender;
@@ -110,6 +113,79 @@ class TeamPlayoffEndToEndTest {
     @AfterEach
     void detachLogCapture() {
         ((Logger) LoggerFactory.getLogger(TeamPlayoffService.class)).detachAppender(logAppender);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"8,4", "8,5", "9,4", "9,5", "10,4", "10,5", "11,4", "11,5", "12,4", "12,5",
+            "13,4", "13,5", "14,4", "14,5", "15,4", "15,5", "16,4", "16,5"})
+    void asynchronousQualificationUsesAllCourtsAndRechecksEveryAssignment(int count, int courts) {
+        long tournament = createTournament(count);
+        var teams = createTeams(tournament, count);
+        playoffService.initQualification(tournament, courts);
+        var running = new HashMap<Long, Integer>();
+        for (int tick = 0; tick < 300; tick++) {
+            final int now = tick;
+            var completed = running.entrySet().stream().filter(e -> e.getValue() <= now).map(Map.Entry::getKey).toList();
+            for (long id : completed) {
+                playoffService.submitQualResult(id, id % 2 == 0 ? 6 : 3, id % 2 == 0 ? 3 : 6);
+                running.remove(id);
+            }
+            var occupied = playoffService.getActiveMatches(tournament).stream()
+                    .map(AmericanoMatch::getCourtNumber).collect(Collectors.toSet());
+            var suggestions = playoffService.suggestSecondRoundPairings(tournament).iterator();
+            for (int court = 1; court <= courts && suggestions.hasNext(); court++) {
+                if (occupied.contains(court)) continue;
+                var pair = suggestions.next();
+                var match = playoffService.createQualificationMatch(tournament, pair.getTeam1().getId(), pair.getTeam2().getId(), court);
+                running.put(match.getId(), tick + 5 + (int) (match.getId() % 17));
+            }
+            if (playoffService.isQualificationDone(tournament)) break;
+        }
+        assertThat(playoffService.isQualificationDone(tournament)).isTrue();
+        assertEachTeamPlayedExactlyTwoQualMatches(tournament, teams);
+        assertNoRematchesWithinQualification(tournament);
+    }
+
+    @Test
+    void positiveTwelveAndFirstSavedResultTimeSurviveCorrectionAndQueue() {
+        long tournament = createTournament(12);
+        var teams = createTeams(tournament, 12);
+        playoffService.initQualification(tournament, 5);
+        AmericanoMatch first = null;
+        for (int team = 0; team < 12; team += 2) {
+            var match = playoffService.createQualificationMatch(tournament, teams.get(team).getId(), teams.get(team + 1).getId(), 1);
+            playoffService.submitQualResult(match.getId(), 6, 2);
+            if (first == null) first = match;
+        }
+        var completed = first.getCompletedAt();
+        assertThat(completed).isNotNull();
+        playoffService.submitQualResult(first.getId(), 6, 4);
+        playoffService.submitQualResult(first.getId(), 6, 4);
+        assertThat(first.getCompletedAt()).isEqualTo(completed);
+        matchRepository.flush();
+        var stored = jdbc.sql("SELECT completed_at FROM americano_matches_db WHERE id = :id")
+                .param("id", first.getId()).query(java.time.LocalDateTime.class).single();
+        var legacySnapshot = jdbc.sql("SELECT CAST(to_jsonb(m) - 'pairing_confirmed' - 'pairing_override_reason' - 'completed_at' AS text) FROM americano_matches_db m WHERE id = :id")
+                .param("id", first.getId()).query(String.class).single();
+        jdbc.sql("DELETE FROM americano_matches_db WHERE id = :id").param("id", first.getId()).update();
+        jdbc.sql("INSERT INTO americano_matches_db SELECT * FROM jsonb_populate_record(NULL::americano_matches_db, CAST(:row AS jsonb))")
+                .param("row", legacySnapshot).update();
+        assertThat(jdbc.sql("SELECT completed_at FROM americano_matches_db WHERE id = :id")
+                .param("id", first.getId()).query(java.time.LocalDateTime.class).single()).isEqualTo(stored);
+        assertThat(jdbc.sql("SELECT pairing_confirmed FROM americano_matches_db WHERE id = :id")
+                .param("id", first.getId()).query(Boolean.class).single()).isTrue();
+        for (var pair : List.of(new int[]{2,4}, new int[]{6,8}, new int[]{1,3}, new int[]{5,7}, new int[]{9,11}, new int[]{10,12})) {
+            var match = playoffService.queueQualificationMatch(tournament, teams.get(pair[0]-1).getId(), teams.get(pair[1]-1).getId());
+            assertThat(playoffService.getQueue(tournament)).anySatisfy(queued -> {
+                assertThat(queued.getId()).isEqualTo(match.getId());
+                assertThat(queued.getTeam1WaitingSeconds()).isNotNull();
+                assertThat(queued.getTeam2WaitingSeconds()).isNotNull();
+            });
+            playoffService.assignCourtToQueuedMatch(match.getId(), 1);
+            playoffService.submitQualResult(match.getId(), 6, 2);
+        }
+        assertNoRematchesWithinQualification(tournament);
+        assertEachTeamPlayedExactlyTwoQualMatches(tournament, teams);
     }
 
     @ParameterizedTest(name = "{0} equipos")
@@ -460,20 +536,26 @@ class TeamPlayoffEndToEndTest {
         List<AmericanoMatch> qfMatches = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.QUARTER_FINAL);
         assertThat(qfMatches).hasSize(4);
 
-        long directTeamsSeeded = qfMatches.stream()
-                .flatMap(m -> java.util.stream.Stream.of(m.getTeam1Id(), m.getTeam2Id()))
-                .filter(java.util.Objects::nonNull)
-                .count();
-        assertThat(directTeamsSeeded).isEqualTo(PlayoffFormat.directToQuarterFinal(teamCount));
 
         List<AmericanoMatch> playInMatches = matchRepository.findByTournamentIdAndPlayoffStage(tournamentId, PlayoffStage.ROUND_OF_16);
         assertThat(playInMatches).hasSize(PlayoffFormat.playInTeams(teamCount) / 2);
+        var playInIds = playInMatches.stream().flatMap(m -> Stream.of(m.getTeam1Id(), m.getTeam2Id())).collect(Collectors.toSet());
+        var expectedDirect = playoffService.getQualRanking(tournamentId).getRanking().stream()
+                .limit(PlayoffFormat.directToQuarterFinal(teamCount)).map(AmericanoTeamDto::getId).collect(Collectors.toSet());
+        assertThat(playInIds).doesNotContainAnyElementsOf(expectedDirect);
+        assertThat(playInIds.size() + expectedDirect.size()).isEqualTo(teamCount);
     }
 
     /** Раз за разом доигрывает все текущие IN_PROGRESS матчи плей-офф (play-in → QF → SF → Final), пока турнир не завершится. */
     private void playThroughPlayoff(Long tournamentId) {
         int guard = 0;
         while (guard++ < 20) {
+            for (var queued : playoffService.getQueue(tournamentId)) {
+                var occupied = playoffService.getActiveMatches(tournamentId).stream().map(AmericanoMatch::getCourtNumber).collect(Collectors.toSet());
+                var free = java.util.stream.IntStream.rangeClosed(1, playoffService.getConfiguredCourts(tournamentId))
+                        .filter(c -> !occupied.contains(c)).findFirst();
+                if (free.isPresent()) playoffService.assignCourtToQueuedMatch(queued.getId(), free.getAsInt());
+            }
             List<Long> inProgressIds = matchRepository.findByTournamentIdOrderByRoundIdAscMatchNumberAsc(tournamentId)
                     .stream()
                     .filter(AmericanoMatch::isInProgress)

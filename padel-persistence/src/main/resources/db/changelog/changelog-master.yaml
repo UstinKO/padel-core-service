@@ -293,3 +293,7 @@ databaseChangeLog:
   - include:
       file: versions/v1.95-tournament-result-exports.yaml
       relativeToChangelogFile: true
+
+  - include:
+      file: versions/v1.97-team-playoff-scheduling.yaml
+      relativeToChangelogFile: true

@@ -23,6 +23,7 @@ import com.padle.core.padelcoreservice.service.PlayerService;
 import com.padle.core.padelcoreservice.service.TournamentAccessService;
 import com.padle.core.padelcoreservice.service.TournamentService;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffService;
+import com.padle.core.padelcoreservice.service.americano.TeamQualificationScheduling;
 import com.padle.core.padelcoreservice.service.americano.TeamPlayoffReadService;
 import com.padle.core.padelcoreservice.service.conduct.TournamentConductHistory;
 import com.padle.core.padelcoreservice.util.SecurityUtils;
@@ -443,7 +444,7 @@ public class TeamPlayoffViewController {
     // REST API
     // ══════════════════════════════════════════════════════════════════════
 
-    public record EarlyPlayoffRequest(Long firstId, Long secondId, Integer court, boolean approvedOverride) {}
+    public record EarlyPlayoffRequest(Long firstId, Long secondId, Integer court, boolean approvedOverride, String overrideReason) {}
     public record EarlyPlayoffSaved(boolean success, Long matchId, String message) {}
 
     @GetMapping("/api/{tournamentId}/early-playoff")
@@ -464,7 +465,7 @@ public class TeamPlayoffViewController {
         tournamentAccessService.assertCanManageTournament(owner, tournamentId);
         try {
             var match = playoffService.confirmEarlyPlayoff(tournamentId, request.firstId(), request.secondId(),
-                    request.court(), request.approvedOverride());
+                    request.court(), request.approvedOverride(), request.overrideReason());
             return ResponseEntity.ok(new EarlyPlayoffSaved(true, match.getId(), null));
         } catch (InvalidStateException e) {
             return ResponseEntity.status(409).body(new EarlyPlayoffSaved(false, null, localMessage(e.getMessage())));
@@ -475,50 +476,69 @@ public class TeamPlayoffViewController {
         return messageSource.getMessage(key, null, key, LocaleContextHolder.getLocale());
     }
 
+    public record QualRequest(Long team1Id, Long team2Id, Integer courtNumber,
+                              boolean approvedOverride, String overrideReason) {}
+    public record MatchSaved(boolean success, AmericanoMatchDto match, String message) {}
+    public record PairConfirmation(boolean approvedOverride, String overrideReason) {}
+
+    @GetMapping("/api/{tournamentId}/qual-safety")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    @ResponseBody
+    public TeamQualificationScheduling.Preview qualificationSafety(
+            @PathVariable Long tournamentId, @RequestParam Long firstId, @RequestParam Long secondId, @RequestParam(required = false) Long matchId,
+            @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
+        return playoffService.qualificationPreview(tournamentId, firstId, secondId, matchId);
+    }
+
     @PostMapping("/api/{tournamentId}/qual-matches")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createQualMatchApi(
-            @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> body,
-            @AuthenticationPrincipal Owner currentOwner) {
-        Map<String, Object> result = new HashMap<>();
+    public ResponseEntity<MatchSaved> createQualMatchApi(@PathVariable Long tournamentId,
+            @RequestBody QualRequest request, @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
-        try {
-            Long team1Id = Long.valueOf(String.valueOf(body.get("team1Id")));
-            Long team2Id = Long.valueOf(String.valueOf(body.get("team2Id")));
-            int courtNumber = Integer.parseInt(String.valueOf(body.get("courtNumber")));
-            AmericanoMatch match = playoffService.createQualificationMatch(tournamentId, team1Id, team2Id, courtNumber);
-            result.put("success", true);
-            result.put("match", playoffService.toMatchDto(match));
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", localMessage(e.getMessage()));
+        if (request.team1Id() == null || request.team2Id() == null || request.courtNumber() == null) {
+            return ResponseEntity.badRequest().body(new MatchSaved(false, null, localMessage("team_playoff.schedule.invalid")));
         }
-        return ResponseEntity.ok(result);
+        try {
+            var match = playoffService.createQualificationMatch(tournamentId, request.team1Id(), request.team2Id(),
+                    request.courtNumber(), request.approvedOverride(), request.overrideReason());
+            return ResponseEntity.ok(new MatchSaved(true, playoffService.toMatchDto(match), null));
+        } catch (InvalidStateException e) {
+            return ResponseEntity.status(409).body(new MatchSaved(false, null, localMessage(e.getMessage())));
+        }
     }
 
-    /** Ставит пару в очередь без назначения корта. */
     @PostMapping("/api/{tournamentId}/qual-matches/queue")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> queueQualMatchApi(
-            @PathVariable Long tournamentId,
-            @RequestBody Map<String, Object> body,
-            @AuthenticationPrincipal Owner currentOwner) {
-        Map<String, Object> result = new HashMap<>();
+    public ResponseEntity<MatchSaved> queueQualMatchApi(@PathVariable Long tournamentId,
+            @RequestBody QualRequest request, @AuthenticationPrincipal Owner currentOwner) {
         tournamentAccessService.assertCanManageTournament(currentOwner, tournamentId);
-        try {
-            Long team1Id = Long.valueOf(String.valueOf(body.get("team1Id")));
-            Long team2Id = Long.valueOf(String.valueOf(body.get("team2Id")));
-            AmericanoMatch match = playoffService.queueQualificationMatch(tournamentId, team1Id, team2Id);
-            result.put("success", true);
-            result.put("match", playoffService.toMatchDto(match));
-        } catch (Exception e) {
-            result.put("success", false);
-            result.put("message", localMessage(e.getMessage()));
+        if (request.team1Id() == null || request.team2Id() == null) {
+            return ResponseEntity.badRequest().body(new MatchSaved(false, null, localMessage("team_playoff.schedule.invalid")));
         }
-        return ResponseEntity.ok(result);
+        try {
+            var match = playoffService.queueQualificationMatch(tournamentId, request.team1Id(), request.team2Id(),
+                    request.approvedOverride(), request.overrideReason());
+            return ResponseEntity.ok(new MatchSaved(true, playoffService.toMatchDto(match), null));
+        } catch (InvalidStateException e) {
+            return ResponseEntity.status(409).body(new MatchSaved(false, null, localMessage(e.getMessage())));
+        }
+    }
+
+    @PostMapping("/api/matches/{matchId}/confirm-pair")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'CLUB_ADMIN')")
+    @ResponseBody
+    public ResponseEntity<MatchSaved> confirmPair(@PathVariable Long matchId, @RequestBody PairConfirmation request,
+                                                 @AuthenticationPrincipal Owner currentOwner) {
+        tournamentAccessService.assertCanManageAmericanoMatch(currentOwner, matchId);
+        try {
+            var match = playoffService.confirmPlayoffPair(matchId, request.approvedOverride(), request.overrideReason());
+            return ResponseEntity.ok(new MatchSaved(true, playoffService.toMatchDto(match), null));
+        } catch (InvalidStateException e) {
+            return ResponseEntity.status(409).body(new MatchSaved(false, null, localMessage(e.getMessage())));
+        }
     }
 
     /** Назначает свободный корт матчу из очереди — матч выходит из очереди и переходит в IN_PROGRESS. */
@@ -596,7 +616,8 @@ public class TeamPlayoffViewController {
         try {
             int slot = Integer.parseInt(String.valueOf(body.get("slot")));
             Long teamId = Long.valueOf(String.valueOf(body.get("teamId")));
-            TeamPlayoffService.MatchTeamChangeResult changeResult = playoffService.changeMatchTeam(matchId, slot, teamId);
+            TeamPlayoffService.MatchTeamChangeResult changeResult = playoffService.changeMatchTeam(matchId, slot, teamId,
+                    Boolean.TRUE.equals(body.get("approvedOverride")), (String) body.get("overrideReason"));
             result.put("success", true);
             result.put("match", playoffService.toMatchDto(changeResult.match()));
             result.put("warning", changeResult.warning());
@@ -693,6 +714,7 @@ public class TeamPlayoffViewController {
         result.put("availableTeams", playoffService.getAvailableTeamsForQualification(tournamentId));
         result.put("teamGroups", playoffService.getQualificationTeamGroups(tournamentId));
         result.put("queue", playoffService.getQueue(tournamentId));
+        result.put("scheduling", playoffService.qualificationSchedulingState(tournamentId));
         return ResponseEntity.ok(result);
     }
 
