@@ -1,0 +1,28 @@
+.admin-help-action { display: inline-flex; align-items: center; gap: .25rem; max-width: 100%; }
+.admin-help-action > .action-help { flex-shrink: 0; }
+.admin-help-action > .btn { min-width: 0; white-space: normal; }
+.admin-section-help-page .guest-claim .action-help { width: 1.65rem; min-height: 1.65rem; }
+.admin-section-help-page .player-actions { flex-wrap: wrap; }
+.admin-section-help-page .player-actions > .btn { min-width: 0; }
+.admin-section-help-page .player-actions .action-form { display: flex; align-items: center; max-width: 100%; }
+.admin-section-help-page .player-actions .action-form > .btn { flex: 1; min-width: 0; width: auto; }
+.admin-section-help-page .player-actions .btn,
+.admin-section-help-page [data-claim-activate] > .btn { max-width: 100%; white-space: normal; }
+.admin-section-help-page .player-details-grid > *,
+.admin-section-help-page .player-profile-info { min-width: 0; }
+.admin-section-help-page .player-email { overflow-wrap: anywhere; }
+.admin-section-help-page .info-value form { flex-wrap: wrap; }
+.admin-section-help-page .action-help-heading { flex-wrap: wrap; }
+.admin-section-help-page .action-help-heading > h2,
+.admin-section-help-page .action-help-heading > h3 { min-width: 0; }
+.admin-help-field { display: flex; align-items: center; gap: .25rem; min-width: 0; }
+.admin-help-field > input, .admin-help-field > select,
+.admin-help-field > .input-with-icon { min-width: 0; flex: 1; }
+.admin-section-help-page .player-detail-item { flex-wrap: wrap; }
+.admin-section-help-page #calendarOrganizationForm > .admin-help-action { align-self: end; }
+@media (max-width: 767px) {
+    .admin-section-help-page .guest-claim .action-help { width: 44px; min-height: 44px; }
+    .admin-section-help-page .player-actions > .btn { width: auto; flex: 1; }
+    .admin-section-help-page #calendarToday { grid-column: 1 / 3; }
+    .admin-section-help-page .event-calendar__toolbar > .action-help { padding: 0; }
+}
