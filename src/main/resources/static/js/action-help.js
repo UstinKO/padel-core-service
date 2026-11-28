@@ -151,6 +151,9 @@
         document.querySelectorAll('[data-pair-help]').forEach(element => { element.hidden = !paired && !(element.hasAttribute('data-pair-help-chooser') && !type.value); });
         if (active && active.closest('[hidden]')) hide();
     }
-    document.addEventListener('change', formHelp);
+    document.addEventListener('change', () => {
+        formHelp();
+        if (active && active.closest('[hidden]')) hide();
+    });
     formHelp();
 })();
