@@ -20,6 +20,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || '' }}
+      - name: Record checked revision
+        id: revision
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          printf 'sha=%s\n' "$revision" >> "$GITHUB_OUTPUT"
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -44,9 +50,11 @@ jobs:
         run: pnpm --dir frontend exec playwright install chromium
       - name: Check preview in desktop and mobile browsers
         run: pnpm --dir frontend test:e2e
+    outputs:
+      revision: ${{ steps.revision.outputs.sha }}
 
-  build:
-    needs: frontend
+
+  backend:
     runs-on: ubuntu-latest
 
     services:
@@ -75,6 +83,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || '' }}
+
+      - name: Record checked revision
+        id: revision
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          printf 'sha=%s\n' "$revision" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -196,9 +211,10 @@ jobs:
           if [ -f automation/ui-preview/runtime/state.json ]; then
             python3 automation/ui-preview/preview.py stop
           fi
+    outputs:
+      revision: ${{ steps.revision.outputs.sha }}
 
   browser-marketing:
-    needs: frontend
     runs-on: ubuntu-24.04
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
@@ -239,6 +255,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || '' }}
+      - name: Record checked revision
+        id: revision
+        shell: bash
+        run: |
+          revision=$(git -c safe.directory="$GITHUB_WORKSPACE" rev-parse HEAD)
+          printf 'sha=%s\n' "$revision" >> "$GITHUB_OUTPUT"
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
@@ -302,3 +324,52 @@ jobs:
             target/individual-action-help-qa/*
           if-no-files-found: ignore
           retention-days: 3
+    outputs:
+      revision: ${{ steps.revision.outputs.sha }}
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: [ frontend, backend, browser-marketing ]
+    if: ${{ always() }}
+    steps:
+      - name: Check required jobs and revisions
+        shell: bash
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          BROWSER_RESULT: ${{ needs.browser-marketing.result }}
+          FRONTEND_REVISION: ${{ needs.frontend.outputs.revision }}
+          BACKEND_REVISION: ${{ needs.backend.outputs.revision }}
+          BROWSER_REVISION: ${{ needs.browser-marketing.outputs.revision }}
+          REQUESTED_REF: ${{ inputs.ref || '' }}
+          EVENT_REVISION: ${{ github.sha }}
+        run: |
+          printf '%-18s %-10s %s\n' \
+            frontend "$FRONTEND_RESULT" "$FRONTEND_REVISION" \
+            backend "$BACKEND_RESULT" "$BACKEND_REVISION" \
+            browser-marketing "$BROWSER_RESULT" "$BROWSER_REVISION"
+
+            if [[ "$FRONTEND_RESULT" != success ||
+                  "$BACKEND_RESULT" != success ||
+                  "$BROWSER_RESULT" != success ]]; then
+               echo "::error::One or more required jobs did not succeed"
+               exit 1
+            fi
+
+            if [[ -z "$FRONTEND_REVISION" ||
+                     "$FRONTEND_REVISION" != "$BACKEND_REVISION" ||
+                     "$FRONTEND_REVISION" != "$BROWSER_REVISION" ]]; then
+               echo "::error::Required jobs did not report the same checked revision"
+               exit 1
+            fi
+
+            if [[ -z "$REQUESTED_REF" && "$FRONTEND_REVISION" != "$EVENT_REVISION" ]]; then
+               echo "::error::Checked revision differs from the pull request event revision"
+               exit 1
+               fi
+
+            if [[ "$REQUESTED_REF" =~ ^[0-9a-f]{40}$ && "$FRONTEND_REVISION" != "$REQUESTED_REF" ]]; then
+               echo "::error::Checked revision differs from the requested commit"
+               exit 1
+            fi
