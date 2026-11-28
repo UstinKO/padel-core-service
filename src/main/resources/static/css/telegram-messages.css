@@ -23,3 +23,6 @@
 
 .tg-compose button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 .tg-compose [data-telegram-invitation] input{width:100%;box-sizing:border-box;padding:.75rem;border:1px solid #aab1bb;border-radius:8px;font:inherit}
+.tg-compose [data-translations]{margin-top:1rem}.tg-compose [data-translations] label{display:block;font-weight:600;margin:.8rem 0 .4rem}
+.tg-compose [data-translations] p{font-size:.9rem}.tg-compose [data-message-language]{margin:1rem 0}
+.tg-compose details[data-translations]{border:1px solid #e5e7eb;border-radius:8px;padding:.8rem}.tg-compose details[data-translations] summary{cursor:pointer;font-weight:600;min-height:44px;align-content:center}

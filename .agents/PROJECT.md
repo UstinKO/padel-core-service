@@ -1,4 +1,5 @@
 Локализованные кампании: TelegramCampaignTranslationService / TelegramCampaignTranslator готовят переводы OpenAI без отправки; CampaignModels.Texts и снимок языка/текста адресата, v1.96. [Контракт](../docs/endpoints/player-telegram.md).
+Редактор языковых кампаний: telegram-messages.js готовит переводы по одному исходнику, позволяет проверить версии; подтверждение/история используют снимок адресатов. Браузерная приёмка в TelegramMessagePreviewBrowserTest. [Интерфейс](../docs/player-telegram-interface.md).
 
 Telegram в кабинете: fragments/player-telegram :: invitation и player-telegram.js учитывают серверный invitationDismissed, WhatsApp и связь; возврат предложения в профиле. telegram-connections.html / JS / CSS показывают общий агрегат только SUPER_ADMIN. [Интерфейс и проверки](../docs/player-telegram-interface.md).
 

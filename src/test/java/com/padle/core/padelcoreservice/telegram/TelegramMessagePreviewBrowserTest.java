@@ -27,6 +27,7 @@ import com.padle.core.padelcoreservice.service.EmailService;
 import com.padle.core.padelcoreservice.service.TournamentNotificationService;
 import java.math.BigDecimal;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +51,7 @@ import static org.mockito.Mockito.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.address=127.0.0.1", "app.scheduling.enabled=false", "telegram.enabled=false",
-        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/padel_browser_qa",
+        "spring.datasource.url=jdbc:postgresql://${BROWSER_QA_DB_HOST:localhost}:${BROWSER_QA_DB_PORT:5432}/${BROWSER_QA_DB_NAME:padel_browser_qa}",
         "spring.datasource.username=epadel_user", "spring.datasource.password=test",
         "telegram.players.enabled=true", "telegram.players.automatic-enabled=false",
         "app.analytics.meta.enabled=false", "app.analytics.meta.access-token=",
@@ -77,10 +78,15 @@ class TelegramMessagePreviewBrowserTest {
     @MockitoBean TelegramCampaignProperties campaignFlags;
     @Autowired TelegramCampaignWorker campaignWorker;
     @MockitoBean PlayerTelegramApi api;
+    @MockitoBean TelegramCampaignTranslator translator;
     @MockitoBean EmailService email;
     @MockitoBean TournamentNotificationService notifications;
 
     @BeforeEach void configure() {
+        when(translator.translate(anyString())).thenAnswer(call -> {
+            String source = call.getArgument(0);
+            return new TelegramCampaignTranslator.Translation("ru", source, source, source);
+        });
         when(campaignFlags.enabled()).thenReturn(false);
         when(properties.enabled()).thenReturn(true);
         when(properties.pilotEnabled()).thenReturn(false);
@@ -167,6 +173,59 @@ class TelegramMessagePreviewBrowserTest {
             verify(api, never()).updates(anyLong());
         } finally { Files.deleteIfExists(input); Files.deleteIfExists(directory); }
     }
+    @Test void localizedCampaignShowsAndSendsTheApprovedProfileLanguage() throws Exception {
+        var fixture = new TransactionTemplate(transactions).execute(status -> {
+            var seeded = seed();
+            var ids = List.of(seeded.alphaId(), seeded.bravoId(), seeded.charlieId());
+            var locales = List.of("es", "ru", "en");
+            for (int index = 0; index < ids.size(); index++) {
+                long id = ids.get(index);
+                if (index > 0) {
+                    String token = UUID.randomUUID().toString();
+                    connections.token(id, token, OffsetDateTime.now().plusMinutes(10), "ru");
+                    connections.bind(token, 7_770_000_000L + id, 7_770_000_000L + id).orElseThrow();
+                }
+                var player = players.findById(id).orElseThrow(); player.setPreferredLocale(locales.get(index));
+                players.saveAndFlush(player);
+            }
+            return seeded;
+        });
+        when(campaignFlags.enabled()).thenReturn(true); when(api.available()).thenReturn(true);
+        when(translator.translate(anyString())).thenAnswer(call -> {
+            String source = call.getArgument(0);
+            boolean spanish = source.startsWith("Jugamos");
+            return new TelegramCampaignTranslator.Translation(spanish ? "es" : "ru",
+                    spanish ? source : "Jugamos a las 18:30 — https://1-padel.com",
+                    spanish ? "Играем в 18:30 — https://1-padel.com" : source,
+                    "We play at 18:30 — https://1-padel.com");
+        });
+        when(api.send(anyLong(), anyString(), anyList())).thenReturn(new TelegramModels.Result("SENT", 123L));
+        var scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleWithFixedDelay(campaignWorker::tick, 0, 100, TimeUnit.MILLISECONDS);
+        Path directory = Files.createTempDirectory("telegram-languages-browser-");
+        Path input = directory.resolve("fixture.json");
+        Path output = Path.of("target/telegram-message-preview-qa"); Files.createDirectories(output);
+        Files.createFile(input, PosixFilePermissions.asFileAttribute(
+                PosixFilePermissions.fromString("rw-------")));
+        Files.writeString(input, json.writeValueAsString(fixture));
+        try {
+            var process = new ProcessBuilder("node", "tests/browser/telegram-campaign-languages.browser.mjs", input.toString())
+                    .redirectErrorStream(true).redirectOutput(output.resolve("languages-browser.log").toFile()).start();
+            boolean completed = process.waitFor(180, TimeUnit.SECONDS);
+            if (!completed) process.destroyForcibly();
+            assertThat(completed).isTrue();
+            assertThat(process.exitValue()).as(Files.readString(output.resolve("languages-browser.log"))).isZero();
+            verify(api, times(1)).send(7_770_000_000L + fixture.alphaId(), "Nos vemos a las 18:30 — https://1-padel.com", List.of());
+            verify(api, times(1)).send(7_770_000_000L + fixture.bravoId(), "Играем в 18:30 — https://1-padel.com", List.of());
+            verify(api, times(1)).send(7_770_000_000L + fixture.charlieId(), "We play at 18:30 — https://1-padel.com", List.of());
+            verify(api, times(3)).send(anyLong(), anyString(), anyList());
+            verify(api, never()).updates(anyLong());
+        } finally {
+            scheduler.shutdownNow(); scheduler.awaitTermination(10, TimeUnit.SECONDS);
+            Files.deleteIfExists(input); Files.deleteIfExists(directory);
+        }
+    }
+
     private Fixture seed() {
         String suffix = UUID.randomUUID().toString();
         String password = "Preview-qa-" + suffix;
